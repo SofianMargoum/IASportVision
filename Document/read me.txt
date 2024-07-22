@@ -1,0 +1,27 @@
+--globalsources
+margoum.contact@gmail.com	
+Passe83550.
+
+--Github
+margoum.contact@gmail.com	
+Passe83550.
+
+	
+--SADP
+	Model
+		-DS-2CD2T47G2P-LSU/SL
+	IP :
+		-192.168.1.4
+		-admin	
+		-Vidauban
+	securicode:
+		-IAsportvision83
+	security question:
+		- 1.Mohammed
+		- Ilham
+		- Audi
+	idsite
+		-e6c7abde81
+	ip public
+		-http://192.168.1.4:60000/
+		-http://91.170.83.13:60000/

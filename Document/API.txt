@@ -1,0 +1,13 @@
+
+
+-Commencer enregistrement d'une video
+PUT
+http://192.168.1.4:60000/ISAPI/ContentMgmt/record/control/manual/start/tracks/1
+
+-Arrêter enregistrement d'une video
+PUT
+http://192.168.1.4:60000/ISAPI/ContentMgmt/record/control/manual/stop/tracks/1
+
+
+-Rechercher le nom de son club
+https://api-dofa.prd-aws.fff.fr/api/clubs?clNom=vidauban

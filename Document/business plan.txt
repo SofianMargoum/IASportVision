@@ -1,0 +1,82 @@
+Projet :
+	-Vente et installation de caméra dans des stades de foot amateurs.
+	
+	-Avec les images d'un match de foot officiel pouvoir : 
+		
+		-Visionner les videos des match enregistrer
+		-Analyser les video et la performances de l'équipe et des joueur individuelle,
+		-Aider le coach a mettre une tactique de jeu en place.
+		
+	-Fonctionnalité requis via application web ou mobile a distance:
+
+		Step 1 :
+			-Demarrer un enregistrement
+			-Arret
+			-Enregistrement dans le cloud
+			
+		Step 2 :
+			-liste des video
+			-Visionner les video
+		
+		Step 3 :
+			-Pause (enregistrement)
+			-Lecture (enregistrement)
+			-Mise en veille
+			-Allumer
+
+		Step 4
+			-Gestion des utilisateurs
+			-Gestion des droit des utilisateurs
+			-Mettre la video en direct sur l'appli
+
+
+
+Projet 2.0 :
+
+	Avec les images d'un match de foot officiel pouvoir : 
+	
+	-Récupéré les statistique des joueurs 
+		-nombre de km parcourue, 
+		-nombre de passe, 
+		-nombre de tir,
+		-nombre de ballon recuperer...
+		
+	-Generer une video resumé du match
+	-Publier sur les réseaux (youtube, site internet...) 
+
+Mes produits:
+
+	-Hikvision
+	-Cable internet
+	-Tablette
+	
+Solution:
+	
+	-Google Cloud plateform
+	-Google Cloud Video Intelligence
+	-Node.js (backend)
+	-react (frontend)
+	
+	
+	DS-2CD2T47G2P-LSU/SL 4MP
+	DS-2CD2T87G2P-LSU/SL 8MP
+	
+Application:
+une application pour le football amateur.
+il y a deux type d'utilisateur:
+	-Utilisateur admin. 
+		-Chaque club aura un compte ou il pourras s'authentifier.
+			-il aura accés à 5 onglets:
+				-premiere onglet : possibilité d'enregistrer une video d'un match avec la camera installer dans le stade
+				-deuxiemme onglet : visionner le classement les resulat et le calendrier 
+				-troisieme onglet : liste des videos deja enregistrer et possibilité de les visionner
+				-quatrieme onglet : barre de recherche des autre club. pour visioner leur resulat et video
+				-cinquieme onglet : parametre du compte, mdp, ip camera...
+	-Utilisateur lambda. 
+		-il devra renseigner le club qu'il cherche
+			-il aura accés à 3 onglets:
+				-premiere onglet :  visionner un match en direct
+				-deuxiemme onglet : visionner le classement les resulat et le calendrier 
+				-troisieme onglet : liste des videos deja enregistrer et possibilité de les visionner
+				-quatrieme onglet : barre de recherche des autre club. pour visioner leur resulat et video
+				-cinquieme onglet : parametre du compte, mdp, ip camera...

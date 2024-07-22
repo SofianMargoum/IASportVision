@@ -1,0 +1,8 @@
+https://www.youtube.com/watch?v=DxRT-Z2E_x8&ab_channel=SFEIRTV 
+	-33min
+	
+--cmd to APK
+gradlew.bat assembleRelease
+
+--test sur navigateur 
+npm start

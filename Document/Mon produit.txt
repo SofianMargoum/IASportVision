@@ -1,0 +1,16 @@
+-Une caméra double objectif couvrant une vue à 180°.
+-Avec support pour fixation à un poteau.
+-Installation facile avec une vis ou deux.
+-Réglable verticalement et horizontalement.
+-Pas d'enregistrement sonore.
+-Alimentation via un câble Ethernet.
+-Stockage interne de 64 Go.
+-Avec fonctionnalité Bluetooth permettant d'interagir avec une autre machine avec les options suivantes :
+	-Lecture
+	-Pause
+	-Arrêt
+	-Publication (réseaux sociaux, serveur, site internet)
+
+-Visualiser la liste des vidéos enregistrées
+-Limitation des vidéos à 100 minutes.
+-Suppression de la vidéo la plus ancienne si le stockage atteint 20 Go.

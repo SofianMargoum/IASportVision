@@ -1,0 +1,13 @@
+-Definition du besoin : OK
+-Commander la camera : OK
+-Inscription Hikvision pour API : OK
+-Ouverture des ports : OK
+-Test appels API Local : OK
+-Test appels API Distant : OK
+-Test enregister video Local : OK
+-Test enregister video Distant :
+-Site cms ou application mobile :
+-Site cms ou application web :
+-
+-
+-
