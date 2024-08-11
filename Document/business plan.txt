@@ -54,6 +54,7 @@ Solution:
 	
 	-Google Cloud plateform
 	-Google Cloud Video Intelligence
+	-App engine
 	-Node.js (backend)
 	-react (frontend)
 	
