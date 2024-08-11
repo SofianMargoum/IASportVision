@@ -6,3 +6,9 @@ gradlew.bat assembleRelease
 
 --test sur navigateur 
 npm start
+
+gcloud app deploy
+
+
+https://ia-sport.oa.r.appspot.com/api/hello
+https://ia-sport.oa.r.appspot.com/api/images
