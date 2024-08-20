@@ -10,6 +10,7 @@
 --Astuce version simple Push
 	git add .
 	git commit -m "first commit"
+	git commit -m "my-app update server for get list video of bucket by folder"
 	git push -u origin main
 
 --Astuce pull

@@ -10,7 +10,7 @@ Projet :
 	-Fonctionnalité requis via application web ou mobile a distance:
 
 		Step 1 :
-			-Demarrer un enregistrement
+			-Demarrer un enregistrement (via nomdedomaine)
 			-Arret
 			-Enregistrement dans le cloud
 			
