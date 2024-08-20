@@ -8,6 +8,28 @@ http://192.168.1.4:60000/ISAPI/ContentMgmt/record/control/manual/start/tracks/1
 PUT
 http://192.168.1.4:60000/ISAPI/ContentMgmt/record/control/manual/stop/tracks/1
 
+-Lister les videos
+http://192.168.1.4:60000/ISAPI/ContentMgmt/search
+
+<CMSearchDescription>
+    <searchID>1</searchID>
+    <trackIDList>
+        <trackID>101</trackID>
+    </trackIDList>
+    <timeSpanList>
+        <timeSpan>
+            <startTime>2024-08-01T00:00:00Z</startTime>
+            <endTime>2024-08-14T23:59:59Z</endTime>
+        </timeSpan>
+    </timeSpanList>
+    <maxResults>40</maxResults>
+    <searchResultPostion>0</searchResultPostion>
+    <metadataList>
+        <metadataDescriptor>//recordType.meta.std-cgi.com</metadataDescriptor>
+    </metadataList>
+</CMSearchDescription>
+
+
 
 -Rechercher le nom de son club
 https://api-dofa.prd-aws.fff.fr/api/clubs?clNom=vidauban
