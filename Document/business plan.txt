@@ -10,7 +10,7 @@ Projet :
 	-Fonctionnalité requis via application web ou mobile a distance:
 
 		Step 1 :
-			-Demarrer un enregistrement (via nomdedomaine)
+			-Demarrer un enregistrement 
 			-Arret
 			-Enregistrement dans le cloud
 			
@@ -18,17 +18,17 @@ Projet :
 			-liste des video
 			-Visionner les video
 		
-		Step 3 :
-			-Pause (enregistrement)
-			-Lecture (enregistrement)
-			-Mise en veille
-			-Allumer
 
-		Step 4
+		Step 3
 			-Gestion des utilisateurs
 			-Gestion des droit des utilisateurs
 			-Mettre la video en direct sur l'appli
 
+		Step 4 :
+			-Mise en veille
+			-Allumer
+			-Pause (enregistrement)
+			-Lecture (enregistrement)
 
 
 Projet 2.0 :
