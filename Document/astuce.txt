@@ -16,3 +16,34 @@ https://ia-sport.oa.r.appspot.com/api/images
 
 --cmd download video
 ffmpeg -rtsp_transport tcp -i "rtsp://admin:Vidauban@192.168.1.4:55400/Streaming/tracks/101/?starttime=20240818T143531Z&endtime=20240818T143541Z&name=ch01_00000000000000206&size=4224544" -t 00:00:10 -c:v copy -c:a copy output.mp4
+
+
+--Verrouiller le Package avec apt-mark
+sudo apt-mark hold ffmpeg
+
+--Annuler le verrouillage si nécessaire :
+sudo apt-mark unhold ffmpeg
+
+--Charte graphique
+background-color: #0C121E; /* Couleur bleu foncé de fond générale */
+background-color: #242B35; /* Couleur gris foncé de fond container */
+color: #ffffff; /* Couleur bleu claire de texte / icon */
+color: #8DE8FD; /* Couleur blanc de texte / icon selectioner */
+
+--keytool
+C:\perso\IA Sport Vision\Application\DEV\IASV>"C:\Program Files (x86)\Java\jdk11.0.17_8\bin\keytool.exe" -list -v -keystore "%USERPROFILE%\.android\debug.keystore" -alias androiddebugkey -storepass android -keypass android
+Nom d'alias : androiddebugkey
+Date de création : 19 juil. 2024
+Type d'entrée : PrivateKeyEntry
+Longueur de chaîne du certificat : 1
+Certificat[1]:
+Propriétaire : C=US, O=Android, CN=Android Debug
+Emetteur : C=US, O=Android, CN=Android Debug
+Numéro de série : 1
+Valide du Fri Jul 19 17:10:02 CEST 2024 au Sun Jul 12 17:10:02 CEST 2054
+Empreintes du certificat :
+         SHA 1: 68:63:57:3D:E1:B1:AF:11:64:71:73:C8:74:83:56:AC:36:A0:EF:2A
+         SHA 256: 31:A2:D1:71:24:66:7D:4C:9D:C3:6C:49:98:0A:4D:27:85:A5:E2:17:67:F9:4A:F6:8A:66:CB:3D:36:77:8F:F0
+Nom de l'algorithme de signature : SHA256withRSA
+Algorithme de clé publique du sujet : Clé RSA 2048 bits
+Version : 1

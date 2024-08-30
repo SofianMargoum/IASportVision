@@ -1,0 +1,169 @@
+/* App.css */
+
+/* Styles pour l'application en général */
+.app-container {
+  font-family: Arial, sans-serif;
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  background-color: #0C121E; /* Couleur de fond générale */
+  position: relative; /* Ajouté pour positionner les éléments en absolu */
+}
+
+
+/* Styles pour l'en-tête */
+.app-header {
+  background-color: #0C121E; /* Même couleur de fond que l'app-container */
+  padding: 10px 20px;
+  text-align: center;
+  color: #ffffff;
+}
+
+.selected-club-label {
+  font-size: 18px;
+  font-weight: bold;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center; /* Centre le contenu horizontalement */
+}
+
+.selected-club-logo {
+  width: 50px; /* Taille du logo */
+  height: 50px; /* Hauteur du logo */
+  border-radius: 50%; /* Bordures arrondies pour un effet circulaire */
+  object-fit: cover; /* Assure que l'image est bien contenue dans le cercle */
+  margin-right: 10px; /* Espacement entre le logo et le texte */
+}
+
+.app-content {
+  flex: 1;
+  padding: 20px;
+  margin: 20px;
+  background-color: #242B35; /* Couleur de fond générale */
+  border-radius: 15px 15px 0 0; /* Bordures arrondies en haut */
+  box-shadow: 0px -4px 15px rgba(0, 0, 0, 0.1); /* Ombre subtile */
+  max-width: 1200px; /* Largeur maximale pour les écrans larges */
+  margin-top: 10px; /* Ajout d'un peu d'espace au-dessus */
+}
+
+.component-container {
+  background-color: #f8f9fa; /* Couleur légèrement différente pour les composants */
+  border-radius: 10px; /* Bordures arrondies */
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); /* Ombre légère */
+  padding: 20px;
+  margin: 10px; /* Marges autour du conteneur */
+  width: 100%;
+  max-width: 800px; /* Largeur maximale des conteneurs */
+  transition: transform 0.3s ease;
+}
+
+.component-container:hover {
+  transform: translateY(-5px); /* Légère élévation du conteneur au survol */
+}
+
+/* Navbar fixée en bas */
+.app-navbar {
+  background-color: #343a40;
+  color: #fff;
+  padding: 15px 0; /* Augmenté pour une navbar plus grande */
+  position: fixed; /* Rend la navbar fixe */
+  bottom: 0; /* Positionne la navbar en bas de l'écran */
+  width: 100%; /* Assure que la navbar couvre toute la largeur de l'écran */
+  box-shadow: 0 -2px 5px rgba(0, 0, 0, 0.3);
+  z-index: 1000; /* Assure que la navbar est au-dessus d'autres éléments */
+}
+
+.app-navbar ul {
+  list-style-type: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  justify-content: space-around;
+}
+
+.app-navbar li {
+  flex: 1;
+  text-align: center;
+  position: relative;
+}
+
+.app-navbar li a {
+  color: #fff;
+  text-decoration: none;
+  padding: 12px 16px; /* Augmenté pour plus d'espace autour des liens */
+  border-radius: 50%; /* Bordures complètement arrondies */
+  transition: background-color 0.3s ease, transform 0.3s ease;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  position: relative;
+  z-index: 1;
+  font-size: 18px; /* Augmenté pour une police plus grande */
+}
+
+.app-navbar li a:hover {
+  background-color: #495057; /* Couleur d'arrière-plan au survol */
+}
+
+.app-navbar li a.active {
+  transform: translateY(-10px) scale(1.2);
+  background-color: transparent;
+  color: #8DE8FD;
+}
+
+.app-navbar li a.active:after {
+  content: '';
+  position: absolute;
+  bottom: -10px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 80px;
+  height: 40px;
+  background-color: #343a40;
+  border-radius: 1000px 1000px 0 0;
+  z-index: -1;
+}
+
+.app-navbar li a svg {
+  width: 28px; /* Augmenté pour des icônes plus grandes */
+  height: 28px; /* Augmenté pour des icônes plus grandes */
+  transition: transform 0.3s ease;
+}
+
+.app-navbar li a.active svg {
+  transform: scale(1.2);
+}
+
+/* Media Queries pour rendre la navigation responsive */
+@media (max-width: 768px) {
+  .app-navbar ul {
+    justify-content: space-between;
+  }
+
+  .app-navbar li a {
+    padding: 10px 14px; /* Ajusté pour les écrans moyens */
+    font-size: 16px; /* Ajusté pour une police légèrement plus petite */
+  }
+
+  .app-navbar li a svg {
+    width: 24px; /* Ajusté pour des icônes légèrement plus petites */
+    height: 24px; /* Ajusté pour des icônes légèrement plus petites */
+  }
+}
+
+@media (max-width: 480px) {
+  .app-navbar {
+    padding: 10px; /* Ajusté pour les petits écrans */
+  }
+
+  .app-navbar li a {
+    padding: 8px 12px; /* Ajusté pour les très petits écrans */
+    font-size: 14px; /* Ajusté pour une police plus petite */
+  }
+
+  .app-navbar li a svg {
+    width: 20px; /* Ajusté pour des icônes plus petites */
+    height: 20px; /* Ajusté pour des icônes plus petites */
+  }
+}
