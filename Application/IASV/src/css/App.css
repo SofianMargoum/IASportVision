@@ -1,0 +1,182 @@
+/* App.css */
+
+/* Styles généraux pour l'application */
+.app-container {
+  font-family: Arial, sans-serif;
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  background-color: #010E1E; /* Couleur de fond générale */
+  position: relative;
+}
+
+/* Styles pour l'en-tête */
+.app-header {
+  background-color: #010E1E; /* Même couleur de fond que l'app-container */
+  padding: 10px 20px;
+  text-align: center;
+  color: #ffffff;
+}
+
+.app-content {
+  flex: 1;
+  padding: 20px;
+  margin: 20px auto 10px; /* Centre horizontalement et ajoute un espace en haut */
+  background-color: #001A31; /* Couleur de fond du contenu */
+  border-radius: 15px 15px 0 0; /* Bordures arrondies en haut */
+  box-shadow: 0px -4px 15px rgba(0, 0, 0, 0.1); /* Ombre subtile */
+  max-width: 95%;
+  width: 100%;
+  box-sizing: border-box; /* Inclut le padding et les bordures dans la largeur totale */
+  max-height: 100vh; /* Limite la hauteur du conteneur à 80% de la hauteur de l'écran */
+}
+
+
+/* Conteneur des composants individuels */
+.component-container {
+  background-color: #f8f9fa; /* Couleur légèrement différente pour les composants */
+  border-radius: 10px; /* Bordures arrondies */
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); /* Ombre légère */
+  padding: 20px;
+  margin: 10px;
+  width: 100%;
+  max-width: 800px; /* Largeur maximale des conteneurs */
+  transition: transform 0.3s ease;
+}
+
+.component-container:hover {
+  transform: translateY(-5px); /* Légère élévation du conteneur au survol */
+}
+
+/* Styles pour le label de club sélectionné */
+.selected-club-label {
+  display: flex;
+  align-items: flex-start;
+  justify-content: center; /* Centre le contenu horizontalement */
+  font-size: 18px;
+  font-weight: bold;
+}
+
+.selected-club-logo {
+  width: 50px; /* Taille du logo */
+  height: 50px; /* Hauteur du logo */
+  border-radius: 50%; /* Bordures arrondies pour un effet circulaire */
+  object-fit: cover; /* Assure que l'image est bien contenue dans le cercle */
+  margin-right: 10px; /* Espacement entre le logo et le texte */
+}
+
+.selected-club-text {
+  display: flex;
+  flex-direction: column;
+}
+
+.selected-club-name {
+  font-size: 1em; /* Taille normale pour le nom du club */
+}
+
+.selected-competition-label {
+  font-size: 0.8em; /* Réduit la taille de la police pour la compétition */
+  font-style: italic; /* Met le texte en italique */
+  margin-top: 2px; /* Espace entre le nom du club et la compétition */
+}
+
+/* Navbar fixée en bas */
+.app-navbar {
+  background-color: #001A31;
+  color: #fff;
+  position: fixed; /* Rend la navbar fixe */
+  bottom: 0; /* Positionne la navbar en bas de l'écran */
+  width: 100%; /* Assure que la navbar couvre toute la largeur de l'écran */
+  box-shadow: 0 -2px 5px rgba(0, 0, 0, 0.3);
+  z-index: 1000; /* Assure que la navbar est au-dessus d'autres éléments */
+}
+
+.app-navbar ul {
+  list-style-type: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  justify-content: space-around;
+}
+
+.app-navbar li {
+  flex: 1;
+  text-align: center;
+  position: relative;
+}
+
+.app-navbar li a {
+  color: #fff;
+  text-decoration: none;
+  padding: 12px 16px;
+  border-radius: 50%; /* Bordures complètement arrondies */
+  transition: background-color 0.3s ease, transform 0.3s ease;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  position: relative;
+  z-index: 1;
+  font-size: 18px; /* Taille de la police augmentée */
+}
+
+.app-navbar li a.active {
+  transform: translateY(-10px) scale(1.2);
+  color: #00BFFF;
+}
+
+.app-navbar li a.active:after {
+  content: '';
+  position: absolute;
+  bottom: -10px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 80px;
+  height: 40px;
+  border-radius: 1000px 1000px 0 0;
+  z-index: -1;
+  background-color: transparent;
+}
+
+.app-navbar li a svg {
+  width: 28px; /* Icônes plus grandes */
+  height: 28px;
+  transition: transform 0.3s ease;
+}
+
+.app-navbar li a.active svg {
+  transform: scale(1.2);
+  background-color: #001A31;
+}
+
+/* Media Queries pour rendre la navigation responsive */
+@media (max-width: 768px) {
+  .app-navbar ul {
+    justify-content: space-between;
+  }
+
+  .app-navbar li a {
+    padding: 10px 14px; /* Ajusté pour les écrans moyens */
+    font-size: 16px; /* Ajusté pour une police légèrement plus petite */
+  }
+
+  .app-navbar li a svg {
+    width: 24px; /* Icônes légèrement plus petites */
+    height: 24px;
+  }
+}
+
+@media (max-width: 480px) {
+  .app-navbar li a {
+    font-size: 14px; /* Ajusté pour une police plus petite */
+  }
+
+  .app-navbar li a svg {
+    width: 20px; /* Icônes plus petites */
+    height: 20px;
+  }
+}
+
+input {
+  border: none !important;
+  outline: none !important;
+}

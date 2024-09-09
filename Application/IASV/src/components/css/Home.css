@@ -1,0 +1,285 @@
+.home-main {
+  width: 100%; /* Prend toute la largeur du conteneur parent */
+  max-width: 300px; /* Limite la largeur */
+  height: 100%; /* Prend toute la hauteur disponible du conteneur parent */
+  margin: 40px auto;
+  overflow: hidden; /* Cache tout contenu qui dépasse */
+}
+.home-container {
+  background-color: #010E1E; /* Couleur de fond générale */
+  color: #ffffff;
+  padding: 20px;
+  border-radius: 8px;
+  max-width: 300px; /* Limite la largeur à 300px */
+  margin: 1px auto;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  font-family: 'Arial', sans-serif;
+  text-align: center;
+  height: 520px; /* Hauteur fixe */
+  position: relative;
+  overflow: hidden; /* Cache tout contenu qui dépasse */
+}
+
+/* Conteneur principal pour les sections du haut */
+.top-section {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-radius: 6px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+  background-color: #001A31; /* Couleur de fond générale */
+  color: #ffffff;
+  margin-bottom: 5px;
+  margin-top: 5px;
+  width: 300px;
+  height: 100px;
+}
+
+/* Style pour les informations du club sélectionné */
+.selected-club-info {
+  display: flex;
+  align-items: center;
+  background-color: #001A31; /* Couleur de fond générale */
+  color: #ffffff;
+  padding: 10px;
+  margin-bottom: 10px;
+}
+
+/* Style pour le logo du club */
+.selected-club-logo {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  object-fit: cover;
+  margin-right: 10px;
+}
+
+/* Style pour le nom du club */
+.selected-club-name {
+  font-size: 1em;
+  font-weight: bold;
+  color: #ffffff;
+}
+
+/* Conteneur pour le champ de texte et les compteurs */
+.main-section {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+
+/* Conteneur pour les résultats de recherche et les compteurs */
+.input-container {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  border: 0px solid #ddd;
+  background-color: #001A31; /* Couleur de fond générale */
+  color: #ffffff;
+  position: relative;
+}
+
+/* Style pour le champ de texte */
+.input-section {
+  display: flex;
+  flex-direction: column;
+  background-color: #001A31; /* Couleur de fond générale */
+  color: #ffffff;
+  border: 0px solid #ddd;
+  width: 100%;
+  margin-bottom: 10px; /* Espacement sous le champ de texte */
+}
+
+/* Style pour le champ de texte */
+input[type="text"] {
+  width: 100%;
+  padding: 5px 5px 5px 20px;
+  font-size: 16px;
+  border: 0px solid #ddd;
+  background-color: #001A31; /* Couleur de fond générale */
+  color: #ffffff;
+  box-sizing: border-box;
+  transition: background-color 0.3s ease;
+}
+
+/* Icône de recherche positionnée à gauche dans le champ de texte 
+.input-container::before {
+  content: "\f002";
+  font-family: "Font Awesome 5 Free";
+  font-weight: 900;
+  position: absolute;
+  left: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 20px;
+  color: #888;
+}*/
+
+/* Style pour les résultats de recherche */
+.search-results {
+  list-style-type: none;
+  padding: 0;
+  margin: 0;
+  max-height: 300px;
+  overflow-y: auto;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  background-color: #ffffff;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+  position: absolute;
+  width: 100%;
+  top: 100%;
+  left: 0;
+}
+
+/* Style pour chaque résultat de recherche */
+.search-results li {
+  display: flex;
+  align-items: center;
+  padding: 10px;
+  border-bottom: 1px solid #ddd;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.search-results li:hover {
+  background-color: #f0f0f0;
+}
+
+.result-logo {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  object-fit: cover;
+  margin-right: 10px;
+}
+
+.result-name {
+  font-size: 16px;
+  color: #333;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+
+
+/* Style pour chaque conteneur de compteur */
+.counter-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  align-items: center;
+  background-color: #001A31; /* Couleur de fond générale */
+  color: #ffffff;
+  padding: 5px;
+}
+
+.counter-label {
+  font-size: 20px;
+  margin: 10px 0;
+  font-weight : bold;
+}
+
+/* Style pour les boutons du compteur */
+.counter-container button {
+  background: none;
+  border: none;
+  font-size: 15px;
+  cursor: pointer;
+  color: #555;
+}
+
+.counter-container button:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+
+/* Style du bouton */
+.button {
+  width: 80px;
+  height: 80px;
+  border: 20px solid white; /* Bordure blanche */
+  border-radius: 50%;
+  cursor: pointer;
+  font-size: 24px;
+  color: red;
+  background-color: red; /* Couleur de fond générale */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.3s ease, transform 0.3s ease;
+  /* Positionnement en bas et au centre du conteneur */
+  position: absolute;
+  bottom: 30px; /* Distance du bas du conteneur */
+  left: 50%; /* Centré horizontalement */
+  transform: translateX(-50%); /* Correction du centrage */
+}
+
+.button.stop {
+  color: red;
+  background-color: white; /* Couleur de fond générale */
+  border: 20px solid white; /* Bordure blanche */
+  font-size: 40px; /* Augmente la taille de l'icône Font Awesome */
+}
+
+.button.disabled {
+  background-color: red; /* Couleur de fond générale */
+  color: red;
+  cursor: not-allowed;
+  border: 20px solid white; /* Bordure blanche */
+  opacity: 0.6;
+}
+
+.button:hover {
+  color: red;
+}
+
+.button:active {
+  color: red;
+}
+
+/* Style pour le timer */
+.timer {
+  font-size: 16px;
+  margin-top: 20px;
+  color: #555;
+}
+
+/* Style pour les messages */
+.message {
+  font-size: 14px;
+  color: #555;
+  margin-top: 20px;
+  padding: 10px;
+  background-color: #001A31; /* Couleur de fond générale */
+  color: #ffffff;
+  border-left: 4px solid #007bff;
+  border-radius: 6px;
+  text-align: center;
+}
+.swap-button {
+  transform: rotate(90deg); /* Pivoter le bouton de 90 degrés */
+  transition: transform 0.3s ease; /* Ajoute une transition pour que la rotation soit fluide */
+  
+  font-size: 18px;
+  border: 0px solid #ddd;
+  box-shadow: 2px 0 6px rgba(0, 0, 0, 0.15);
+  background-color: #001A31; /* Couleur de fond générale */
+  color: #ffffff;
+  
+  
+    width: 50px; /* Définit la largeur du bouton */
+    height: 50px; /* Définit la hauteur du bouton */
+    border-radius: 50%; /* Rend le bouton rond */
+    font-size: 16px; /* Taille de la police */
+    cursor: pointer; /* Change le curseur pour pointer au survol */
+    justify-content: center; /* Centre le contenu horizontalement */
+    align-items: center; /* Centre le contenu verticalement */
+	
+    position: relative; /* ou absolute/fixed selon vos besoins */
+	z-index: 1000;
+	display : none;
+  
+}

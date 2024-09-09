@@ -24,11 +24,30 @@ sudo apt-mark hold ffmpeg
 --Annuler le verrouillage si nécessaire :
 sudo apt-mark unhold ffmpeg
 
---Charte graphique
-background-color: #0C121E; /* Couleur bleu foncé de fond générale */
-background-color: #242B35; /* Couleur gris foncé de fond container */
-color: #ffffff; /* Couleur bleu claire de texte / icon */
-color: #8DE8FD; /* Couleur blanc de texte / icon selectioner */
+
+--Charte graphique 2.0
+background-color: #010E1E; /* Couleur bleu foncé de fond générale */
+background-color: #001A31; /* Couleur bleu foncé de fond container */
+color: #ffffff; /* Couleur blanc claire de texte / icon */
+color: #00BFFF; /* Couleur bleu de texte / icon selectioner */
+
+
+--Generer apk
+	--cordova
+		1.cordova create "IA-Sport Vision" com.example.iasportvision "IA-Sport Vision" 
+		2.cordova platform add android
+	--nodeJS
+		1.npm run build
+		2.Copier  C:\perso\IA Sport Vision\Application\IASV\build\*  
+		3.Coller C:\perso\IA Sport Vision\Application\IA-Sport Vision\www\
+		4.1 cordova build android --release
+		4.2 cordova build android --release -- --packageType=apk
+
+
+
+
+
+
 
 --keytool
 C:\perso\IA Sport Vision\Application\DEV\IASV>"C:\Program Files (x86)\Java\jdk11.0.17_8\bin\keytool.exe" -list -v -keystore "%USERPROFILE%\.android\debug.keystore" -alias androiddebugkey -storepass android -keypass android
