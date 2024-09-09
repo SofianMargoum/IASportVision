@@ -9,8 +9,7 @@
 
 --Astuce version simple Push
 	git add .
-	git commit -m "first commit"
-	git commit -m "IASV and myapp update step 2 OK test android OK "
+	git commit -m "IASV and myapp update step 2 OK test android OK"
 	git push -u origin main
 
 --Astuce pull

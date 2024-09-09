@@ -1,0 +1,36 @@
+/* Profile.css */
+.profile-container {
+  padding: 20px;
+  text-align: center;
+}
+
+.google-login-container {
+  margin-top: 20px;
+}
+
+.google-login-container button {
+  background-color: #4285F4;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  padding: 10px 20px;
+  cursor: pointer;
+}
+
+.google-login-container button:hover {
+  background-color: #357AE8;
+}
+.profile-container {
+  background-color: #010E1E; /* Couleur de fond générale */
+  color: #ffffff;
+  padding: 20px;
+  border-radius: 8px;
+  max-width: 300px; /* Limite la largeur à 300px */
+  margin: 1px auto;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  font-family: 'Arial', sans-serif;
+  text-align: center;
+  height: 520px; /* Hauteur fixe */
+  position: relative;
+  overflow: hidden; /* Cache tout contenu qui dépasse */
+}
