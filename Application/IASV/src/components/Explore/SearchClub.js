@@ -109,6 +109,9 @@ const SearchClub = () => {
 
   return (
     <div ref={scrollViewRef} className="search-club-container">
+      
+      
+      <h4>Sélectionner un club</h4>
       <div className="input-container">
         <input
           type="text"
@@ -117,8 +120,6 @@ const SearchClub = () => {
           placeholder="Rechercher un club"
         />
       </div>
-      <hr />
-      <h4>Sélectionner un club</h4>
       <div className="suggestions">suggestions</div>
       <ul>
         {memoizedClubList.map((club) => (

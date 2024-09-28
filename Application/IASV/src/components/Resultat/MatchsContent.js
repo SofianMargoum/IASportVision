@@ -8,6 +8,7 @@ function MatchsContent() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const matchRefs = useRef([]);
+  const scrollContainerRef = useRef(null); // Ajouter une ref pour le conteneur
   const [selectedClub, setSelectedClub] = useState(config.getSelectedClub());  // Initialiser avec le club sélectionné
   const [selectedCompetition, setSelectedCompetition] = useState(config.getSelectedCompetition());  // Initialiser avec la compétition sélectionnée
 
@@ -64,17 +65,18 @@ function MatchsContent() {
   useEffect(() => {
     if (filteredMatches.length > 0) {
       const today = new Date();
-      const latestMatchIndex = filteredMatches.reduce((latestIndex, match, index) => {
+      const lastMatchIndex = filteredMatches.reduce((lastIndex, match, index) => {
         const matchDate = new Date(match.date);
-        return matchDate < today && (latestIndex === -1 || matchDate > new Date(filteredMatches[latestIndex].date))
+        return matchDate < today && (lastIndex === -1 || matchDate < new Date(filteredMatches[lastIndex].date))
           ? index
-          : latestIndex;
+          : lastIndex;
       }, -1);
 
-      if (latestMatchIndex >= 0 && matchRefs.current[latestMatchIndex]) {
-        matchRefs.current[latestMatchIndex].scrollIntoView({
+      if (lastMatchIndex >= 0 && matchRefs.current[lastMatchIndex]) {
+        // Scroller le conteneur spécifique vers le dernier match avant aujourd'hui
+        scrollContainerRef.current.scrollTo({
+          top: matchRefs.current[lastMatchIndex].offsetTop, // Défile vers la position du dernier match avant aujourd'hui
           behavior: 'smooth',
-          block: 'start',
         });
       }
     }
@@ -88,45 +90,43 @@ function MatchsContent() {
     return <div className="error">Erreur : {error}</div>;
   }
 
-return (
-  <div className="tab-content">
-    {filteredMatches.length === 0 ? (
-      <p className="error">Aucun match trouvé pour {selectedClub.name} à domicile.</p>
-    ) : (
-      <div className="scroll-container"> {/* Ajout de la classe scroll-container */}
-        {filteredMatches.map((match, index) => (
-          <div
-            key={match.id}
-            className="match-item"
-            ref={el => matchRefs.current[index] = el}
-          >
-            <div className="match-date">
-              {new Date(match.date).toLocaleDateString()} - {match.time} - {match.competitionName}
+  return (
+    <div className="tab-content-match">
+      {filteredMatches.length === 0 ? (
+        <p className="error">Aucun match trouvé pour {selectedClub.name}.</p>
+      ) : (
+        <div className="scroll-container" ref={scrollContainerRef}> {/* Ajout de la classe scroll-container */}
+          {filteredMatches.map((match, index) => (
+            <div
+              key={match.id}
+              className="match-item"
+              ref={el => matchRefs.current[index] = el}
+            >
+              <div className="match-date">
+                {new Date(match.date).toLocaleDateString()} - {match.time} - {match.competitionName}
+              </div>
+              <div className="match-content">
+                <div className="match-details-team">
+                  <img src={match.homeLogo} alt={`${match.homeTeam} logo`} className="team-logo" />
+                  {match.homeTeam}
+                </div>
+                <div className="match-score">
+                  {match.home_score}
+                </div>
+                <div className="match-details-team">
+                  <img src={match.awayLogo} alt={`${match.awayTeam} logo`} className="team-logo" />
+                  {match.awayTeam}
+                </div>
+                <div className="match-score">
+                  {match.away_score}
+                </div>
+              </div>
             </div>
-            <div className="match-content">
-              <div className="match-details-team">
-                <img src={match.homeLogo} alt={`${match.homeTeam} logo`} className="team-logo" />
-                {match.homeTeam}
-              </div>
-              <div className="match-score">
-                {match.home_score}
-              </div>
-              <div className="match-details-team">
-                <img src={match.awayLogo} alt={`${match.awayTeam} logo`} className="team-logo" />
-                {match.awayTeam}
-              </div>
-              <div className="match-score">
-                {match.away_score}
-              </div>
-            </div>
-          </div>
-        ))}
-      </div>
-    )}
-  </div>
-);
-
-
+          ))}
+        </div>
+      )}
+    </div>
+  );
 }
 
 export default MatchsContent;

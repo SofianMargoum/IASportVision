@@ -2,12 +2,13 @@
 
 /* Styles généraux pour l'application */
 .app-container {
-  font-family: Arial, sans-serif;
   display: flex;
   flex-direction: column;
-  min-height: 100vh;
-  background-color: #010E1E; /* Couleur de fond générale */
-  position: relative;
+  min-height: 100vh; /* Hauteur minimale de la page à 100% de la hauteur de l'écran */
+  width: 100vw;
+  height: 100vh;
+  background-color: #010E1E;
+  position: fixed;
 }
 
 /* Styles pour l'en-tête */
@@ -19,18 +20,26 @@
 }
 
 .app-content {
-  flex: 1;
+  flex: 1; /* Prend tout l'espace disponible entre l'en-tête et la navbar */
   padding: 20px;
-  margin: 20px auto 10px; /* Centre horizontalement et ajoute un espace en haut */
-  background-color: #001A31; /* Couleur de fond du contenu */
-  border-radius: 15px 15px 0 0; /* Bordures arrondies en haut */
-  box-shadow: 0px -4px 15px rgba(0, 0, 0, 0.1); /* Ombre subtile */
-  max-width: 95%;
+  margin: 10px auto;
+  background-color: #001A31;
+  border-radius: 15px 15px 0 0;
+  box-shadow: 0px -4px 15px rgba(0, 0, 0, 0.1);
+  max-width: 95%; /* Largeur maximale de 95% de l'écran */
   width: 100%;
-  box-sizing: border-box; /* Inclut le padding et les bordures dans la largeur totale */
-  max-height: 100vh; /* Limite la hauteur du conteneur à 80% de la hauteur de l'écran */
+  box-sizing: border-box;
+  overflow-y: hidden; /* Ajoute un défilement si le contenu dépasse la hauteur disponible */
 }
 
+.app-navbar {
+  background-color: #001A31;
+  color: #fff;
+  width: 100%;
+  z-index: 1000;
+  flex-shrink: 0; /* Empêche la navbar de se rétrécir */
+  bottom: 0;
+}
 
 /* Conteneur des composants individuels */
 .component-container {
@@ -64,7 +73,14 @@
   object-fit: cover; /* Assure que l'image est bien contenue dans le cercle */
   margin-right: 10px; /* Espacement entre le logo et le texte */
 }
-
+.my-logo {
+  width: 250px; /* Taille du logo */
+  height: 50px; /* Hauteur du logo */
+  object-fit: contain; /* Assure que l'image est bien contenue dans le cercle */
+  left: 10px; /* Espacement entre le logo et le texte */
+  position: absolute;
+  opacity: 0.2;
+}
 .selected-club-text {
   display: flex;
   flex-direction: column;
@@ -80,16 +96,6 @@
   margin-top: 2px; /* Espace entre le nom du club et la compétition */
 }
 
-/* Navbar fixée en bas */
-.app-navbar {
-  background-color: #001A31;
-  color: #fff;
-  position: fixed; /* Rend la navbar fixe */
-  bottom: 0; /* Positionne la navbar en bas de l'écran */
-  width: 100%; /* Assure que la navbar couvre toute la largeur de l'écran */
-  box-shadow: 0 -2px 5px rgba(0, 0, 0, 0.3);
-  z-index: 1000; /* Assure que la navbar est au-dessus d'autres éléments */
-}
 
 .app-navbar ul {
   list-style-type: none;
@@ -162,6 +168,9 @@
   .app-navbar li a svg {
     width: 24px; /* Icônes légèrement plus petites */
     height: 24px;
+  }
+  .my-logo {
+    display: none;
   }
 }
 

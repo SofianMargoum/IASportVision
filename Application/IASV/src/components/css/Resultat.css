@@ -3,19 +3,15 @@
 .resultat-container {
   font-family: Arial, sans-serif;
   background-color: #010E1E; /* Couleur bleu foncé de fond générale */
-  padding: 20px;
+  padding: 10px;
   border-radius: 8px; /* Coins arrondis pour le conteneur général */
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); /* Légère ombre pour un effet de profondeur */
   max-width: 800px;
-  margin: 0 auto;
-  position: fixed; /* Position fixe pour que le conteneur reste visible */
-  top: 20; /* Tu peux ajuster cette valeur pour définir l'emplacement */
-  left: 0;
-  right: 0;
-  z-index: 1000; /* S'assurer que le conteneur est au-dessus des autres éléments */
-    display: flex;
+  position: relative; /* Position fixe pour que le conteneur reste visible */
+  display: flex;
   flex-direction: column;
   height: 100%; /* Assure que le conteneur parent occupe toute la hauteur disponible */
+  margin: 0px auto;
 
 }
 
@@ -88,7 +84,7 @@
 }
 
 /* Styles pour le contenu affiché */
-.resultat-container .tab-content {
+.resultat-container .tab-content-match {
   padding: 8px;
   background-color: #001A31; /* Couleur bleu foncé de fond du container */
   color: #ffffff; /* Couleur blanc claire de texte */
@@ -97,6 +93,7 @@
   max-width: 100%; /* Assure que le conteneur ne dépasse pas la largeur du parent */
   width: 100%; /* Assure que le conteneur prend toute la largeur disponible du parent */
   max-height: calc(100vh - 40px); /* Ajustez cette valeur en fonction des besoins (hauteur maximale) */
+  max-height: 95%; /* Ajustez cette valeur en fonction des besoins (hauteur maximale) */
   box-sizing: border-box; /* Inclut padding et bordures dans la largeur totale */
   overflow-y: auto; /* Ajoute une barre de défilement verticale si le contenu dépasse la hauteur maximale */
 }

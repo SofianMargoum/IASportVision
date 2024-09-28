@@ -1,10 +1,10 @@
 /* Style global pour le composant */
-.tab-content {
+.tab-content-match {
   background-color: #001A31; /* Couleur bleu foncé de fond container */
   color: #ffffff; /* Couleur blanc claire de texte */
   padding: 0px; /* Réduit le padding pour les petits écrans */
   border-radius: 12px;
-  margin: 20px auto;
+  margin: 5px auto;
   max-width: 100%; /* Assure que le conteneur ne dépasse pas la largeur du parent */
   width: 100%; /* Assure que le conteneur prend toute la largeur disponible du parent */
   max-height: 100vh; /* Limite la hauteur à la hauteur de la fenêtre d'affichage */
@@ -12,17 +12,16 @@
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5); /* Ombre prononcée */
   transition: background-color 0.3s ease-in-out; /* Transition pour effet au survol */
   overflow-y: auto; /* Ajoute une barre de défilement verticale si nécessaire */
+  margin: 1px auto;
 }
 
-
-
 /* Effet au survol du container */
-.tab-content:hover {
+.tab-content-match:hover {
   background-color: #002B49; /* Couleur bleu encore plus foncé au survol */
 }
 
 /* Style pour le titre */
-.tab-content h2 {
+.tab-content-match h2 {
   color: #ffffff;
   border-bottom: 3px solid #00BFFF; /* Accent bleu clair sous le titre */
   padding-bottom: 10px;
@@ -129,7 +128,7 @@
   }
 }
 .scroll-container {
-  max-height: 75%; /* Limite la hauteur à la hauteur de la fenêtre d'affichage */
+  max-height:100%; /* Limite la hauteur à la hauteur de la fenêtre d'affichage */
   overflow-y: auto; /* Affiche la barre de défilement uniquement si nécessaire */
   padding-right: 0px; /* Évite de créer un espace supplémentaire à droite */
   scrollbar-width: auto; /* Affiche la barre de défilement pour Firefox */

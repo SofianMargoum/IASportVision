@@ -1,8 +1,3 @@
-/* Profile.css */
-.profile-container {
-  padding: 20px;
-  text-align: center;
-}
 
 .google-login-container {
   margin-top: 20px;
@@ -30,7 +25,8 @@
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
   font-family: 'Arial', sans-serif;
   text-align: center;
-  height: 520px; /* Hauteur fixe */
+  height: 400px; /* Hauteur fixe */
   position: relative;
   overflow: hidden; /* Cache tout contenu qui dépasse */
+  overflow-y: auto; /* Ajoute une barre de défilement verticale si nécessaire */
 }

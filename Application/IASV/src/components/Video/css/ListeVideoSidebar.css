@@ -108,4 +108,19 @@
   margin: 0;
   overflow-y: auto;
   width: auto; 
+  text-align: center;
+  color: #00BFFF;
+  font-weight: bold;
+}
+/* Liste des titres de vidéos */
+.liste-videoSidebar-titles-header{
+  margin-bottom: 30px;
+  border-bottom: 2px solid #00BFFF;
+
+  
+  padding: 12px 16px;
+  font-size: 16px;
+  text-align: center;
+  transition: color 0.3s ease-in-out;
+
 }

@@ -10,26 +10,18 @@ const BackArrow = () => (
 );
 
 const Video = () => {
-  // Créez un état pour la vidéo sélectionnée
   const [selectedVideo, setSelectedVideo] = useState(null);
 
-  // Fonction pour mettre à jour la vidéo sélectionnée
   const handleVideoSelect = (video) => {
     setSelectedVideo(video);
   };
 
-  // Fonction pour revenir à la liste des vidéos
   const handleBackClick = () => {
     setSelectedVideo(null);
   };
 
   return (
     <div className="video-container">
-      {/* Affichez ListeVideoSidebar si aucune vidéo n'est sélectionnée */}
-      <div className={`liste-video-sidebar ${!selectedVideo ? 'active' : ''}`}>
-        <ListeVideoSidebar onVideoSelect={handleVideoSelect} />
-      </div>
-      
       {/* Affichez ListeVideo si une vidéo est sélectionnée */}
       <div className={`liste-video ${selectedVideo ? 'active' : ''}`}>
         {selectedVideo && (
@@ -37,13 +29,17 @@ const Video = () => {
             <div className="video-header">
               <button className="back-button" onClick={handleBackClick}>
                 <BackArrow />
-                {/* Ajoutez ici le titre de la vidéo à côté du bouton back */}
                 <span className="selected-video-title">{selectedVideo.name}</span>
               </button>
             </div>
             <ListeVideo selectedVideo={selectedVideo} />
           </>
         )}
+      </div>
+
+      {/* Affichez ListeVideoSidebar si aucune vidéo n'est sélectionnée */}
+      <div className={`liste-video-sidebar ${!selectedVideo ? 'active' : ''}`}>
+        <ListeVideoSidebar onVideoSelect={handleVideoSelect} />
       </div>
     </div>
   );

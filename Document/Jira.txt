@@ -1,0 +1,72 @@
+Backlog :
+		ticket 1 Onglet Live :
+			-Mettre la video en direct sur l'appli
+			-Pause (enregistrement)
+			-Lecture (enregistrement)
+			-Bouton action pour resumer
+			
+		ticket 2 Onglet Resultat :
+			-corriger le defilement automatique
+			-fixer le header du classement
+			-Récupéré les statistiques de l'equipe :
+				-Meilleur buteur
+				-Meilleur passeur
+				-Meilleur recuperateur
+				https://fr.whoscored.com/Teams/37/Statistics/Allemagne-Bayern-Munich
+				-Image pourcentage tir (gauche milleu droite) (6m, surface, ext surface)
+				-Image touche  (gauche milleu droite) (bloc bas, millieu, haut)
+			
+		ticket 3 Onglet Video :
+			-Récupéré les statistique des joueurs :
+				-nombre de km parcourue, 
+				-nombre de passe, 
+				-nombre de tir,
+				-nombre de ballon touché
+				-nombre de ballon recuperer...
+			-Generer une video resumé du match
+			-Publier sur les réseaux (youtube, site internet...) 
+		
+		ticket 4 Onglet Explore :
+			-suggestion les 3 derniers clubs
+		
+		ticket 5 Onglet Connexion :
+			-Gestion des droit des utilisateurs
+			-Prendre en photo les maillots
+			-renseigner l'adresse ip externe et la detecter automatiquement
+			
+			
+SPRINT 2 :
+		ticket 1 Onglet Live :
+		ticket 2 Onglet Resultat :
+		ticket 3 Onglet Video :
+		ticket 4 Onglet Explore :
+		ticket 5 Onglet Connexion :
+			
+			
+			
+			
+SPRINT 1 :
+		ticket 1 Onglet Live :
+			-Demarrer un enregistrement 
+			-Arret
+			-Enregistrement dans le cloud
+			
+		ticket 2 Onglet Resultat :
+			-Afficher les resultat
+			-Afficher le classement du championat
+			
+		ticket 3 Onglet Video :
+			-liste des video
+			-Visionner les video
+		
+		ticket 4 Onglet Explore :
+			-recherche club
+			-recherche equipe
+		
+		ticket 5 Onglet Connexion :
+			-connexion google
+		
+
+		
+		
+		

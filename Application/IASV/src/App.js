@@ -44,7 +44,10 @@ const App = () => {
   return (
     <div className="app-container">
       <header className="app-header">
-        <div className="selected-club-label">
+      <div className="selected-club-label">
+      <div className="logoMain">
+        <img src="logo.png" alt={`${selectedClub.name} logo`} className="my-logo" />
+        </div>
           {selectedClub ? (
             <>
               <img src={selectedClub.logo} alt={`${selectedClub.name} logo`} className="selected-club-logo" />

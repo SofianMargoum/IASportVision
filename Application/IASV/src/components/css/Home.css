@@ -1,9 +1,24 @@
 .home-main {
   width: 100%; /* Prend toute la largeur du conteneur parent */
   max-width: 300px; /* Limite la largeur */
-  height: 100%; /* Prend toute la hauteur disponible du conteneur parent */
-  margin: 40px auto;
+  height: 80%; /* Prend toute la hauteur disponible du conteneur parent */
+  margin-top: 40px auto;
   overflow: hidden; /* Cache tout contenu qui dépasse */
+  position: relative;
+  margin-bottom: 0px;
+}
+/* Styles pour le contenu affiché */
+.home-container .tab-content {
+  padding: 8px;
+  background-color: #001A31; /* Couleur bleu foncé de fond du container */
+  color: #ffffff; /* Couleur blanc claire de texte */
+  border-radius: 8px; /* Coins arrondis */
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); /* Légère ombre pour le contenu */
+  max-width: 100%; /* Assure que le conteneur ne dépasse pas la largeur du parent */
+  width: 100%; /* Assure que le conteneur prend toute la largeur disponible du parent */
+  max-height: calc(100vh - 40px); /* Ajustez cette valeur en fonction des besoins (hauteur maximale) */
+  box-sizing: border-box; /* Inclut padding et bordures dans la largeur totale */
+  overflow-y: auto; /* Ajoute une barre de défilement verticale si le contenu dépasse la hauteur maximale */
 }
 .home-container {
   background-color: #010E1E; /* Couleur de fond générale */
@@ -15,9 +30,18 @@
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
   font-family: 'Arial', sans-serif;
   text-align: center;
-  height: 520px; /* Hauteur fixe */
+  height: 95%; /* Hauteur fixe */
   position: relative;
   overflow: hidden; /* Cache tout contenu qui dépasse */
+  overflow-y: scroll; /* Ajoute une barre de défilement verticale */
+  
+  /* Masquer la barre de défilement */
+  scrollbar-width: none; /* Pour Firefox */
+  -ms-overflow-style: none; /* Pour Internet Explorer et Edge */
+}
+
+.home-container::-webkit-scrollbar {
+  display: none; /* Pour les navigateurs basés sur WebKit comme Chrome et Safari */
 }
 
 /* Conteneur principal pour les sections du haut */
@@ -212,8 +236,8 @@ input[type="text"] {
   transition: background-color 0.3s ease, transform 0.3s ease;
   /* Positionnement en bas et au centre du conteneur */
   position: absolute;
-  bottom: 30px; /* Distance du bas du conteneur */
   left: 50%; /* Centré horizontalement */
+  bottom: 0px;
   transform: translateX(-50%); /* Correction du centrage */
 }
 

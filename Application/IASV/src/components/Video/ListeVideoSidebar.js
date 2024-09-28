@@ -65,14 +65,28 @@ const ListeVideoSidebar = ({ onVideoSelect }) => {
       {!loading && !error && (
         <div className="liste-videoSidebar-wrapper">
           <ul className="liste-videoSidebar-titles">
+          <div className="liste-videoSidebar-titles-header">
+          Toutes les matchs
+          </div>
+    
             {videos.length > 0 ? (
               videos.map((video, index) => (
+                
                 <li
                   key={index}
                   className={`liste-video-title ${selectedVideo === video ? 'selected' : ''}`}
                   onClick={() => handleVideoSelect(video)}
                 >
-                  {video.name}
+                <img src="/ImageDeConverture.jpg" width="64" height="36"></img>
+                
+                <div className="liste-videoSidebar-title">
+                <div className="liste-videoSidebar-title-creationDate">
+                  {video.creationDate}
+                  </div>
+                <div className="liste-videoSidebar-title-name">
+                {video.name}
+                  </div>
+                </div>
                 </li>
               ))
             ) : (

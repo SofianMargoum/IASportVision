@@ -1,0 +1,2 @@
+"use strict";(self.webpackChunkfrontend=self.webpackChunkfrontend||[]).push([[680],{680:(n,e,t)=>{t.r(e),t.d(e,{default:()=>c});t(43);var s=t(579);const c=function(){return(0,s.jsx)("div",{className:"tab-content",children:"Contenu des STATS"})}}}]);
+//# sourceMappingURL=680.d9e522aa.chunk.js.map
