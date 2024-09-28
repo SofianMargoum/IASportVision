@@ -8,10 +8,10 @@
     background-color: #010E1E;
   }
 
-  .liste-video-sidebar {
-    /* flex: 1; */
+  /*.liste-video-sidebar {
+     flex: 1; 
     
-  }
+  }*/
 
   .liste-video {
     flex: 2;

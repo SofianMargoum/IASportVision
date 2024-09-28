@@ -135,6 +135,9 @@ export const fetchMatchesForClub = async (cl_no) => {
             }
           }
           var competitionName = match.competition  ? match.competition.name :'';
+          var competitionNumber = match.competition  ? match.competition.cp_no :'';
+          var phaseNumber = match.phase  ? match.phase.number :'';
+          var pouleNumber = match.poule  ? match.poule.stage_number :'';
         return {
           id: match['@id'].split('/').pop(), // Extraction de l'ID depuis l'URL
           date: match.date,
@@ -147,12 +150,52 @@ export const fetchMatchesForClub = async (cl_no) => {
           homeLogo: match.home && match.home.club.logo ? match.home.club.logo : '', // Vérifie l'existence
           awayLogo: match.away && match.away.club.logo ? match.away.club.logo : '', // Vérifie l'existence
           competitionName, // Ajout du nom de la compétition de l'équipe à domicile
+          competitionNumber,
+          phaseNumber,
+          pouleNumber,
           homeCompetitionName, // Ajout du nom de la compétition de l'équipe à domicile
           awayCompetitionName, // Ajout du nom de la compétition de l'équipe à l'extérieur
         };
       });
   } catch (error) {
     console.error('Error fetching matches:', error);
+    return [];
+  }
+};
+
+
+// Fonction pour récupérer le classement des journées pour une poule spécifique
+export const fetchClassementJournees = async (competitionId, phaseId, pouleId) => {
+  try {
+    const response = await fetch(`https://api-dofa.prd-aws.fff.fr/api/compets/${competitionId}/phases/${phaseId}/poules/${pouleId}/classement_journees`);
+    if (!response.ok) {
+      throw new Error('Échec de la récupération du classement des journées');
+    }
+    const data = await response.json();
+
+    return data['hydra:member'].map(journee => ({
+      journeeNumber: journee.cj_no,
+      season: journee.season,
+      date: journee.date,
+      rank: journee.rank,
+      points: journee.point_count,
+      penaltyPoints: journee.penalty_point_count,
+      wonGames: journee.won_games_count,
+      drawGames: journee.draw_games_count,
+      lostGames: journee.lost_games_count,
+      forfeits: journee.forfeits_games_count,
+      goalsFor: journee.goals_for_count,
+      goalsAgainst: journee.goals_against_count,
+      goalDifference: journee.goals_diff,
+      totalGames: journee.total_games_count,
+      teamName: journee.equipe.short_name,
+      teamCategory: journee.equipe.category_label,
+      teamGender: journee.equipe.category_gender,
+      pouleName: journee.poule.name,
+      stageNumber: journee.poule.stage_number,
+    }));
+  } catch (error) {
+    console.error('Error fetching classement journées:', error);
     return [];
   }
 };

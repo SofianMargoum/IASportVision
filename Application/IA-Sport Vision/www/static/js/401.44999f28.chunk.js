@@ -1,0 +1,2 @@
+"use strict";(self.webpackChunkfrontend=self.webpackChunkfrontend||[]).push([[401],{401:(n,e,t)=>{t.r(e),t.d(e,{default:()=>c});t(43);var s=t(579);const c=function(){return(0,s.jsx)("div",{className:"tab-content",children:"Contenu des CLASSEMENTS"})}}}]);
+//# sourceMappingURL=401.44999f28.chunk.js.map
