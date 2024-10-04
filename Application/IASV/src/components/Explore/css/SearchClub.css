@@ -97,7 +97,7 @@
 hr {
   border: none;
   height: 2px; /* Épaisseur de la ligne */
-  background: radial-gradient(circle, #fff, #010E1E);
+  background: radial-gradient(circle, #001A31, #010E1E);
   margin: 20px 0; /* Espacement au-dessus et en dessous de la ligne */
   border-radius: 5px; /* Coins légèrement arrondis */
 }

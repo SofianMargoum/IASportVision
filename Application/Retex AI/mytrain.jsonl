@@ -1,0 +1,1 @@
+{"videoGcsUri": "gs://ia-sport.appspot.com/F.C. VIDAUBAN/F.C. VIDAUBAN 0 - 0 S. C. DRAGUIGNAN.mp4", "timeSegmentAnnotations": [{"startTime": "1.0s", "endTime": "3.0s", "displayName": "Passe"}, {"startTime": "7.0s", "endTime": "8.0s", "displayName": "Passe"}, {"startTime": "10.0s", "endTime": "12.0s", "displayName": "Tir"}], "dataItemResourceLabels": {"ml_use": "training"}}
