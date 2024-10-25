@@ -17,7 +17,7 @@ const GoogleSignInButton = () => {
       console.log(userInfo);
 
       // Envoyer le token au backend pour vérification
-      const response = await fetch('http://localhost:8080/api/auth/google', {
+      const response = await fetch('https://ia-sport.oa.r.appspot.com/api/api/google', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

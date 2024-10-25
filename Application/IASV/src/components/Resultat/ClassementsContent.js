@@ -116,25 +116,31 @@ function ClassementsContent() {
         <table className="classement-table">
           <thead>
             <tr>
-              <th></th> {/* Colonne pour la position */}
+              <th>Rang</th> {/* Classement / Rang */}
               <th>Club</th>
               <th>Pts</th>
               <th>MJ</th>
               <th>G</th>
               <th>N</th>
               <th>P</th>
+              <th>BP</th> {/* Buts pour */}
+              <th>BC</th> {/* Buts contre */}
+              <th>DB</th> {/* Différence de buts */}
             </tr>
           </thead>
           <tbody>
             {classements.map((journee, index) => (
-              <tr key={index}>
-                <td>{index + 1}</td> {/* Affichage de la position */}
+              <tr key={journee.teamName}> {/* Utilisation de teamName comme key pour éviter index */}
+                <td>{journee.rank}</td> {/* Classement/Rang */}
                 <td className="team-column">{journee.teamName}</td>
                 <td className="points-column">{journee.points}</td>
                 <td>{journee.totalGames}</td>
                 <td>{journee.wonGames}</td>
                 <td>{journee.drawGames}</td>
                 <td>{journee.lostGames}</td>
+                <td>{journee.goalsFor}</td> {/* Buts pour */}
+                <td>{journee.goalsAgainst}</td> {/* Buts contre */}
+                <td>{journee.goalDifference}</td> {/* Différence de buts */}
               </tr>
             ))}
           </tbody>

@@ -1,0 +1,13 @@
+/* Explore.css */
+.scrollable-div {
+    height: 100%; /* Ajustez la hauteur selon vos besoins */
+    overflow-y: auto; /* Permet le défilement vertical */
+    overflow-y: scroll; /* Permet le défilement vertical */
+    scrollbar-width: none; /* Pour Firefox */
+    -ms-overflow-style: none; /* Pour Internet Explorer et Edge */
+  }
+  
+  .scrollable-div::-webkit-scrollbar {
+    display: none; /* Pour Chrome, Safari et Opera */
+  }
+  

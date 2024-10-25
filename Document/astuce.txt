@@ -31,15 +31,23 @@ background-color: #001A31; /* Couleur bleu foncé de fond container */
 color: #ffffff; /* Couleur blanc claire de texte / icon */
 color: #00BFFF; /* Couleur bleu de texte / icon selectioner */
 
+--react native
+	npx react-native run-android
+
+
+
+
 
 --Generer apk
 	--cordova
 		1.cordova create "IA-Sport Vision" com.example.iasportvision "IA-Sport Vision" 
 		2.cordova platform add android
 	--nodeJS
+		0. go C:\perso\IA Sport Vision\Application\IASV\cmd.exe
 		1.npm run build
 		2.Copier  C:\perso\IA Sport Vision\Application\IASV\build\*  
 		3.Coller C:\perso\IA Sport Vision\Application\IA-Sport Vision\www\
+		4.0 go C:\perso\IA Sport Vision\Application\IA-Sport Vision\cmd.exe
 		4.1 cordova build android --release
 		4.2 cordova build android --release -- --packageType=apk
 
@@ -66,3 +74,24 @@ Empreintes du certificat :
 Nom de l'algorithme de signature : SHA256withRSA
 Algorithme de clé publique du sujet : Clé RSA 2048 bits
 Version : 1
+
+
+
+
+profile:
+
+        {/* Email Input */}
+        <div className="input-group">
+          <label htmlFor="email">Adresse e-mail</label>
+          <div className="inputs">
+            <input type="email" id="email" placeholder="Entrez votre email" />
+          </div>
+        </div>
+
+        {/* Password Input */}
+        <div className="input-group">
+          <label htmlFor="password">Mot de passe</label>
+          <div className="inputs">
+            <input type="password" id="password" placeholder="Entrez votre mot de passe" />
+          </div>
+        </div>

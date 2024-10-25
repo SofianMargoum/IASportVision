@@ -12,6 +12,9 @@
   flex-direction: column;
   height: 100%; /* Assure que le conteneur parent occupe toute la hauteur disponible */
   margin: 0px auto;
+  border: 1px solid;
+  border-color: #001A31;
+  box-shadow: 0 4px 12px #001A31; /* Ombre du conteneur */
 
 }
 

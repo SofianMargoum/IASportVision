@@ -23,7 +23,7 @@
   flex: 1; /* Prend tout l'espace disponible entre l'en-tête et la navbar */
   padding: 20px;
   margin: 10px auto;
-  background-color: #001A31;
+  /*background-color: #001A31;*/
   border-radius: 15px 15px 0 0;
   box-shadow: 0px -4px 15px rgba(0, 0, 0, 0.1);
   max-width: 95%; /* Largeur maximale de 95% de l'écran */
@@ -151,7 +151,7 @@
 
 .app-navbar li a.active svg {
   transform: scale(1.2);
-  background-color: #001A31;
+  background-color: transparent;
 }
 
 /* Media Queries pour rendre la navigation responsive */
