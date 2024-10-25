@@ -6,6 +6,10 @@
     display: flex;
     flex-direction: row;
     background-color: #010E1E;
+    border: 1px solid;
+    border-color: #001A31;
+    box-shadow: 0 4px 12px #001A31; /* Ombre du conteneur */
+    border-radius: 8px; /* Coins arrondis pour le conteneur général */
   }
 
   /*.liste-video-sidebar {
@@ -29,6 +33,10 @@
     flex-direction: column;
     position: relative;
     background-color: #010E1E;
+    border: 1px solid;
+    border-radius: 8px; /* Coins arrondis pour le conteneur général */
+    border-color: #001A31;
+    box-shadow: 0 4px 12px #001A31; /* Ombre du conteneur */
   }
 
   .liste-video-sidebar,

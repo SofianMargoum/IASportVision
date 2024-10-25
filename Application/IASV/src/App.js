@@ -1,3 +1,4 @@
+// src/App.js
 import React, { useState, useEffect } from 'react';
 import { Routes, Route, NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { FaVideo, FaSearch, FaList, FaUser, FaMedal } from 'react-icons/fa';
@@ -6,6 +7,7 @@ import Explore from './components/Explore';
 import Video from './components/Video';
 import Resultat from './components/Resultat';
 import Profile from './components/Profile';
+import { GoogleOAuthProvider } from '@react-oauth/google'; // Importer GoogleOAuthProvider
 import './css/App.css';
 import config from './config';
 
@@ -42,96 +44,98 @@ const App = () => {
   }, [areTabsDisabled, location, navigate]);
 
   return (
-    <div className="app-container">
-      <header className="app-header">
-      <div className="selected-club-label">
-      <div className="logoMain">
-        <img src="logo.png" alt={`${selectedClub.name} logo`} className="my-logo" />
+    <GoogleOAuthProvider clientId="YOUR_GOOGLE_CLIENT_ID">
+      <div className="app-container">
+        <header className="app-header">
+          <div className="selected-club-label">
+            <div className="logoMain">
+              <img src="logo.png" alt="Main logo" className="my-logo" />
+            </div>
+            {selectedClub ? (
+              <>
+                <img src={selectedClub.logo} alt={`${selectedClub.name} logo`} className="selected-club-logo" />
+                <div className="selected-club-text">
+                  <div className="selected-club-name">{selectedClub.name}</div>
+                  {selectedCompetition && (
+                    <div className="selected-competition-label">{selectedCompetition}</div>
+                  )}
+                </div>
+              </>
+            ) : (
+              <p></p>
+            )}
+          </div>
+        </header>
+        <div className="app-content">
+          <Routes location={location}>
+            <Route path="/" element={<Home selectedClub={selectedClub} />} />
+            <Route
+              path="/explore"
+              element={
+                <Explore 
+                  selectedClub={selectedClub} 
+                  selectedCompetition={selectedCompetition}
+                />
+              }
+            />
+            <Route path="/video" element={<Video selectedClub={selectedClub} />} />
+            <Route 
+              path="/resultat" 
+              element={<Resultat club={selectedClub} competition={selectedCompetition} />} 
+            />
+            <Route path="/profile" element={<Profile />} />
+          </Routes>
         </div>
-          {selectedClub ? (
-            <>
-              <img src={selectedClub.logo} alt={`${selectedClub.name} logo`} className="selected-club-logo" />
-              <div className="selected-club-text">
-                <div className="selected-club-name">{selectedClub.name}</div>
-                {selectedCompetition && (
-                  <div className="selected-competition-label">{selectedCompetition}</div>
-                )}
-              </div>
-            </>
-          ) : (
-            <p>No club selected</p>
-          )}
-        </div>
-      </header>
-      <div className="app-content">
-        <Routes location={location}>
-          <Route path="/" element={<Home selectedClub={selectedClub} />} />
-          <Route
-            path="/explore"
-            element={
-              <Explore 
-                selectedClub={selectedClub} 
-                selectedCompetition={selectedCompetition}
-              />
-            }
-          />
-          <Route path="/video" element={<Video selectedClub={selectedClub} />} />
-          <Route 
-            path="/resultat" 
-            element={<Resultat club={selectedClub} competition={selectedCompetition} />} 
-          />
-          <Route path="/profile" element={<Profile />} />
-        </Routes>
+        <nav className="app-navbar">
+          <ul>
+            <li>
+              <NavLink
+                to="/"
+                className={({ isActive }) => (isActive ? 'active' : '')}
+                style={{ pointerEvents: areTabsDisabled ? 'none' : 'auto', opacity: areTabsDisabled ? 0.5 : 1 }}
+              >
+                <FaVideo />
+              </NavLink>
+            </li>
+            <li>
+              <NavLink
+                to="/resultat"
+                className={({ isActive }) => (isActive ? 'active' : '')}
+                style={{ pointerEvents: areTabsDisabled ? 'none' : 'auto', opacity: areTabsDisabled ? 0.5 : 1 }}
+              >
+                <FaMedal />
+              </NavLink>
+            </li>
+            <li>
+              <NavLink
+                to="/video"
+                className={({ isActive }) => (isActive ? 'active' : '')}
+                style={{ pointerEvents: areTabsDisabled ? 'none' : 'auto', opacity: areTabsDisabled ? 0.5 : 1 }}
+              >
+                <FaList />
+              </NavLink>
+            </li>
+            <li>
+              <NavLink
+                to="/explore"
+                className={({ isActive }) => (isActive ? 'active' : '')}
+              >
+                <FaSearch />
+              </NavLink>
+            </li>
+            <li>
+              <NavLink
+                to="/profile"
+                className={({ isActive }) => (isActive ? 'active' : '')}
+                style={{ pointerEvents: areTabsDisabled ? 'none' : 'auto', opacity: areTabsDisabled ? 0.5 : 1 }}
+              >
+                <FaUser />
+              </NavLink>
+            </li>
+          </ul>
+        </nav>
       </div>
-      <nav className="app-navbar">
-        <ul>
-          <li>
-            <NavLink
-              to="/"
-              className={({ isActive }) => (isActive ? 'active' : '')}
-              style={{ pointerEvents: areTabsDisabled ? 'none' : 'auto', opacity: areTabsDisabled ? 0.5 : 1 }}
-            >
-              <FaVideo />
-            </NavLink>
-          </li>
-          <li>
-            <NavLink
-              to="/resultat"
-              className={({ isActive }) => (isActive ? 'active' : '')}
-              style={{ pointerEvents: areTabsDisabled ? 'none' : 'auto', opacity: areTabsDisabled ? 0.5 : 1 }}
-            >
-              <FaMedal />
-            </NavLink>
-          </li>
-          <li>
-            <NavLink
-              to="/video"
-              className={({ isActive }) => (isActive ? 'active' : '')}
-              style={{ pointerEvents: areTabsDisabled ? 'none' : 'auto', opacity: areTabsDisabled ? 0.5 : 1 }}
-            >
-              <FaList />
-            </NavLink>
-          </li>
-          <li>
-            <NavLink
-              to="/explore"
-              className={({ isActive }) => (isActive ? 'active' : '')}
-            >
-              <FaSearch />
-            </NavLink>
-          </li>
-          <li>
-            <NavLink
-              to="/profile"
-              className={({ isActive }) => (isActive ? 'active' : '')}
-              style={{ pointerEvents: areTabsDisabled ? 'none' : 'auto', opacity: areTabsDisabled ? 0.5 : 1 }}
-            >
-              <FaUser />
-            </NavLink>
-          </li>
-        </ul>
-      </nav>
-    </div>
+    </GoogleOAuthProvider>
   );
 };
 

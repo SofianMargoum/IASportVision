@@ -10,6 +10,9 @@
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
   font-family: 'Arial', sans-serif;
   color: #ffffff;
+  border: 1px solid;
+  border-color: #001A31;
+  box-shadow: 0 4px 12px #001A31; /* Ombre du conteneur */
 }
 
 .search-club-container .input-container {
@@ -51,6 +54,8 @@
   padding: 0;
   background-color: #010E1E; /* Couleur gris foncé de fond container */
   color: #ffffff;
+  overflow-y: auto; /* Barre de défilement verticale si nécessaire */
+  scrollbar-width: none; /* Masque la barre de défilement */
 }
 
 .search-club-container li {

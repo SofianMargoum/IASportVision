@@ -1,5 +1,28 @@
 // api.js
 
+// Fonction pour envoyer l'idToken au backend pour vérification
+export const sendIdTokenToBackend = async (idToken) => {
+  try {
+    const response = await fetch('https://ia-sport.oa.r.appspot.com/api/google', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ idToken }), // Envoie le idToken au backend
+    });
+
+    if (!response.ok) {
+      throw new Error('Échec de la vérification du token');
+    }
+
+    const data = await response.json();
+    return data; // Réponse avec les informations de l'utilisateur
+  } catch (error) {
+    console.error('Error verifying Google token:', error);
+    throw error;
+  }
+};
+
 // Fonction pour rechercher des clubs
 export const searchClubs = async (searchTerm) => {
   try {

@@ -65,22 +65,27 @@ function MatchsContent() {
   useEffect(() => {
     if (filteredMatches.length > 0) {
       const today = new Date();
+      console.log('Today\'s date:', today);
       const lastMatchIndex = filteredMatches.reduce((lastIndex, match, index) => {
         const matchDate = new Date(match.date);
-        return matchDate < today && (lastIndex === -1 || matchDate < new Date(filteredMatches[lastIndex].date))
+        console.log(`Match ${index}: `, matchDate);
+        return matchDate < today && (lastIndex === -1 || matchDate > new Date(filteredMatches[lastIndex].date))
           ? index
           : lastIndex;
       }, -1);
-
+  
+      console.log('Last match index:', lastMatchIndex);
+  
       if (lastMatchIndex >= 0 && matchRefs.current[lastMatchIndex]) {
-        // Scroller le conteneur spécifique vers le dernier match avant aujourd'hui
         scrollContainerRef.current.scrollTo({
-          top: matchRefs.current[lastMatchIndex].offsetTop, // Défile vers la position du dernier match avant aujourd'hui
+          top: matchRefs.current[lastMatchIndex].offsetTop - 93, // Ajustez la valeur en fonction des marges ou paddings
           behavior: 'smooth',
         });
+        
       }
     }
   }, [filteredMatches]);
+  
 
   if (loading) {
     return <div className="loading">Chargement des matchs...</div>;

@@ -46,7 +46,6 @@
 
 /* Effet au survol des éléments de la liste */
 .match-item:hover {
-  transform: translateY(-5px); /* Décalage vers le haut */
   box-shadow: 0 10px 24px rgba(0, 0, 0, 0.6); /* Ombre plus prononcée */
 }
 .loading {

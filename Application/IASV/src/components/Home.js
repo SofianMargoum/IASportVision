@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { FaPlay, FaStop, FaPlus, FaMinus, FaExchangeAlt, FaRecordVinyl } from 'react-icons/fa';
+import { FaPlay, FaPause, FaStop, FaPlus, FaMinus, FaExchangeAlt, FaRecordVinyl } from 'react-icons/fa';
 import './css/Home.css';
 import { searchClubs, startRecording, stopRecording, getPlaybackURI, uploadVideo } from './api';
 import config from '../config'; // Importer config pour récupérer le club sélectionné
@@ -52,7 +52,11 @@ function Home() {
     setSelectedClubInfo(result);
     setSearchResults([]);
   };
-
+  const handleButtonActionClick = () => {
+    // Logique pour ce bouton
+    console.log('Second button clicked');
+  };
+  
   const handleButtonClick = async () => {
     if (isRecording) {
       setFilename('');
@@ -211,14 +215,39 @@ function Home() {
             <p>{message}</p>
           </div>
         )}
-        <button
-          className={`button ${isRecording ? 'stop' : ''} ${!filename ? 'disabled' : ''}`}
-          onClick={handleButtonClick}
+
+
+<div className="button-container">
+    {isRecording && (
+      <button
+          className={`buttonPause`}
+          onClick={handleButtonActionClick}
           disabled={!filename && !isRecording}
-        >
-          {isRecording ? <FaStop /> : <FaRecordVinyl />}
-        </button>
-      </div>
+      >
+          {isRecording ? <FaPlay /> : <FaPause  />}
+      </button>
+    )}
+    <button
+      className={`button ${isRecording ? 'stop' : ''} ${!filename ? 'disabled' : ''}`}
+      onClick={handleButtonClick}
+      disabled={!filename && !isRecording}
+    >
+      {isRecording ? <FaStop /> : <FaRecordVinyl />}
+    </button>
+        
+
+    {isRecording && (
+      <button
+      className={`buttonAction`}
+      onClick={handleButtonActionClick}
+      disabled={!filename && !isRecording}
+      >
+      {isRecording ? <FaStop /> : <FaRecordVinyl />}
+      </button>
+    )}
+  </div>
+
+  </div>
     </div>
   );
 }

@@ -158,19 +158,7 @@
   background-color: transparent;
 }
 
-.liste-video-content-video {
-  width: 75%; /* Réduit la largeur à 100% du conteneur */
-  max-width: 100%; /* Limite la largeur maximale à 75% */
-  height: auto;
-  max-height: 100%; /* Réduit la hauteur maximale à 100% de l'écran */
-  border-radius: 12px;
-  outline: none;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
-  opacity: 1; /* Assure que la vidéo est visible */
-  transform: none; /* Enlève la transformation qui déplace la vidéo */
-  animation: none; /* Enlève l'animation si elle n'est pas nécessaire */
-  margin: 20px;
-}
+
 
 @keyframes slideIn {
   to {
@@ -219,17 +207,7 @@
   border-bottom: 2px solid var(--primary-color);
 }
 
-.liste-video-content nav button {
-  background-color: transparent;
-  border: none;
-  padding: 12px 16px;
-  font-size: 16px;
-  cursor: pointer;
-  color: var(--text-color);
-  position: relative;
-  text-align: center;
-  transition: color 0.3s ease-in-out;
-}
+
 
 .liste-video-content nav button.active {
   color: var(--primary-color);
@@ -261,15 +239,14 @@
   flex-direction: column; /* Ajouté pour gérer les éléments enfants en colonne */
   align-items: center; /* Centre le contenu horizontalement */
   justify-content: center; /* Centre le contenu verticalement */
-  padding: 20px;
+  padding: 5px;
   background-color: transparent;
   color: var(--text-color);
-  width: 100%;
+  width: 130%;
   height: 100%;
   max-height: calc(100vh - 40px);
   overflow-y: auto;
   overflow-x: hidden;
-  margin: 20px;
   border-radius: none;
   box-shadow: none;
 }
@@ -278,19 +255,38 @@
   flex-direction: column; /* Ajouté pour gérer les éléments enfants en colonne */
   align-items: center; /* Centre le contenu horizontalement */
   justify-content: center; /* Centre le contenu verticalement */
-  padding: 20px;
   background-color: transparent;
   color: var(--text-color);
-  width: 100%;
-  height: 100%;
   max-height: calc(100vh - 40px);
   overflow-y: auto;
   overflow-x: hidden;
-  margin: 20px;
 }
-
+.liste-video-content nav button {
+  background-color: transparent;
+  border: none;
+  padding: 12px 16px;
+  font-size: 16px;
+  cursor: pointer;
+  color: var(--text-color);
+  position: relative;
+  text-align: center;
+  transition: color 0.3s ease-in-out;
+}
 /* CSS Responsive pour petits écrans */
 @media (max-width: 600px) {
+  .liste-video-content nav button {
+    width: 10px; /* Ajuste la largeur des points */
+    height: 10px; /* Ajuste la hauteur des points */
+    border-radius: 50%; /* Forme les boutons en points */
+    background-color: rgba(255, 255, 255, 0.6); /* Couleur des points non actifs */
+    color: transparent; /* Cache le texte des boutons */
+    margin: 0 6px; /* Espacement horizontal entre les points */
+    padding: 0; /* Supprime les espaces autour des points */
+    display: inline-block; /* Assure que les points ne débordent pas */
+    vertical-align: middle; /* Aligne verticalement les points */
+    box-sizing: border-box; /* Inclut le padding et bordure dans les dimensions */
+    font-size: 0; /* Assure que le texte n'est pas visible */
+  }
   .liste-video-content nav {
     display: flex; /* Utilise flex pour aligner les points correctement */
     flex-direction: row; /* Affiche les points côte à côte */
@@ -300,21 +296,6 @@
     border-bottom: none; /* Enlève la bordure inférieure */
     padding: 50px 0; /* Ajoute de l'espace en haut et en bas */
     box-sizing: border-box; /* Inclut le padding dans la largeur totale */
-  }
-
-  .liste-video-content nav button {
-    width: 10px; /* Ajuste la largeur des points */
-    height: 10px; /* Ajuste la hauteur des points */
-    border-radius: 50%; /* Forme les boutons en points */
-    background-color: rgba(255, 255, 255, 0.6); /* Couleur des points non actifs */
-    color: transparent; /* Cache le texte des boutons */
-    margin: 0 6px; /* Espacement horizontal entre les points */
-    padding: 0; /* Supprime les espaces autour des points */
-    border: none; /* Supprime la bordure si elle existe */
-    display: inline-block; /* Assure que les points ne débordent pas */
-    vertical-align: middle; /* Aligne verticalement les points */
-    box-sizing: border-box; /* Inclut le padding et bordure dans les dimensions */
-    font-size: 0; /* Assure que le texte n'est pas visible */
   }
   .liste-video-content::-webkit-scrollbar {
     display: none;  /* Masque la barre de défilement */
@@ -328,4 +309,174 @@
     content: none; /* Supprime le contenu du pseudo-élément */
     display: none; /* Cache le pseudo-élément */
   }
+}
+.liste-video-share-buttons {
+  display: flex;
+  justify-content: center;
+  margin-top: 20px;
+}
+
+
+
+.stats-equipe-image {
+  max-width: 100%;
+  height: auto;
+  display: block;
+  margin: 0 auto;
+}
+/* Nouveau conteneur parent pour la vidéo et les boutons de partage */
+.video-and-share-container {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start; /* Aligne en haut (début) verticalement */
+  width: 100%; /* Prend la largeur totale */
+  max-width: 1200px;
+  margin: 20px 0;
+  position: relative;
+}
+/* Garde les styles existants pour la vidéo */
+.liste-video-content-video {
+  width: 75%;
+  max-width: 100%;
+  height: auto;
+  max-height: 100%;
+  border-radius: 12px;
+  outline: none;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
+  opacity: 1;
+  transform: none;
+  animation: none;
+  margin: 20px;
+}
+
+
+
+
+/* Conteneur principal */
+.share-buttons-container {
+  display: flex;
+  transform: translateY(-20px); /* Déplace les boutons vers le haut */
+  transition: opacity 0.3s ease, transform 0.3s ease; /* Transition douce */
+  justify-content: flex-start; /* Aligne les boutons en haut */
+  flex-direction: column; /* Alignement vertical */
+  align-items: left; /* Centrer les boutons horizontalement */
+  margin: 40px auto; /* Marges autour du conteneur */
+  max-width: 400px; /* Largeur maximale pour le conteneur */
+  position: relative; /* Position relative pour le conteneur */
+  margin-left: 0px;
+}
+
+.option-button i {
+  margin-right: 0px;
+  font-size: 18px;
+}
+/* Bouton de partage principal */
+.option-button {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start; /* Aligner le contenu à gauche */
+  border: none;
+  border-radius: 5px;
+  background-color: transparent; /* Couleur de fond principale */
+  color: #ffffff; /* Couleur du texte */
+  padding: 10px;
+  font-size: 18px; /* Taille du texte */
+  font-weight: bold; /* Gras */
+  cursor: pointer; /* Curseur en main au survol */
+  transition: background-color 0.3s, transform 0.2s, box-shadow 0.3s; /* Transitions pour effet de survol */
+  margin-bottom: 5px; /* Espacement entre le bouton et les boutons sociaux */
+  width: 100%;
+}
+
+
+/* Changement de couleur au survol */
+.option-button:hover {
+  background-color: transparent; /* Couleur de fond principale */
+  transform: translateY(-2px); /* Légère élévation au survol */
+}
+
+.share-button i {
+  font-size: 18px;
+  justify-content: left;
+}
+
+/* Bouton de partage principal */
+.share-button {
+  display: flex;         /* Active le mode flexbox */
+  align-items: center;
+  justify-content: center; /* Centre les éléments verticalement */
+  border: none;
+  border-radius: 5px;
+  background-color: transparent; /* Couleur de fond principale */
+  color: #ffffff; /* Couleur du texte */
+  font-size: 18px; /* Taille du texte */
+  font-weight: bold; /* Gras */
+  cursor: pointer; /* Curseur en main au survol */
+  transition: background-color 0.3s, transform 0.2s, box-shadow 0.3s; /* Transitions pour effet de survol */
+
+
+}
+
+/* Changement de couleur au survol */
+.share-button:hover {
+  background-color: transparent; /* Couleur de fond principale */
+  transform: translateY(-2px); /* Légère élévation au survol */
+}
+
+/* Conteneur des boutons de médias sociaux */
+.social-media-buttons {
+  display: flex;
+  max-width: 0; /* Masquer les boutons au départ */
+  overflow: hidden; /* Masquer les débordements */
+  transition: max-width 0.5s ease-out; /* Transition horizontale */
+}
+.divshare {display: inline-flex;
+    align-items: center;
+    border: none;
+    border-radius: 5px;
+    background-color: transparent;
+    color: #ffffff;
+    padding: 10px;
+    font-size: 18px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: background-color 0.3s, transform 0.2s, box-shadow 0.3s;
+    margin-bottom: 5px;
+}
+
+
+/* Boutons des réseaux sociaux */
+.social-media-buttons button {
+  background-color: transparent; /* Couleur de fond blanche */
+  border: none;
+  color: #333333; /* Couleur du texte sombre */
+  border-radius: 30px; /* Coins arrondis */
+  font-size: 16px; /* Taille du texte */
+  font-weight: 600; /* Semi-gras */
+  cursor: pointer; /* Curseur en main au survol */
+  transition: background-color 0.3s, color 0.3s, transform 0.2s; /* Transitions pour effet de survol */
+}
+
+/* Changement de couleur au survol des boutons sociaux */
+.social-media-buttons button:hover {
+  background-color: transparent; /* Couleur de fond bleue au survol */
+  color: #ffffff; /* Couleur du texte blanche au survol */
+  transform: translateY(-2px); /* Légère élévation au survol */
+}
+
+/* Icônes dans les boutons */
+.social-media-buttons i {
+  margin-right: 10px; /* Espacement entre l'icône et le texte */
+  font-size: 18px; /* Taille de l'icône */
+}
+
+/* Classe pour afficher les boutons sociaux */
+.social-media-visible {
+  max-height: 300px; /* Hauteur maximale lors de l'affichage (ajuster si nécessaire) */
+  max-width: 300px; /* Hauteur maximale lors de l'affichage (ajuster si nécessaire) */
+}
+
+td {
+  text-align: center;
+  vertical-align: middle;
 }
