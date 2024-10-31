@@ -26,15 +26,20 @@ sudo apt-mark unhold ffmpeg
 
 
 --Charte graphique 2.0
+background-color: #010914; /* Couleur bleu foncé + de fond générale */
 background-color: #010E1E; /* Couleur bleu foncé de fond générale */
 background-color: #001A31; /* Couleur bleu foncé de fond container */
 color: #ffffff; /* Couleur blanc claire de texte / icon */
 color: #00BFFF; /* Couleur bleu de texte / icon selectioner */
 
 --react native
+	adb uninstall com.iasvmobile
 	npx react-native run-android
-
-
+	
+	--creer apk
+		cd android
+		./gradlew assembleRelease
+		/android/app/build/outputs/apk/release/
 
 
 
@@ -77,21 +82,28 @@ Version : 1
 
 
 
+--genere une cle
+C:\perso\IA Sport Vision\Application\IASVMobile\android\app>keytool -genkeypair -v -keystore release-key.keystore -alias myappkey -keyalg RSA -keysize 2048 -validity 10000
+Enter keystore password:
+Re-enter new password:
+What is your first and last name?
+  [Unknown]:  Sofian
+What is the name of your organizational unit?
+  [Unknown]:  Margoum
+What is the name of your organization?
+  [Unknown]:  ISAV
+What is the name of your City or Locality?
+  [Unknown]:  Miramas
+What is the name of your State or Province?
+  [Unknown]:  france
+What is the two-letter country code for this unit?
+  [Unknown]:  fr
+Is CN=Sofian, OU=Margoum, O=ISAV, L=Miramas, ST=france, C=fr correct?
+  [no]:  yes
 
-profile:
+Generating 2?048 bit RSA key pair and self-signed certificate (SHA256withRSA) with a validity of 10?000 days
+        for: CN=Sofian, OU=Margoum, O=ISAV, L=Miramas, ST=france, C=fr
+[Storing release-key.keystore]
 
-        {/* Email Input */}
-        <div className="input-group">
-          <label htmlFor="email">Adresse e-mail</label>
-          <div className="inputs">
-            <input type="email" id="email" placeholder="Entrez votre email" />
-          </div>
-        </div>
 
-        {/* Password Input */}
-        <div className="input-group">
-          <label htmlFor="password">Mot de passe</label>
-          <div className="inputs">
-            <input type="password" id="password" placeholder="Entrez votre mot de passe" />
-          </div>
-        </div>
+mdp : SofianISAV
