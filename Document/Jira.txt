@@ -27,6 +27,7 @@ Backlog :
 				-nombre de ballon recuperer...
 			-Generer une video resumé du match
 			-changer l'image de couverture
+			-video presentation
 		
 		ticket 4 Onglet Explore :
 		
