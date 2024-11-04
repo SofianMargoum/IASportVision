@@ -38,7 +38,8 @@ color: #00BFFF; /* Couleur bleu de texte / icon selectioner */
 	
 	--creer apk
 		cd android
-		./gradlew assembleRelease
+		gradlew assembleRelease
+		gradlew app:assembleRelease
 		/android/app/build/outputs/apk/release/
 
 
