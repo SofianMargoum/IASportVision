@@ -9,7 +9,7 @@
 
 --Astuce version simple Push
 	git add .
-	git commit -m "IASV update SPRINT 1 React native update OK"
+	git commit -m "IASV update SPRINT 1 React native reanimed update OK"
 	git push -u origin main
 
 --Astuce pull
