@@ -1,0 +1,140 @@
+/* Style global pour le composant */
+.tab-content-match {
+  background-color: #001A31; /* Couleur bleu foncé de fond container */
+  color: #ffffff; /* Couleur blanc claire de texte */
+  padding: 0px; /* Réduit le padding pour les petits écrans */
+  border-radius: 12px;
+  margin: 5px auto;
+  max-width: 100%; /* Assure que le conteneur ne dépasse pas la largeur du parent */
+  width: 100%; /* Assure que le conteneur prend toute la largeur disponible du parent */
+  max-height: 100vh; /* Limite la hauteur à la hauteur de la fenêtre d'affichage */
+  box-sizing: border-box; /* Inclut padding et bordures dans la largeur totale */
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5); /* Ombre prononcée */
+  transition: background-color 0.3s ease-in-out; /* Transition pour effet au survol */
+  overflow-y: auto; /* Ajoute une barre de défilement verticale si nécessaire */
+  margin: 1px auto;
+}
+
+/* Effet au survol du container */
+.tab-content-match:hover {
+  background-color: #002B49; /* Couleur bleu encore plus foncé au survol */
+}
+
+/* Style pour le titre */
+.tab-content-match h2 {
+  color: #ffffff;
+  border-bottom: 3px solid #00BFFF; /* Accent bleu clair sous le titre */
+  padding-bottom: 10px;
+  margin-bottom: 20px;
+  font-size: 26px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+/* Style pour les éléments de la liste des matchs */
+.match-item {
+  background-color: #010E1E; /* Couleur bleu foncé de fond des éléments */
+  border-radius: 8px;
+  padding: 10px;
+  margin-bottom: 15px;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4); /* Ombre pour un effet de profondeur */
+  transition: transform 0.3s ease, box-shadow 0.3s ease; /* Effet de survol */
+  display: flex;
+  flex-direction: column; /* Aligne les éléments en colonne sur les petits écrans */
+}
+
+/* Effet au survol des éléments de la liste */
+.match-item:hover {
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.6); /* Ombre plus prononcée */
+}
+.loading {
+  color: #ffffff;
+}
+.team-logo {
+  width: 20px;
+  height: 20px;
+  margin-right: 10px;
+  border-radius: 50%; /* Rendre l'image circulaire */
+  object-fit: cover; /* S'assurer que l'image s'adapte bien au conteneur */
+  vertical-align: middle; /* Aligner verticalement avec le texte */
+}
+/* Style pour la date du match */
+.match-date {
+  font-size: 12px;
+  color: #aaaaaa; /* Couleur grise clair pour la date */
+  text-align: left; /* Alignement à gauche */
+  margin-bottom: 10px; /* Espacement sous la date */
+  display: flex;
+  justify-content: center; /* Centre horizontalement */
+  align-items: center;     /* Centre verticalement */
+}
+
+/* Style pour le contenu du match */
+.match-content {
+  display: grid;
+  grid-template-columns: 1fr 1fr; /* Deux colonnes pour les équipes et les scores */
+  gap: 20px; /* Espacement entre les colonnes */
+  align-items: center; /* Alignement vertical centré */
+}
+
+/* Style pour les détails des équipes */
+.match-details-team {
+  font-size: 16px;
+  color: #ffffff;
+  text-align: left; /* Alignement centré pour les détails des équipes */
+  width: 200%;
+}
+
+/* Style pour le score */
+.match-score {
+  font-size: 18px;
+  color: #00BFFF; /* Couleur bleu clair pour le score */
+  font-weight: 700;
+  text-align: center; /* Alignement centré pour le score */
+  text-align: right; /* Alignement centré pour le score */
+}
+
+/* Conteneur pour les éléments */
+.match-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+}
+
+/* Pour les écrans de 768px et moins (tablettes en portrait et mobiles) */
+@media (max-width: 768px) {
+  
+  .match-details-team {
+    font-size: 15px;
+  }
+  
+/* Style pour la date du match */
+.match-date {
+  font-size: 10px;
+}
+
+  .match-score {
+    font-size: 16px;
+  }
+}
+
+/* Pour les écrans de 480px et moins (mobiles) */
+@media (max-width: 480px) {
+  .match-details-team {
+    font-size: 14px;
+  }
+}
+.scroll-container {
+  max-height:100%; /* Limite la hauteur à la hauteur de la fenêtre d'affichage */
+  overflow-y: auto; /* Affiche la barre de défilement uniquement si nécessaire */
+  padding-right: 0px; /* Évite de créer un espace supplémentaire à droite */
+  scrollbar-width: auto; /* Affiche la barre de défilement pour Firefox */
+  -ms-overflow-style: auto;  /* Affiche la barre de défilement pour Internet Explorer et Edge */
+}
+
+/* Masquer la barre de défilement pour les navigateurs basés sur Webkit (Chrome, Safari) */
+.scroll-container::-webkit-scrollbar {
+  display: none;  /* Masque la barre de défilement */
+}
