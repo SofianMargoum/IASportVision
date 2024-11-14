@@ -1,3 +1,29 @@
+--Charte graphique 2.0
+background-color: #010914; /* Couleur bleu foncé + de fond générale */
+background-color: #010E1E; /* Couleur bleu foncé de fond générale */
+background-color: #001A31; /* Couleur bleu foncé de fond container */
+color: #ffffff; /* Couleur blanc claire de texte / icon */
+color: #00A0E9; /* Couleur bleu de texte / icon selectioner */
+color: #00BFFF; /* Couleur bleu de texte / icon selectioner */
+
+--react native
+	adb uninstall com.iasvmobile
+	npx react-native run-android
+	
+	--creer apk
+		cd android
+		gradlew clean
+		gradlew assembleRelease
+		gradlew app:assembleRelease
+		/android/app/build/outputs/apk/release/
+
+
+
+
+
+
+
+
 https://www.youtube.com/watch?v=DxRT-Z2E_x8&ab_channel=SFEIRTV 
 	-33min
 	
@@ -23,24 +49,6 @@ sudo apt-mark hold ffmpeg
 
 --Annuler le verrouillage si nécessaire :
 sudo apt-mark unhold ffmpeg
-
-
---Charte graphique 2.0
-background-color: #010914; /* Couleur bleu foncé + de fond générale */
-background-color: #010E1E; /* Couleur bleu foncé de fond générale */
-background-color: #001A31; /* Couleur bleu foncé de fond container */
-color: #ffffff; /* Couleur blanc claire de texte / icon */
-color: #00BFFF; /* Couleur bleu de texte / icon selectioner */
-
---react native
-	adb uninstall com.iasvmobile
-	npx react-native run-android
-	
-	--creer apk
-		cd android
-		gradlew assembleRelease
-		gradlew app:assembleRelease
-		/android/app/build/outputs/apk/release/
 
 
 
@@ -108,3 +116,15 @@ Generating 2?048 bit RSA key pair and self-signed certificate (SHA256withRSA) wi
 
 
 mdp : SofianISAV
+
+
+sidebar:
+  header: {
+    fontSize: 20 * scale,
+    fontWeight: 'bold',
+    marginBottom: 20 * scale,
+    color: '#00BFFF',
+    borderBottomWidth: 2 * scale,
+    borderBottomColor: '#00BFFF',
+    textAlign: 'center',
+  },
