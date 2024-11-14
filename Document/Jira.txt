@@ -42,15 +42,13 @@ Backlog :
 			
 			
 SPRINT 2 :
-
-
 		ticket 1 Onglet Live :
 			-Pause (enregistrement)
 			-Lecture (enregistrement)
 			-Bouton action pour resumer
+			
 		ticket 5 Onglet Connexion :
 			-Gestion des droit des utilisateurs
-			
 			
 		ticket 3 Onglet Video :
 			-Publier sur les réseaux (insta, facebook, tiktok, youtube...) 
@@ -67,6 +65,8 @@ SPRINT 2 :
 			-suggestion les 3 derniers clubs
 			-defilement equipe
 			-selectionner la premiere equipe apres selection d'un club
+			
+			
 SPRINT 1 :
 		ticket 1 Onglet Live :
 			-Demarrer un enregistrement 
