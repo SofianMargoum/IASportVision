@@ -1,0 +1,71 @@
+apply plugin: "com.android.application"
+apply plugin: "org.jetbrains.kotlin.android"
+apply plugin: "com.facebook.react"
+
+// Ajout du script pour react-native-vector-icons
+apply from: "../../node_modules/react-native-vector-icons/fonts.gradle"
+
+// Configuration React Native
+react {
+    autolinkLibrariesWithApp()
+}
+
+def enableProguardInReleaseBuilds = false
+def jscFlavor = 'org.webkit:android-jsc:+'
+
+// Ajouter les informations sensibles dans gradle.properties pour plus de sécurité
+def keystorePropertiesFile = rootProject.file("keystore.properties")
+def keystoreProperties = new Properties()
+keystoreProperties.load(new FileInputStream(keystorePropertiesFile))
+
+android {
+    ndkVersion rootProject.ext.ndkVersion
+    buildToolsVersion rootProject.ext.buildToolsVersion
+    compileSdk rootProject.ext.compileSdkVersion
+
+    namespace "com.iasvmobile"
+    defaultConfig {
+        applicationId "com.iasvmobile"
+        minSdkVersion rootProject.ext.minSdkVersion
+        targetSdkVersion rootProject.ext.targetSdkVersion
+        versionCode 1
+        versionName "1.0"
+    }
+
+    signingConfigs {
+    debug {
+        storeFile file(keystoreProperties["MYAPP_UPLOAD_STORE_FILE"])
+        storePassword keystoreProperties["MYAPP_UPLOAD_STORE_PASSWORD"]
+        keyAlias keystoreProperties["MYAPP_UPLOAD_KEY_ALIAS"]
+        keyPassword keystoreProperties["MYAPP_UPLOAD_KEY_PASSWORD"]
+    }
+        release {
+            storeFile file(keystoreProperties["MYAPP_UPLOAD_STORE_FILE"])
+            storePassword keystoreProperties["MYAPP_UPLOAD_STORE_PASSWORD"]
+            keyAlias keystoreProperties["MYAPP_UPLOAD_KEY_ALIAS"]
+            keyPassword keystoreProperties["MYAPP_UPLOAD_KEY_PASSWORD"]
+        }
+    }
+
+    buildTypes {
+        debug {
+            signingConfig signingConfigs.debug
+        }
+        release {
+            signingConfig signingConfigs.release
+            minifyEnabled enableProguardInReleaseBuilds
+            shrinkResources false
+            proguardFiles getDefaultProguardFile("proguard-android.txt"), "proguard-rules.pro"
+        }
+    }
+}
+
+dependencies {
+    implementation("com.facebook.react:react-android")
+
+    if (hermesEnabled.toBoolean()) {
+        implementation("com.facebook.react:hermes-android")
+    } else {
+        implementation jscFlavor
+    }
+}
