@@ -23,7 +23,7 @@
 /* Style pour le titre */
 .tab-content-match h2 {
   color: #ffffff;
-  border-bottom: 3px solid #00BFFF; /* Accent bleu clair sous le titre */
+  border-bottom: 3px solid #00A0E9; /* Accent bleu clair sous le titre */
   padding-bottom: 10px;
   margin-bottom: 20px;
   font-size: 26px;
@@ -89,7 +89,7 @@
 /* Style pour le score */
 .match-score {
   font-size: 18px;
-  color: #00BFFF; /* Couleur bleu clair pour le score */
+  color: #00A0E9; /* Couleur bleu clair pour le score */
   font-weight: 700;
   text-align: center; /* Alignement centré pour le score */
   text-align: right; /* Alignement centré pour le score */

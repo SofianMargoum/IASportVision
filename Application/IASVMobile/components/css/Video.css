@@ -58,7 +58,7 @@
     padding: 10px;
     cursor: pointer;
     font-size: 24px;
-    color: #00BFFF;
+    color: #00A0E9;
     z-index: 1;
     display: flex;
     align-items: center; /* Aligne l'icône avec le texte */
@@ -70,7 +70,7 @@
 
   .selected-video-title {
     font-size: 12px;
-    color: #00BFFF;
+    color: #00A0E9;
     font-weight: bold;
   }
 }

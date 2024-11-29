@@ -10,7 +10,7 @@ const Main = () => {
 
   useEffect(() => {
     // Masquer le SplashScreen après 2 secondes
-    const timer = setTimeout(() => setIsSplashVisible(false), 2000);
+    const timer = setTimeout(() => setIsSplashVisible(false), 2500);
     return () => clearTimeout(timer); // Nettoyage du timer
   }, []);
 

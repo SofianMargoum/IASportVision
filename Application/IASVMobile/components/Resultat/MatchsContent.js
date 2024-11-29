@@ -143,7 +143,7 @@ const styles = StyleSheet.create({
   },
   matchScore: {
     fontSize: 18 * scale, // Échelle appliquée ici
-    color: '#00BFFF',
+    color: '#00A0E9',
     fontWeight: '700',
   },
   error: {

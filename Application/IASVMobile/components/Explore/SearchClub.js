@@ -149,6 +149,7 @@ const SearchClub = () => {
   return (
     <FlatList
       contentContainerStyle={styles.container}
+      showsVerticalScrollIndicator={false} // Masquer la scrollbar verticale
       data={data}
       keyExtractor={(item, index) => index.toString()}
       renderItem={({ item }) => (

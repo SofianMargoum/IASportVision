@@ -22,17 +22,17 @@ const Resultat = () => {
   const renderScene = useMemo(() => 
     SceneMap({
       matchs: () => (
-        <Suspense fallback={<ActivityIndicator size="large" color="#00BFFF" />}>
+        <Suspense fallback={<ActivityIndicator size="large" color="#00A0E9" />}>
           <MatchsContent />
         </Suspense>
       ),
       classements: () => (
-        <Suspense fallback={<ActivityIndicator size="large" color="#00BFFF" />}>
+        <Suspense fallback={<ActivityIndicator size="large" color="#00A0E9" />}>
           <ClassementsContent />
         </Suspense>
       ),
       stats: () => (
-        <Suspense fallback={<ActivityIndicator size="large" color="#00BFFF" />}>
+        <Suspense fallback={<ActivityIndicator size="large" color="#00A0E9" />}>
           <StatsContent />
         </Suspense>
       ),
@@ -78,7 +78,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-evenly',
     borderBottomWidth: 2,
-    borderBottomColor: '#00BFFF',
+    borderBottomColor: '#00A0E9',
   },
   button: {
     paddingVertical: 12 * scale,
@@ -87,14 +87,14 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   activeButton: {
-    color: '#00BFFF',
+    color: '#00A0E9',
   },
   buttonText: {
     color: '#ffffff',
     fontSize: 16 * scale,
   },
   activeButtonText: {
-    color: '#00BFFF',
+    color: '#00A0E9',
     fontWeight: 'bold',
   },
   activeIndicator: {
@@ -102,7 +102,7 @@ const styles = StyleSheet.create({
     bottom: -2,
     width: '100%',
     height: 3,
-    backgroundColor: '#00BFFF',
+    backgroundColor: '#00A0E9',
   },
   contentContainer: {
     flex: 1,

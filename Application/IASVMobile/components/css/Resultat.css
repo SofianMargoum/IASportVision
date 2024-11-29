@@ -32,7 +32,7 @@
   justify-content: space-between; /* Ajuste l'espacement entre les onglets */
   flex-wrap: wrap; /* Permet aux onglets de passer à la ligne si nécessaire */
   margin-bottom: 30px;
-  border-bottom: 2px solid #00BFFF; /* Bordure inférieure pour délimiter le menu */
+  border-bottom: 2px solid #00A0E9; /* Bordure inférieure pour délimiter le menu */
 }
 
 .resultat-container nav button {
@@ -50,11 +50,11 @@
 }
 
 .resultat-container nav button:hover {
-  color: #00BFFF; /* Couleur bleu clair au survol */
+  color: #00A0E9; /* Couleur bleu clair au survol */
 }
 
 .resultat-container nav button.active {
-  color: #00BFFF; /* Couleur bleu clair pour l'onglet actif */
+  color: #00A0E9; /* Couleur bleu clair pour l'onglet actif */
   font-weight: bold; /* Texte en gras pour l'onglet actif */
 }
 
@@ -66,7 +66,7 @@
   transform: translateX(-50%);
   width: 100%;
   height: 3px;
-  background-color: #00BFFF; /* Bordure animée pour l'onglet actif */
+  background-color: #00A0E9; /* Bordure animée pour l'onglet actif */
   transition: width 0.3s ease-in-out;
 }
 
@@ -78,7 +78,7 @@
   transform: translateX(-50%);
   width: 0;
   height: 3px;
-  background-color: #00BFFF;
+  background-color: #00A0E9;
   transition: width 0.3s ease-in-out;
 }
 

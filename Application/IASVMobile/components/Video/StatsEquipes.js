@@ -2,7 +2,6 @@ import React from 'react';
 import { View, Text, StyleSheet, ScrollView } from 'react-native';
 
 const StatsEquipes = () => {
-  // Données de statistiques de match dans l'ordre souhaité
   const matchStats = {
     team1: 'F.C. VIDAUBAN',
     team2: 'A.S. ARCOISE',
@@ -24,19 +23,22 @@ const StatsEquipes = () => {
 
   return (
     <View style={styles.container}>
-      <ScrollView style={styles.scrollView}>
+      <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
+
+
         <View style={styles.grid}>
           {/* Ordre des statistiques selon la demande */}
-          <View style={styles.row}>
-            <Text style={styles.teamStat}>{matchStats.team1}</Text>
-            <Text style={styles.statTitle}></Text>
-            <Text style={styles.teamStat}>{matchStats.team2}</Text>
-          </View>
+          
+        <View style={styles.header}>
+          <Text style={styles.headerTeam}>{matchStats.team1}</Text>
+          <Text style={styles.headerTitle}>-</Text>
+          <Text style={styles.headerTeam}>{matchStats.team2}</Text>
+        </View>
           <View style={styles.row}>
             <Text style={styles.teamStat}>{matchStats.possession.team1}%</Text>
             <Text style={styles.statTitle}>Possession</Text>
             <Text style={styles.teamStat}>{matchStats.possession.team2}%</Text>
-          </View>
+            </View>
           <View style={styles.row}>
             <Text style={styles.teamStat}>{matchStats.shots.team1}</Text>
             <Text style={styles.statTitle}>Tirs</Text>
@@ -113,43 +115,59 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    padding: 16,
+    paddingHorizontal: 16,
   },
   scrollView: {
-    width: '100%', // Assure que le ScrollView prend toute la largeur disponible
+    width: '100%',
   },
-  title: {
-    fontSize: 20,
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    borderBottomColor: '#001A31',
+    borderBottomWidth: 1,
+    marginBottom:20,
+  },
+  headerTeam: {
+    fontSize: 16,
     fontWeight: 'bold',
-    color: '#00BFFF',
+    color: '#00A0E9', // Couleur dorée pour les équipes
+    flex: 1,
     textAlign: 'center',
-    marginBottom: 20,
+  },
+  headerTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#00A0E9',
+    flex: 1,
+    textAlign: 'center',
   },
   grid: {
     borderRadius: 8,
     overflow: 'hidden',
-    maxWidth: 400, // Limite la largeur de la grille
+    maxWidth: 400,
   },
   row: {
     flexDirection: 'row',
     paddingVertical: 10,
     alignItems: 'center',
     justifyContent: 'space-between',
+    borderBottomColor: '#001A31',
+    borderBottomWidth: 1,
   },
   statTitle: {
-    fontSize: 16,
-    fontWeight: '600',
+    fontSize: 14,
+    fontWeight: 'bold',
     color: '#ffffff',
     flex: 1,
     textAlign: 'center',
   },
   teamStat: {
-    fontSize: 16,
+    fontSize: 14,
+    fontWeight: 'bold',
     color: '#ffffff',
     flex: 1,
     textAlign: 'center',
-    fontWeight: '500',
-
   },
 });
 

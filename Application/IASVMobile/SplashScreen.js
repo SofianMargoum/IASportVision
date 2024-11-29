@@ -1,10 +1,14 @@
-// SplashScreen.js
 import React from 'react';
-import { View, Image, StyleSheet } from 'react-native';
+import { View, StyleSheet } from 'react-native';
+import FastImage from 'react-native-fast-image';
 
 const SplashScreen = () => (
   <View style={styles.container}>
-    <Image source={require('./assets/logo.png')} style={styles.logoSplashScreen} />
+    <FastImage
+      source={require('./assets/logo-SplashScreen.gif')}
+      style={styles.logoSplashScreen}
+      resizeMode={FastImage.resizeMode.contain}
+    />
   </View>
 );
 
@@ -13,12 +17,11 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#010914', // Fond de l'écran splash
+    backgroundColor: '#010914',
   },
   logoSplashScreen: {
-    width: 200,
-    height: 200,
-    resizeMode: 'contain', // Ajustez les dimensions si nécessaire
+    width: 300,
+    height: 300,
   },
 });
 

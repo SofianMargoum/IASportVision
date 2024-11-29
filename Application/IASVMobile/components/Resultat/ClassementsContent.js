@@ -50,7 +50,7 @@ function ClassementsContent() {
   if (loading) {
     return (
       <View style={styles.centered}>
-        <ActivityIndicator size="large" color="#00BFFF" />
+        <ActivityIndicator size="large" color="#00A0E9" />
         <Text style={styles.loadingText}>Chargement des classements...</Text>
       </View>
     );
@@ -80,13 +80,17 @@ function ClassementsContent() {
   );
 
   return (
-    <View style={{ flex: 1 }}>
-      {/* Conteneur principal avec les classements */}
+  <ScrollView
+    contentContainerStyle={{ flexGrow: 1 }}
+    style={{ flex: 1 }}
+    showsVerticalScrollIndicator={false} // Masquer la barre verticale
+  >
       <View style={styles.container}>
+        {/* Conteneur principal avec les classements */}
         <View style={styles.fixedColumn}>
           <View style={styles.headerRow}>
             <Text style={styles.headerCell}>Rang</Text>
-            <Text style={[styles.headerCell, styles.teamName]}>Club</Text>
+            <Text style={[styles.headerCell, styles.teamName, { color: '#00A0E9' }]}>Club</Text>
           </View>
           <FlatList
             data={classements}
@@ -94,7 +98,13 @@ function ClassementsContent() {
             renderItem={({ item }) => (
               <View style={styles.row}>
                 <Text style={styles.cell}>{item.rank}</Text>
-                <Text style={[styles.cell, styles.teamName]}>{item.teamName}</Text>
+                <Text
+                  style={[styles.cell, styles.teamName]}
+                  numberOfLines={1}
+                  ellipsizeMode="tail"
+                >
+                  {item.teamName}
+                </Text>
               </View>
             )}
             scrollEnabled={false}
@@ -124,7 +134,7 @@ function ClassementsContent() {
           </View>
         </ScrollView>
       </View>
-    </View>
+    </ScrollView>
   );
 }
 
@@ -133,14 +143,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flex: 1,
     padding: 10 * scale,
-    borderRadius: 8,
-    marginTop: 10 * scale,
-    borderColor: '#001A31',
-    borderWidth: 1,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    elevation: 5,
   },
   centered: {
     flex: 1,
@@ -148,7 +150,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   loadingText: {
-    color: '#00BFFF',
+    color: '#00A0E9',
     fontSize: 16 * scale,
     marginTop: 10,
   },
@@ -158,6 +160,7 @@ const styles = StyleSheet.create({
   },
   fixedColumn: {
     width: 200,
+    height: '100%',
   },
   scrollableContent: {
     flex: 1,
@@ -171,17 +174,19 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     paddingVertical: 8 * scale,
     padding: 5,
-    borderBottomColor: '#001A31',
-    borderBottomWidth: 1,
     flex: 1,
+    borderRightWidth: 1,
+    borderRightColor: 'rgba(255, 255, 255, 0.3)',
   },
   cell: {
     width: 50,
     color: '#FFFFFF',
     textAlignVertical: 'center',
     textAlign: 'center',
+    borderBottomColor: '#001A31',
+    borderBottomWidth: 1,
     padding: 5,
-    fontSize: 14 * scale,
+    fontSize: 14,
   },
   teamName: {
     flex: 1,
@@ -190,14 +195,17 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     textAlign: 'center',
     textAlignVertical: 'center',
+    color: '#FFFFFF',
+    fontSize: 14,
+    overflow: 'hidden',
   },
   headerCell: {
     width: 50,
-    color: '#00BFFF',
+    color: '#00A0E9',
     fontWeight: 'bold',
     textAlignVertical: 'center',
     textAlign: 'center',
-    fontSize: 14 * scale,
+    fontSize: 14,
     paddingVertical: 5,
   },
 });

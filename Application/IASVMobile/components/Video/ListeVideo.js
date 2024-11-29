@@ -1,17 +1,15 @@
-// ListeVideo.js
 import React, { useState } from 'react';
 import {
   View,
   Text,
   TouchableOpacity,
   StyleSheet,
-  Share,
-  Image,
 } from 'react-native';
-import Video from 'react-native-video';
 import { TabView, SceneMap } from 'react-native-tab-view';
+import MatchComplet from './MatchComplet'; // Import du composant MatchComplet
+import MatchResume from './MatchResume';   // Import du composant MatchResume
 import StatsEquipes from './StatsEquipes';
-import StatsJoueurs from './StatsJoueurs';  // Importation de StatsJoueurs
+import StatsJoueurs from './StatsJoueurs';
 
 const scale = 0.85;
 
@@ -23,80 +21,13 @@ const ListeVideo = ({ selectedVideo, resumeVideoUrl }) => {
     { key: 'statsEquipes', title: 'STATS EQUIPES' },
     { key: 'statsJoueurs', title: 'STATS JOUEURS' },
   ]);
-  const [shareVisible, setShareVisible] = useState(false);
-
-  const renderVideoScene = () => (
-    <View style={styles.videoContainer}>
-      {selectedVideo ? (
-        <Video
-          source={{ uri: selectedVideo.url }}
-          style={styles.video}
-          resizeMode="cover"
-          controls
-        />
-      ) : (
-        <Text style={styles.noContentText}>Aucune vidéo sélectionnée.</Text>
-      )}
-    </View>
-  );
-
-  const renderResumeScene = () => (
-    <View style={styles.videoContainer}>
-      {selectedVideo ? (
-        <>
-          <Video
-            source={{ uri: selectedVideo.url }}
-            style={styles.video}
-            resizeMode="cover"
-            controls
-          />
-          <View style={styles.shareButtonsContainer}>
-            {shareVisible && (
-              <View style={styles.socialMediaButtons}>
-                <TouchableOpacity onPress={shareOnSocialMedia}>
-                  <Text style={styles.shareButtonText}>Partager</Text>
-                </TouchableOpacity>
-              </View>
-            )}
-          </View>
-        </>
-      ) : (
-        <Text style={styles.noContentText}>Aucune vidéo sélectionnée.</Text>
-      )}
-    </View>
-  );
-
-  const renderStatsEquipesScene = () => <StatsEquipes />;
-  const renderStatsJoueursScene = () => <StatsJoueurs />;
 
   const renderScene = SceneMap({
-    video: renderVideoScene,
-    resume: renderResumeScene,
-    statsEquipes: renderStatsEquipesScene,
-    statsJoueurs: renderStatsJoueursScene,
+    video: () => <MatchComplet selectedVideo={selectedVideo} />, // Utilisation du composant MatchComplet
+    resume: () => <MatchResume selectedVideo={selectedVideo} />, // Utilisation du composant MatchComplet
+    statsEquipes: () => <StatsEquipes />,
+    statsJoueurs: () => <StatsJoueurs />,
   });
-
-  const shareOnSocialMedia = async () => {
-    let urlToShare;
-    if (index === 0 && selectedVideo) {
-      urlToShare = selectedVideo.url;
-    } else if (index === 1) {
-      urlToShare = resumeVideoUrl;
-    }
-
-    if (!urlToShare) {
-      alert('Aucune vidéo disponible à partager.');
-      return;
-    }
-
-    try {
-      await Share.share({
-        message: `Check this out: ${urlToShare}`,
-      });
-    } catch (error) {
-      alert(error.message);
-    }
-  };
 
   return (
     <View style={styles.resultatContainer}>
@@ -133,7 +64,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     marginBottom: 30 * scale,
     borderBottomWidth: 2 * scale,
-    borderBottomColor: '#00BFFF',
+    borderBottomColor: '#00A0E9',
   },
   button: {
     flex: 1,
@@ -143,7 +74,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   activeButton: {
-    color: '#00BFFF',
+    color: '#00A0E9',
   },
   buttonText: {
     color: '#ffffff',
@@ -152,7 +83,7 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
   activeButtonText: {
-    color: '#00BFFF',
+    color: '#00A0E9',
     fontWeight: 'bold',
   },
   activeIndicator: {
@@ -160,40 +91,7 @@ const styles = StyleSheet.create({
     bottom: -2 * scale,
     width: '100%',
     height: 3 * scale,
-    backgroundColor: '#00BFFF',
-  },
-  videoContainer: {
-    alignItems: 'center',
-    marginBottom: 20 * scale,
-    borderRadius: 10 * scale,
-    overflow: 'hidden',
-    padding: 10 * scale,
-  },
-  video: {
-    width: '100%',
-    height: 200 * scale,
-    borderRadius: 10 * scale,
-  },
-  shareButtonsContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    marginTop: 10 * scale,
-    width: '100%',
-  },
-  socialMediaButtons: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginTop: 10 * scale,
-  },
-  noContentText: {
-    color: '#FFFFFF',
-    textAlign: 'center',
-    marginTop: 20 * scale,
-    fontSize: 16 * scale,
-  },
-  shareButtonText: {
-    color: '#00BFFF',
-    fontWeight: 'bold',
+    backgroundColor: '#00A0E9',
   },
 });
 
