@@ -100,7 +100,7 @@ function StatsContent() {
   if (loading) {
     return (
       <View style={styles.centered}>
-        <ActivityIndicator size="large" color="#00BFFF" />
+        <ActivityIndicator size="large" color="#00A0E9" />
         <Text style={styles.loadingText}>Chargement des statistiques...</Text>
       </View>
     );
@@ -116,10 +116,14 @@ function StatsContent() {
   }
 
   return (
-    <ScrollView style={{ flex: 1 }}>
+    <ScrollView style={{ flex: 1 }}
+    showsVerticalScrollIndicator={false} // Masquer la scrollbar verticale
+    >
       <View style={styles.statsContainer}>
                 {/* Podium des 3 premières équipes */}
-                <View style={styles.statBlock}>
+        <View style={styles.statBlock}>
+        
+        
           <View style={styles.podiumContainer}>
             {/* Deuxième : À gauche */}
             <View style={[styles.podiumItem, styles.secondPlace]}>
@@ -136,6 +140,8 @@ function StatsContent() {
               <Text style={styles.thirdPlace}>{topThree[2]?.teamName}</Text>
             </View>
           </View>
+
+          
           <Image source={require('../../assets/podium.png')} style={styles.statsImagepe} />
         </View>
         
@@ -257,11 +263,11 @@ const styles = StyleSheet.create({
   },
   errorText: {
     color: 'red',
-    fontSize: 18,
+    fontSize: 14,
   },
   loadingText: {
     color: '#000',
-    fontSize: 18,
+    fontSize: 14,
   },
   statsContainer: {
     marginTop: 10,
@@ -276,7 +282,7 @@ const styles = StyleSheet.create({
     marginVertical: 10,
   },
   statCategory: {
-    fontSize: 20 * scale,
+    fontSize: 16 * scale,
     fontWeight: 'bold',
     color: '#fff',
     textAlign: 'center',
@@ -292,21 +298,21 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   statTitle: {
-    fontSize: 19 * scale,
+    fontSize: 14 ,
     fontWeight: 'bold',
     color: '#640914',
     textAlign: 'center',
     marginBottom: 10,
   },  
   statTitlev: {
-    fontSize: 19 * scale,
+    fontSize: 14,
     fontWeight: 'bold',
     color: '#016D14',
     textAlign: 'center',
     marginBottom: 10,
   },
   statsText: {
-    fontSize: 15 * scale,
+    fontSize: 14 * scale,
     color: '#ffffff',
     textAlign: 'center',
     fontWeight: 'bold',
@@ -353,43 +359,52 @@ const styles = StyleSheet.create({
   },
   worstStatBlock: {
     padding: 10,
-  },
+  },  
   podiumContainer: {
     flexDirection: 'row',
-    justifyContent: 'space-around',
-    alignItems: 'center',
+    justifyContent: 'space-around', // Répartition équitable des podiums
+    alignItems: 'flex-end', // Aligner les podiums en bas pour un effet visuel harmonieux
     marginTop: 10,
   },
   podiumItem: {
+    flex: 1, // Chaque podium prend un tiers de la largeur
+    alignItems: 'center', // Centrer le contenu horizontalement
+    marginHorizontal: 5, // Espacement entre les podiums
     borderRadius: 8,
     shadowColor: '#000',
     shadowOpacity: 0.8,
     shadowRadius: 6,
     shadowOffset: { width: 0, height: 2 },
+    padding: 5, // Ajout de padding pour contenir le texte
   },
   firstPlace: {
-    color: '#FFD700', // Texte en noir
-    zIndex: 3,
-    fontSize: 18 * scale,
-    paddingHorizontal :2,
-    justifyContent: 'flex-start',
+    color: '#FFD700',
+    fontSize: 14,
     fontWeight: 'bold',
-    height:50,
+    height: 60, // Hauteur maximale pour le podium de première place
+    justifyContent: 'flex-start',
   },
   secondPlace: {
-    zIndex: 2,
     color: '#C0C0C0',
-    fontSize: 18 * scale,
-    height:30,
-    justifyContent: 'center',
+    fontSize: 14,
     fontWeight: 'bold',
+    height: 50, // Hauteur légèrement inférieure pour la deuxième place
+    justifyContent: 'center',
   },
   thirdPlace: {
     color: '#CD7F32',
-    fontSize: 18 * scale,
-    justifyContent: 'flex-end',
-    height:18,
+    fontSize: 14,
     fontWeight: 'bold',
+    height: 40, // Hauteur la plus basse pour la troisième place
+    justifyContent: 'flex-end',
+  },
+  podiumText: {
+    fontSize: 14, // Taille de texte unifiée
+    fontWeight: 'bold',
+    textAlign: 'center',
+    paddingHorizontal: 2, // Espacement interne pour éviter les débordements
+    numberOfLines: 1, // Limite le texte à une ligne
+    ellipsizeMode: 'tail', // Ajout des points de suspension pour les textes trop longs
   },
 });
 

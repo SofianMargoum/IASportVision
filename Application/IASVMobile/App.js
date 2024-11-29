@@ -40,9 +40,9 @@ const Main = ({ windowWidth }) => {
   const { setSelectedClub, setClNo, setCompetition } = useClubContext();
   const [index, setIndex] = useState(2); // Définit "Video" comme onglet par défaut
   const [routes] = useState([
-    { key: 'home', title: 'Home' },
-    { key: 'resultat', title: 'Resultat' },
     { key: 'video', title: 'Video' },
+    { key: 'resultat', title: 'Resultat' },
+    { key: 'home', title: 'Home' },
     { key: 'explore', title: 'Explore' },
     { key: 'profile', title: 'Profile' },
   ]);
@@ -70,9 +70,9 @@ const Main = ({ windowWidth }) => {
   }, [setSelectedClub, setClNo, setCompetition]);
 
   const renderScene = SceneMap({
-    home: Home,
-    resultat: Resultat,
     video: Video,
+    resultat: Resultat,
+    home: Home,
     explore: Explore,
     profile: Profile,
   });
@@ -98,9 +98,9 @@ const Main = ({ windowWidth }) => {
 const BottomTabNavigator = ({ index, setIndex }) => (
   <View style={styles.tabBarStyle}>
     {[
-      { name: 'Home', icon: 'home' },
-      { name: 'Resultat', icon: 'trophy' },
       { name: 'Video', icon: 'video-camera' },
+      { name: 'Resultat', icon: 'trophy' },
+      { name: 'Home', icon: 'home' },
       { name: 'Explore', icon: 'search' },
       { name: 'Profile', icon: 'user' },
     ].map((route, i) => (
@@ -147,7 +147,7 @@ const TabIcon = ({ icon, focused, onPress }) => (
     <Icon
       name={icon}
       size={focused ? 30 * scale : 25 * scale}
-      color={focused ? '#00BFFF' : '#ffffff'}
+      color={focused ? '#00A0E9' : '#ffffff'}
     />
   </TouchableOpacity>
 );
@@ -165,7 +165,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     width: '100%',
     marginBottom: 5,
-    shadowColor: '#00BFFF',
+    shadowColor: '#00A0E9',
     shadowOpacity: 0.1,
     shadowOffset: { width: 0, height: 5 },
     shadowRadius: 6,

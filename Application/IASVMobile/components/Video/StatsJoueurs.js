@@ -3,27 +3,70 @@ import { View, Image, Text, StyleSheet, FlatList, ScrollView, TouchableOpacity }
 
 const scale = 0.85;
 
-// Liste des joueurs (même pour les deux équipes)
+// Liste des joueurs avec des statistiques pour chaque équipe
 const joueurStats = Array.from({ length: 14 }, (_, i) => ({
   id: (i + 1).toString(),
   nom: `Joueur ${i + 1}`,
-  buts: Math.floor(Math.random() * 6),
-  passesDecisives: Math.floor(Math.random() * 4),
-  tirs: Math.floor(Math.random() * 5),
-  precisionTirs: Math.floor(Math.random() * 100),
-  passes: Math.floor(Math.random() * 5),
-  precisionPasses: Math.floor(Math.random() * 100),
-  dribles: Math.floor(Math.random() * 5),
-  precisionDribles: Math.floor(Math.random() * 100),
-  tacles: Math.floor(Math.random() * 7),
-  taclesReussis: Math.floor(Math.random() * 100),
-  horsJeu: Math.floor(Math.random() * 3),
-  fautesComises: Math.floor(Math.random() * 3),
-  ballonRecuperes: Math.floor(Math.random() * 5),
-  ballonPerdus: Math.floor(Math.random() * 5),
-  distanceParcourue: (Math.random() * 10 + 6).toFixed(2),
-  tempsJeu: `${70 + Math.floor(Math.random() * 21)} min`
+  statsVidauban: {
+    nom: `Sofian M`,
+    buts: Math.floor(Math.random() * 6),
+    passesDecisives: Math.floor(Math.random() * 4),
+    tirs: Math.floor(Math.random() * 5),
+    precisionTirs: Math.floor(Math.random() * 100),
+    passes: Math.floor(Math.random() * 5),
+    precisionPasses: Math.floor(Math.random() * 100),
+    dribles: Math.floor(Math.random() * 5),
+    precisionDribles: Math.floor(Math.random() * 100),
+    tacles: Math.floor(Math.random() * 7),
+    taclesReussis: Math.floor(Math.random() * 100),
+    horsJeu: Math.floor(Math.random() * 3),
+    fautesComises: Math.floor(Math.random() * 3),
+    ballonRecuperes: Math.floor(Math.random() * 5),
+    ballonPerdus: Math.floor(Math.random() * 5),
+    distanceParcourue: (Math.random() * 10 + 6).toFixed(2),
+    tempsJeu: `${70 + Math.floor(Math.random() * 21)} min`,
+  },
+  statsArcoise: {
+    nom: `Amine M`,
+    buts: Math.floor(Math.random() * 6),
+    passesDecisives: Math.floor(Math.random() * 4),
+    tirs: Math.floor(Math.random() * 5),
+    precisionTirs: Math.floor(Math.random() * 100),
+    passes: Math.floor(Math.random() * 5),
+    precisionPasses: Math.floor(Math.random() * 100),
+    dribles: Math.floor(Math.random() * 5),
+    precisionDribles: Math.floor(Math.random() * 100),
+    tacles: Math.floor(Math.random() * 7),
+    taclesReussis: Math.floor(Math.random() * 100),
+    horsJeu: Math.floor(Math.random() * 3),
+    fautesComises: Math.floor(Math.random() * 3),
+    ballonRecuperes: Math.floor(Math.random() * 5),
+    ballonPerdus: Math.floor(Math.random() * 5),
+    distanceParcourue: (Math.random() * 10 + 6).toFixed(2),
+    tempsJeu: `${70 + Math.floor(Math.random() * 21)} min`,
+  },
 }));
+
+// Fonction pour obtenir dynamiquement l'image du joueur
+const getImageSource = (id) => {
+  switch (id) {
+    case '1': return require('../../assets/joueur-1.png');
+    case '2': return require('../../assets/joueur-2.png');
+    case '3': return require('../../assets/joueur-3.png');
+    case '4': return require('../../assets/joueur-4.png');
+    case '5': return require('../../assets/joueur-5.png');
+    case '6': return require('../../assets/joueur-6.png');
+    case '7': return require('../../assets/joueur-7.png');
+    case '8': return require('../../assets/joueur-8.png');
+    case '9': return require('../../assets/joueur-9.png');
+    case '10': return require('../../assets/joueur-10.png');
+    case '11': return require('../../assets/joueur-11.png');
+    case '12': return require('../../assets/joueur-12.png');
+    case '13': return require('../../assets/joueur-13.png');
+    case '14': return require('../../assets/joueur-14.png');
+    default: return require('../../assets/joueur-7.png'); // Image par défaut si le joueur n'existe pas
+  }
+};
 
 const StatsJoueurs = () => {
   const [selectedJoueur, setSelectedJoueur] = useState(joueurStats[0]); // Joueur initialement sélectionné
@@ -31,10 +74,8 @@ const StatsJoueurs = () => {
   const renderItem = ({ item }) => (
     <TouchableOpacity onPress={() => setSelectedJoueur(item)}>
       <View style={[styles.joueurItem, selectedJoueur.id === item.id && styles.selectedJoueurItem]}>
-      <Text style={[styles.joueurNom, selectedJoueur.id === item.id && styles.selectedJoueurNom]}>
-          {item.nom}
-        </Text>
-        <Image source={require('../../assets/joueur-7.png')} style={styles.statsImage} />
+        
+        <Image source={getImageSource(item.id)} style={styles.statsImage} />
       </View>
     </TouchableOpacity>
   );
@@ -43,7 +84,7 @@ const StatsJoueurs = () => {
     <View style={styles.container}>
       <View style={styles.playerListContainer}>
         <FlatList
-          data={joueurStats} // Liste commune des joueurs
+          data={joueurStats} // Liste des joueurs
           keyExtractor={(item) => item.id}
           renderItem={renderItem}
           horizontal={true}
@@ -55,17 +96,21 @@ const StatsJoueurs = () => {
         <View style={[styles.hr, { backgroundColor: '#fff', opacity: 0.1 }]} />
       </View>
 
-      <ScrollView style={styles.statCardContainer}>
+      <ScrollView
+        style={styles.statCardContainer}
+        showsVerticalScrollIndicator={false}
+      >
         {selectedJoueur ? (
           <View style={styles.statCard}>
             <View style={styles.table}>
               <View style={styles.tableRow}>
-                <Text style={styles.tableHeader}>Equipe A</Text>
-                <Text style={styles.tableHeader}>Statistiques</Text>
-                <Text style={styles.tableHeader}>Equipe B</Text>
+                <Text style={styles.tableHeader}>F.C. VIDAUBAN</Text>
+                <Text style={styles.tableHeader}>-</Text>
+                <Text style={styles.tableHeader}>A.S. ARCOISE</Text>
               </View>
 
-              {[
+              {[ // Liste des statistiques à afficher
+                ['Joueur', 'nom'],
                 ['Buts', 'buts'],
                 ['Passes décisives', 'passesDecisives'],
                 ['Tirs', 'tirs'],
@@ -84,9 +129,9 @@ const StatsJoueurs = () => {
                 ['Temps de jeu', 'tempsJeu'],
               ].map(([title, key], index) => (
                 <View style={styles.tableRow} key={index}>
-                  <Text style={styles.tableCell}>{selectedJoueur[key]}</Text>
+                  <Text style={styles.tableCell}>{selectedJoueur.statsVidauban[key]}</Text>
                   <Text style={styles.tableCell}>{title}</Text>
-                  <Text style={styles.tableCell}>{selectedJoueur[key]}</Text>
+                  <Text style={styles.tableCell}>{selectedJoueur.statsArcoise[key]}</Text>
                 </View>
               ))}
             </View>
@@ -109,7 +154,6 @@ const styles = StyleSheet.create({
   hr: {
     height: 2,
     width: '100%',
-    marginVertical: 1,
   },
   playerListContainer: {
     position: 'relative',
@@ -145,26 +189,25 @@ const styles = StyleSheet.create({
   },
   statCardContainer: {
     borderRadius: 8,
-    marginBottom: 16,
   },
   statCard: {
     padding: 16,
     borderRadius: 8,
   },
-  table: {
-    marginTop: 10,
-  },
   tableRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     padding: 10,
+    borderBottomColor: '#001A31',
+    borderBottomWidth: 1,
   },
   tableHeader: {
     fontWeight: 'bold',
-    fontSize: 14,
-    color: '#fff',
+    fontSize: 16,
+    color: '#00A0E9',
     width: '33%',
     textAlign: 'center',
+    marginBottom : 10,
   },
   tableCell: {
     fontSize: 14,

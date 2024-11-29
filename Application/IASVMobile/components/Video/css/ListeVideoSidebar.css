@@ -1,5 +1,5 @@
 :root {
-  --primary-color: #00BFFF;
+  --primary-color: #00A0E9;
   --dark-bg: #001A31;
   --text-color: #ffffff;
   --shadow-color: rgba(0, 0, 0, 0.4);
@@ -109,13 +109,13 @@
   overflow-y: auto;
   width: auto; 
   text-align: center;
-  color: #00BFFF;
+  color: #00A0E9;
   font-weight: bold;
 }
 /* Liste des titres de vidéos */
 .liste-videoSidebar-titles-header{
   margin-bottom: 30px;
-  border-bottom: 2px solid #00BFFF;
+  border-bottom: 2px solid #00A0E9;
 
   
   padding: 12px 16px;

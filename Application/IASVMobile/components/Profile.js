@@ -90,7 +90,7 @@ const styles = StyleSheet.create({
     width: '80%',
     padding: 20 * scale, // Échelle appliquée ici
     borderRadius: 10,
-    shadowColor: '#00BFFF',
+    shadowColor: '#00A0E9',
     shadowOpacity: 0.1,
     shadowOffset: { width: 0, height: 2 },
     shadowRadius: 10,
@@ -125,7 +125,7 @@ const styles = StyleSheet.create({
     borderColor: '#001A31',
     alignItems: 'center',
     borderRadius: 10,
-    shadowColor: '#00BFFF',
+    shadowColor: '#00A0E9',
     shadowOpacity: 1,
     elevation: 3,
     backgroundColor: '#010914',

@@ -103,7 +103,7 @@ const ListeVideoSidebar = ({ onVideoSelect }) => {
 
   return (
     <View style={styles.container}>
-      {loading && <ActivityIndicator size="large" color="#00BFFF" />}
+      {loading && <ActivityIndicator size="large" color="#00A0E9" />}
       {error && <Text style={styles.errorMessage}>{error}</Text>}
       {!loading && !error && (
         <FlatList
@@ -113,6 +113,7 @@ const ListeVideoSidebar = ({ onVideoSelect }) => {
           ListEmptyComponent={<Text style={styles.noVideos}>Aucune vidéo disponible</Text>}
           ListHeaderComponent={<Text style={styles.header}></Text>}
           contentContainerStyle={styles.listContent}
+          showsVerticalScrollIndicator={false} // Masquer la scrollbar verticale
         />
       )}
     </View>
