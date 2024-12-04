@@ -1618,6 +1618,13 @@
   dependencies:
     color "^4.2.3"
 
+"@react-navigation/elements@^2.2.0":
+  version "2.2.0"
+  resolved "https://registry.npmjs.org/@react-navigation/elements/-/elements-2.2.0.tgz"
+  integrity sha512-+DIVCwaJsVCk/yPf5N1NKyRkQ8/jrLh8FRfqgzxAygrOgAYuqI6cZGvAJvOhNTbbgek1Lq1J2UOWn1wIDxPwag==
+  dependencies:
+    color "^4.2.3"
+
 "@react-navigation/native-stack@^7.0.0":
   version "7.0.0"
   resolved "https://registry.npmjs.org/@react-navigation/native-stack/-/native-stack-7.0.0.tgz"
@@ -1642,6 +1649,14 @@
   integrity sha512-lTM8gSFHSfkJvQkxacGM6VJtBt61ip2XO54aNfswD+KMw6eeZ4oehl7m0me3CR9hnDE4+60iAZR8sAhvCiI3NA==
   dependencies:
     nanoid "^3.1.23"
+
+"@react-navigation/stack@^7.0.14":
+  version "7.0.14"
+  resolved "https://registry.npmjs.org/@react-navigation/stack/-/stack-7.0.14.tgz"
+  integrity sha512-EuTf/nOaURQ6lg2LoiIWZkngfSBe4oUHJulZFSuFeopHvhW2NiuZZJHi18WYhZUSjgHfYwn6RueCOJDcZNzB/w==
+  dependencies:
+    "@react-navigation/elements" "^2.2.0"
+    color "^4.2.3"
 
 "@sideway/address@^4.1.5":
   version "4.1.5"

@@ -1,201 +1,79 @@
 import { StyleSheet } from 'react-native';
 
-const styles = StyleSheet.create({
-  homeMain: {
-    width: '100%', // Prend toute la largeur
-    maxWidth: 300, // Limite la largeur
-    height: '80%', // Prend 80% de la hauteur
-    marginTop: 40,
-    overflow: 'hidden',
-    position: 'relative',
-    marginBottom: 0,
+const scale = 0.85;
+
+export const styles = StyleSheet.create({
+  appContainer: {
+    flex: 1,
+    backgroundColor: '#010914',
   },
-  tabContent: {
-    padding: 8,
-    backgroundColor: '#001A31', // Bleu foncé
-    color: '#fff', // Texte blanc
-    borderRadius: 8,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    maxWidth: '100%',
-    width: '100%',
-    maxHeight: '100%',
-    boxSizing: 'border-box',
-    overflowY: 'scroll',
-  },
-  homeContainer: {
-    backgroundColor: '#010E1E', // Fond général
-    color: '#fff', // Texte blanc
-    padding: 20,
-    borderRadius: 8,
-    maxWidth: 300,
-    marginVertical: 1,
-    height: '95%',
-    position: 'relative',
-    overflow: 'hidden',
-    borderColor: '#001A31',
-    borderWidth: 1,
-    shadowColor: '#001A31',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.15,
-    shadowRadius: 12,
-  },
-  topSection: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    borderRadius: 6,
-    backgroundColor: '#001A31',
-    marginBottom: 5,
-    marginTop: 5,
-    width: 300,
-    height: 100,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.15,
-    shadowRadius: 6,
-  },
-  selectedClubInfo: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#001A31',
+  header: {
     padding: 10,
-    marginBottom: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: '100%',
+    marginBottom: 5,
+    shadowColor: '#00A0E9',
+    shadowOpacity: 0.1,
+    shadowOffset: { width: 0, height: 5 },
+    shadowRadius: 6,
+    elevation: 3,
+    backgroundColor: '#010914',
   },
-  selectedClubLogo: {
-    width: 30,
-    height: 30,
-    borderRadius: 50,
-    marginRight: 10,
-    resizeMode: 'cover',
+  logoMain: {
+    position: 'absolute',
+    left: 0,
+    opacity: 0.2,
   },
-  selectedClubName: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#fff',
+  logo: {
+    width: 2500 * scale,
+    height: 50 * scale,
+    resizeMode: 'contain',
   },
-  mainSection: {
+  selectedClubLabel: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 15 * scale,
+  },
+  clubLogo: {
+    width: 50 * scale,
+    height: 50 * scale,
+    borderRadius: 25 * scale,
+    marginRight: 15 * scale,
+  },
+  selectedClubText: {
+    flexDirection: 'column',
     alignItems: 'flex-start',
   },
-  inputContainer: {
-    flexDirection: 'column',
-    flex: 1,
-    backgroundColor: '#001A31',
-    position: 'relative',
-  },
-  inputSection: {
-    flexDirection: 'column',
-    backgroundColor: '#001A31',
-    width: '100%',
-    marginBottom: 10,
-  },
-  inputText: {
-    width: '100%',
-    paddingVertical: 5,
-    paddingHorizontal: 20,
-    fontSize: 16,
-    borderColor: '#ddd',
-    backgroundColor: '#001A31',
-    color: '#fff',
-    borderWidth: 0,
-    boxSizing: 'border-box',
-    transition: 'background-color 0.3s ease',
-  },
-  searchResults: {
-    position: 'absolute',
-    width: '100%',
-    top: '100%',
-    left: 0,
-    backgroundColor: '#fff',
-    borderColor: '#ddd',
-    borderWidth: 1,
-    borderRadius: 6,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.15,
-    shadowRadius: 6,
-  },
-  searchResultItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 10,
-    borderBottomColor: '#ddd',
-    borderBottomWidth: 1,
-    cursor: 'pointer', // Ceci est un style spécifique au web, pas supporté par React Native
-  },
-  searchResultItemHovered: {
-    backgroundColor: '#f0f0f0',
-  },
-  resultLogo: {
-    width: 30,
-    height: 30,
-    borderRadius: 50,
-    marginRight: 10,
-    resizeMode: 'cover',
-  },
-  resultName: {
-    fontSize: 16,
-    color: '#333',
-    flexShrink: 1, // Pour gérer le texte long
-  },
-  counterContainer: {
-    flexDirection: 'column',
-    alignItems: 'center',
-    backgroundColor: '#001A31',
-    padding: 5,
-  },
-  counterLabel: {
-    fontSize: 20,
-    marginVertical: 10,
+  clubName: {
+    fontSize: 18 * scale,
     fontWeight: 'bold',
+    color: '#fff',
   },
-  buttonContainer: {
+  competitionLabel: {
+    fontSize: 14 * scale,
+    fontStyle: 'italic',
+    color: '#ffffff',
+  },
+  tabBarStyle: {
+    backgroundColor: '#010E1E',
+    borderTopWidth: 0,
+    height: 60 * scale,
     flexDirection: 'row',
-    justifyContent: 'center',
-    position: 'absolute',
-    bottom: 2,
-    width: '100%',
+    justifyContent: 'space-around',
+    alignItems: 'center',
   },
-  buttonPause: {
-    width: 80,
-    height: 80,
-    borderWidth: 20,
-    borderColor: '#fff',
-    borderTopLeftRadius: 50,
-    borderBottomLeftRadius: 50,
+  iconContainer: {
+    flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    fontSize: 40,
-    backgroundColor: '#fff',
-    color: 'red',
+    width: '100%', // Pour s'assurer que l'icône occupe toute la largeur de son conteneur
+    height: '100%', // Pour remplir la hauteur du conteneur
   },
-  buttonAction: {
-    width: 80,
-    height: 80,
-    borderRadius: 50,
-    backgroundImage: 'url("action.PNG")', // Les images sont gérées différemment en React Native, utilise require() si c'est un fichier local
-    backgroundSize: 'cover',
-    transition: 'transform 0.3s ease',
-  },
-  timer: {
-    fontSize: 16,
-    marginTop: 20,
-    color: '#555',
-  },
-  message: {
-    fontSize: 14,
-    marginTop: 20,
-    padding: 10,
-    backgroundColor: '#001A31',
-    color: '#fff',
-    borderLeftWidth: 4,
-    borderLeftColor: '#007bff',
-    borderRadius: 6,
-    textAlign: 'center',
+  iconActive: {
+    backgroundColor: '#001F3F', // Exemple de fond actif (modifiable selon vos besoins)
+    borderRadius: 10, // Exemple pour adoucir les angles
   },
 });
 

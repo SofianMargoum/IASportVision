@@ -10,7 +10,7 @@ function StatsContent() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  const { selectedClub, competition } = useClubContext();
+  const { selectedClub, competition, phase, poule, cp_no } = useClubContext();
 
   // Statistiques supplémentaires
   const [bestAttack, setBestAttack] = useState(null);
@@ -35,15 +35,7 @@ function StatsContent() {
       }
 
       try {
-        const matches = await fetchMatchesForClub(selectedClub.cl_no);
-        const foundMatch = matches.find(match => match.competitionName === competition);
-
-        if (!foundMatch) {
-          throw new Error('Aucun match trouvé pour la compétition sélectionnée.');
-        }
-
-        const { competitionNumber, phaseNumber, pouleNumber } = foundMatch;
-        const classementsData = await fetchClassementJournees(competitionNumber, phaseNumber, pouleNumber);
+        const classementsData = await fetchClassementJournees(cp_no, phase, poule);
 
         // Calcul des statistiques supplémentaires
         setBestAttack(findBestAttack(classementsData));
@@ -57,7 +49,6 @@ function StatsContent() {
         const sortedTeams = classementsData.sort((a, b) => b.points - a.points); // Trie par points
         setTopThree(sortedTeams.slice(0, 3)); // Les trois premières équipes
       } catch (error) {
-        console.error("Error fetching data:", error);
         setError(error);
       } finally {
         setLoading(false);
@@ -85,17 +76,21 @@ function StatsContent() {
   };
 
   const findMostBalanced = (data) => {
-    return data.reduce((prev, curr) => (
-      Math.abs(curr.goalDifference) < Math.abs(prev.goalDifference) ? curr : prev
-    ), data[0]);
+    return data.reduce((prev, curr) => {
+      const prevDifference = prev.goalsFor - prev.goalsAgainst;
+      const currDifference = curr.goalsFor - curr.goalsAgainst;
+      return currDifference > prevDifference ? { ...curr, goalDifference: currDifference } : { ...prev, goalDifference: prevDifference };
+    }, { ...data[0], goalDifference: data[0].goalsFor - data[0].goalsAgainst });
   };
-
+  
   const findLeastBalanced = (data) => {
-    return data.reduce((prev, curr) => (
-      Math.abs(curr.goalDifference) > Math.abs(prev.goalDifference) ? curr : prev
-    ), data[0]);
+    return data.reduce((prev, curr) => {
+      const prevDifference = prev.goalsFor - prev.goalsAgainst;
+      const currDifference = curr.goalsFor - curr.goalsAgainst;
+      return currDifference < prevDifference ? { ...curr, goalDifference: currDifference } : { ...prev, goalDifference: prevDifference };
+    }, { ...data[0], goalDifference: data[0].goalsFor - data[0].goalsAgainst });
   };
-
+  
   // Affichage si les données sont en cours de chargement
   if (loading) {
     return (
@@ -381,6 +376,7 @@ const styles = StyleSheet.create({
     color: '#FFD700',
     fontSize: 14,
     fontWeight: 'bold',
+    textAlign: 'center',
     height: 60, // Hauteur maximale pour le podium de première place
     justifyContent: 'flex-start',
   },
@@ -388,12 +384,14 @@ const styles = StyleSheet.create({
     color: '#C0C0C0',
     fontSize: 14,
     fontWeight: 'bold',
+    textAlign: 'center',
     height: 50, // Hauteur légèrement inférieure pour la deuxième place
     justifyContent: 'center',
   },
   thirdPlace: {
     color: '#CD7F32',
     fontSize: 14,
+    textAlign: 'center',
     fontWeight: 'bold',
     height: 40, // Hauteur la plus basse pour la troisième place
     justifyContent: 'flex-end',

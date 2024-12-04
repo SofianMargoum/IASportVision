@@ -10,7 +10,7 @@ const MatchsContent = () => {
   const [loading, setLoading] = useState(true); // État pour suivre le statut de chargement
   const [error, setError] = useState(null); // État pour gérer les erreurs lors de la récupération des données
 
-  const { selectedClub, competition } = useClubContext(); // Récupère le club et la compétition depuis le contexte
+  const { selectedClub, competition,phase,poule,cp_no } = useClubContext(); // Récupère le club et la compétition depuis le contexte
 
   useEffect(() => {
     const loadMatches = async () => {
@@ -18,8 +18,7 @@ const MatchsContent = () => {
       try {
         // Vérifie si le club est bien défini avant de faire l'appel API
         if (selectedClub?.cl_no) {
-          const data = await fetchMatchesForClub(selectedClub.cl_no); // Appel API pour récupérer les matchs
-          console.log(data); // Debug: Affiche les données récupérées
+          const data = await fetchMatchesForClub(cp_no, phase, poule, selectedClub.cl_no); // Appel API pour récupérer les matchs
           setMatches(data); // Met à jour l'état avec les données récupérées
         }
       } catch (error) {
@@ -38,15 +37,12 @@ const MatchsContent = () => {
     return () => {
       setMatches([]); // Réinitialise les matchs lors du démontage
     };
-  }, [selectedClub]); // Le hook s'exécute à chaque changement de selectedClub
+  }, [selectedClub, competition]); // Ajout de `competition` comme dépendance
+
 
   // Filtrer les matchs en fonction du club et de la compétition sélectionnés
-  const filteredMatches = useMemo(() => {
-    return matches.filter(match => (
-      (match.homeTeam.trim() === selectedClub?.name.trim() && match.homeCompetitionName === competition) ||
-      (match.awayTeam.trim() === selectedClub?.name.trim() && match.awayCompetitionName === competition)
-    ));
-  }, [matches, selectedClub?.name, competition]); // Se met à jour lorsque matches, selectedClub ou competition changent
+  const filteredMatches = matches; // Pas de filtrage, on garde tous les matchs
+ // Se met à jour lorsque matches, selectedClub ou competition changent
 
   // Affiche un indicateur de chargement pendant que les données sont récupérées
   if (loading) {

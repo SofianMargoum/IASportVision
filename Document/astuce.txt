@@ -128,3 +128,38 @@ sidebar:
     borderBottomColor: '#00BFFF',
     textAlign: 'center',
   },
+  
+  
+  
+  keytool -list -v -keystore C:\perso\IA_Sport_Vision\Application\IASVMobile\android\app\release-key.keystore -alias myappkey -storepass SofianISAV -keypass SofianISAV
+C:\perso\IA_Sport_Vision\Application\IASVMobile\android\app\build\outputs\apk\release>keytool -list -v -keystore C:\perso\IA_Sport_Vision\Application\IASVMobile\android\app\release-key.keystore -alias myappkey -storepass SofianISAV -keypass SofianISAV
+Alias name: myappkey
+Creation date: 25 oct. 2024
+Entry type: PrivateKeyEntry
+Certificate chain length: 1
+Certificate[1]:
+Owner: CN=Sofian, OU=Margoum, O=ISAV, L=Miramas, ST=france, C=fr
+Issuer: CN=Sofian, OU=Margoum, O=ISAV, L=Miramas, ST=france, C=fr
+Serial number: 12f3dcb2091f3b5
+Valid from: Fri Oct 25 16:25:23 CEST 2024 until: Tue Mar 12 15:25:23 CET 2052
+Certificate fingerprints:
+         SHA1: CB:B6:87:50:A5:6E:2E:F1:A9:8D:02:80:B2:4F:EE:EF:CD:A9:7A:3D
+         SHA256: D6:7C:64:A2:A1:1E:6B:6C:72:7F:FF:65:F7:10:E6:9B:5A:3D:4B:9A:73:5E:60:80:A7:47:B9:73:41:A8:29:AD
+Signature algorithm name: SHA256withRSA
+Subject Public Key Algorithm: 2048-bit RSA key
+Version: 3
+
+Extensions:
+
+#1: ObjectId: 2.5.29.14 Criticality=false
+SubjectKeyIdentifier [
+KeyIdentifier [
+0000: 5E 1E 0C 35 8D 02 A1 09   30 35 C8 96 4E A1 B0 F3  ^..5....05..N...
+0010: B5 8D 90 33                                        ...3
+]
+]
+
+
+
+maps
+cle AIzaSyB0JkX454knbN_YXXrin1ToZnQAXa0A7dc

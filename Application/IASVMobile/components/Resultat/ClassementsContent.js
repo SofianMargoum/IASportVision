@@ -10,7 +10,7 @@ function ClassementsContent() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  const { selectedClub, competition } = useClubContext();
+  const { selectedClub, competition, phase, poule, cp_no } = useClubContext();
 
   useEffect(() => {
     const loadClassements = async () => {
@@ -25,18 +25,9 @@ function ClassementsContent() {
       }
 
       try {
-        const matches = await fetchMatchesForClub(selectedClub.cl_no);
-        const foundMatch = matches.find(match => match.competitionName === competition);
-
-        if (!foundMatch) {
-          throw new Error('Aucun match trouvé pour la compétition sélectionnée.');
-        }
-
-        const { competitionNumber, phaseNumber, pouleNumber } = foundMatch;
-        const classementsData = await fetchClassementJournees(competitionNumber, phaseNumber, pouleNumber);
+        const classementsData = await fetchClassementJournees(cp_no, phase, poule);
         setClassements(classementsData);
       } catch (error) {
-        console.error("Error fetching data:", error);
         setError(error);
       } finally {
         setLoading(false);
@@ -75,7 +66,7 @@ function ClassementsContent() {
       <Text style={styles.cell}>{item.lostGames}</Text>
       <Text style={styles.cell}>{item.goalsFor}</Text>
       <Text style={styles.cell}>{item.goalsAgainst}</Text>
-      <Text style={styles.cell}>{item.goalDifference}</Text>
+      <Text style={styles.cell}>{item.goalsFor - item.goalsAgainst}</Text>
     </View>
   );
 
