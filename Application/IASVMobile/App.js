@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { View, Image, Text, StyleSheet, Dimensions, TouchableOpacity } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
+import { createStackNavigator } from '@react-navigation/stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { TabView, SceneMap } from 'react-native-tab-view';
 import Icon from 'react-native-vector-icons/FontAwesome';
@@ -14,7 +15,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
 const Tab = createBottomTabNavigator();
-
+const Stack = createStackNavigator();
 const App = () => {
   const [windowWidth, setWindowWidth] = useState(Dimensions.get('window').width);
 
@@ -39,6 +40,7 @@ const App = () => {
 const Main = ({ windowWidth }) => {
   const { setSelectedClub, setClNo, setCompetition } = useClubContext();
   const [index, setIndex] = useState(2); // Définit "Video" comme onglet par défaut
+  const [showHeader, setShowHeader] = useState(true);
   const [routes] = useState([
     { key: 'video', title: 'Video' },
     { key: 'resultat', title: 'Resultat' },
@@ -77,10 +79,16 @@ const Main = ({ windowWidth }) => {
     profile: Profile,
   });
 
+  useEffect(() => {
+    // Masquer le Header uniquement si l'index actif est celui de Profile
+    setShowHeader(index !== routes.findIndex(route => route.key === 'profile'));
+  }, [index, routes]);
+
   return (
     <NavigationContainer>
       <View style={styles.appContainer}>
-        <Header windowWidth={windowWidth} />
+        {/* Affiche le Header en fonction de l'état showHeader */}
+        {showHeader && <Header windowWidth={windowWidth} />}
         <TabView
           navigationState={{ index, routes }}
           renderScene={renderScene}

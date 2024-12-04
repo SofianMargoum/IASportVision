@@ -3,18 +3,17 @@ import { View, Text, TextInput, FlatList, TouchableOpacity, Image, StyleSheet } 
 import Icon from 'react-native-vector-icons/Ionicons'; // Import de l'icône Ionicons
 import { debounce } from 'lodash';
 import { searchClubs, fetchCompetitionsForClub } from './../api';
-import config from './../../config';
 import { useClubContext } from './../ClubContext';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const scale = 0.85;
 
 const SearchClub = () => {
-  const { setSelectedClub, setClNo, setCompetition, selectedClub } = useClubContext();
+  const { setSelectedClub, setClNo, setCompetition, selectedClub, setPhase, setPoule, setCp_no } = useClubContext();
   const [searchTerm, setSearchTerm] = useState('');
   const [clubs, setClubs] = useState([]);
   const [recentClubs, setRecentClubs] = useState([]);
-  const [recentlySelectedClubs, setRecentlySelectedClubs] = useState([]);
+  const [detailedCompetitions, setDetailedCompetitions] = useState([]);
   const [competitionNames, setCompetitionNames] = useState([]);
   const [selectedCompetition, setSelectedCompetition] = useState('');
 
@@ -23,58 +22,75 @@ const SearchClub = () => {
   useEffect(() => {
     const loadStoredData = async () => {
       try {
-        const savedRecentClubs = await AsyncStorage.getItem('recentClubs');
         const savedSelectedClub = await AsyncStorage.getItem('selectedClub');
+        const savedRecentClubs = await AsyncStorage.getItem('recentClubs');
         const savedSelectedCompetition = await AsyncStorage.getItem('selectedCompetition');
 
-        if (savedRecentClubs) setRecentClubs(JSON.parse(savedRecentClubs));
+        if (savedRecentClubs) {
+          setRecentClubs(JSON.parse(savedRecentClubs));
+        }
+
         if (savedSelectedClub) {
           const club = JSON.parse(savedSelectedClub);
           setSelectedClub(club);
-          setRecentlySelectedClubs([club]);
           setClNo(club.cl_no);
 
-          // Charger les compétitions pour le club sélectionné
           const storedCompetitions = await fetchCompetitionsForClub(club.cl_no);
-          const sortedCompetitions = storedCompetitions.sort((a, b) => a.localeCompare(b));
-          setCompetitionNames(sortedCompetitions);
+          const sortedCompetitions = storedCompetitions.sort((a, b) =>
+            a.competitionName.localeCompare(b.competitionName)
+          );
 
-          // Si une compétition est déjà sauvegardée, la sélectionner
-          if (savedSelectedCompetition && sortedCompetitions.includes(savedSelectedCompetition)) {
-            setSelectedCompetition(savedSelectedCompetition);
-            setCompetition(savedSelectedCompetition);
+          setCompetitionNames(sortedCompetitions.map((comp) => comp.competitionName));
+          setDetailedCompetitions(sortedCompetitions);
+
+          if (
+            savedSelectedCompetition &&
+            sortedCompetitions.some((comp) => comp.competitionName === savedSelectedCompetition)
+          ) {
+            const selectedCompDetails = sortedCompetitions.find(
+              (comp) => comp.competitionName === savedSelectedCompetition
+            );
+            setSelectedCompetition(selectedCompDetails.competitionName);
+            setCompetition(selectedCompDetails.competitionName);
+            setPhase(selectedCompDetails.phaseNumber);
+            setPoule(selectedCompDetails.stageNumber);
+            setCp_no(selectedCompDetails.cp_no);
           } else if (sortedCompetitions.length > 0) {
-            // Sélectionner la première compétition si aucune n'est sauvegardée
-            setSelectedCompetition(sortedCompetitions[0]);
-            setCompetition(sortedCompetitions[0]);
+            const firstCompDetails = sortedCompetitions[0];
+            setSelectedCompetition(firstCompDetails.competitionName);
+            setCompetition(firstCompDetails.competitionName);
+            setPhase(firstCompDetails.phaseNumber);
+            setPoule(firstCompDetails.stageNumber);
+            setCp_no(firstCompDetails.cp_no);
           }
         }
       } catch (error) {
-        console.error("Erreur lors du chargement des données:", error);
+        console.error('Erreur lors du chargement des données:', error);
       }
     };
 
     loadStoredData();
-  }, [setSelectedClub, setClNo, setCompetition]);
-
-  useEffect(() => {
-    const loadRecentClubs = async () => {
-      const savedRecentClubs = await config.getRecentClubs();
-      setRecentClubs(savedRecentClubs);
-      if (searchTerm.trim().length === 0) setClubs(savedRecentClubs);
-    };
-
-    loadRecentClubs();
-  }, [searchTerm]);
+  }, [setSelectedClub, setCompetition]);
 
   const handleCompetitionClick = useCallback(
     (competitionName) => {
-      config.setSelectedCompetition(competitionName);
-      setCompetition(competitionName);
-      setSelectedCompetition(competitionName);
-      AsyncStorage.setItem('selectedCompetition', competitionName);
+      const selectedCompDetails = detailedCompetitions.find(
+        (comp) => comp.competitionName === competitionName
+      );
+
+      if (selectedCompDetails) {
+        setSelectedCompetition(selectedCompDetails.competitionName);
+        setCompetition(selectedCompDetails.competitionName);
+        setPhase(selectedCompDetails.phaseNumber);
+        setPoule(selectedCompDetails.stageNumber);
+        setCp_no(selectedCompDetails.cp_no);
+
+        AsyncStorage.setItem('selectedCompetition', selectedCompDetails.competitionName);
+        AsyncStorage.setItem('selectedPhase', JSON.stringify(selectedCompDetails.phaseNumber));
+        AsyncStorage.setItem('selectedPoule', JSON.stringify(selectedCompDetails.stageNumber));
+      }
     },
-    [setCompetition]
+    [detailedCompetitions, setCompetition, setSelectedCompetition, setPhase, setPoule, setCp_no]
   );
 
   const handleSearch = useCallback(
@@ -106,51 +122,76 @@ const SearchClub = () => {
       setSearchTerm('');
       setSelectedClub(club);
       setClNo(club.cl_no);
-
-      setRecentlySelectedClubs((prevClubs) => {
+  
+      // Mettre à jour les clubs récents (sans doublons)
+      setRecentClubs((prevClubs) => {
         const updatedClubs = [club, ...prevClubs.filter((c) => c.cl_no !== club.cl_no)];
-        AsyncStorage.setItem('recentlySelectedClubs', JSON.stringify(updatedClubs.slice(0, 3)));
+        AsyncStorage.setItem('recentClubs', JSON.stringify(updatedClubs.slice(0, 3)));
         return updatedClubs.slice(0, 3);
       });
-
+  
+      // Charger les compétitions pour le club sélectionné
       const storedCompetitions = await fetchCompetitionsForClub(club.cl_no);
-      const sortedCompetitions = storedCompetitions.sort((a, b) => a.localeCompare(b));
-      setCompetitionNames(sortedCompetitions);
-
-      if (sortedCompetitions.length > 0) handleCompetitionClick(sortedCompetitions[0]);
-
+  
+      // Trier les compétitions par nom (competitionName)
+      const sortedCompetitions = storedCompetitions.sort((a, b) =>
+        a.competitionName.localeCompare(b.competitionName)
+      );
+  
+      // Mettre à jour les états avec les données enrichies
+      setCompetitionNames(sortedCompetitions.map((comp) => comp.competitionName)); // Pour affichage simplifié
+      setDetailedCompetitions(sortedCompetitions); // Conserver les données complètes pour utilisation ultérieure
+  
+      // Gérer la première compétition par défaut
+      if (sortedCompetitions.length > 0) {
+        const firstCompetition = sortedCompetitions[0];
+        setSelectedCompetition(firstCompetition.competitionName);
+        setCompetition(firstCompetition.competitionName);
+        setPhase(firstCompetition.phaseNumber);
+        setPoule(firstCompetition.stageNumber);
+        setCp_no(firstCompetition.cp_no);
+  
+        // Sauvegarder la compétition sélectionnée par défaut
+        AsyncStorage.setItem('selectedCompetition', firstCompetition.competitionName);
+      }
+  
+      // Sauvegarder le club sélectionné
       AsyncStorage.setItem('selectedClub', JSON.stringify(club));
     },
-    [handleCompetitionClick, setSelectedClub, setClNo]
+    [setSelectedClub, setClNo, setCompetition, setPhase, setPoule, setCp_no]
   );
+  
+  
 
   const memoizedClubList = useMemo(() => {
-    return searchTerm.trim().length === 0 ? [...recentClubs, ...recentlySelectedClubs] : clubs;
-  }, [clubs, recentClubs, recentlySelectedClubs, searchTerm]);
-
-  const data = [
-    { title: 'Sélectionner un club', data: memoizedClubList, showSuggestions: true },
-    { title: 'Sélectionner une équipe', data: competitionNames, showSuggestions: competitionNames.length > 0 },
-  ];
+    return searchTerm.trim().length === 0 ? recentClubs : clubs;
+  }, [clubs, recentClubs, searchTerm]);
 
   const renderClubItem = ({ item }) => (
     <TouchableOpacity onPress={() => handleClubClick(item)} style={styles.clubItem}>
       <Image source={{ uri: item.logo }} style={styles.logo} />
-      <Text style={[styles.clubName, item.cl_no === selectedClub?.cl_no && styles.selectedClub]}>{item.name}</Text>
+      <Text style={[styles.clubName, item.cl_no === selectedClub?.cl_no && styles.selectedClub]}>
+        {item.name}
+      </Text>
     </TouchableOpacity>
   );
 
   const renderCompetitionItem = ({ item }) => (
     <TouchableOpacity onPress={() => handleCompetitionClick(item)} style={styles.competitionItem}>
-      <Text style={item === selectedCompetition ? styles.selectedCompetition : styles.competitionName}>{item}</Text>
+      <Text style={item === selectedCompetition ? styles.selectedCompetition : styles.competitionName}>
+        {item}
+      </Text>
     </TouchableOpacity>
   );
 
   return (
     <FlatList
       contentContainerStyle={styles.container}
-      showsVerticalScrollIndicator={false} // Masquer la scrollbar verticale
-      data={data}
+      showsVerticalScrollIndicator={false}
+      data={[
+        { title: 'Sélectionner un club', data: memoizedClubList, showSuggestions: true },
+        { title: 'Sélectionner une équipe', data: competitionNames, showSuggestions: competitionNames.length > 0 },
+      ]}
       keyExtractor={(item, index) => index.toString()}
       renderItem={({ item }) => (
         <View style={styles.section}>
@@ -210,17 +251,14 @@ const styles = StyleSheet.create({
   hr: {
     height: 2,
     width: '100%',
-    marginVertical: 1, // Espacement entre les vues pour simuler un dégradé
+    marginVertical: 1,
   },
   title: {
-    alignItems: 'center',
-    justifyContent: 'center',
     textAlign: 'center',
     fontSize: 20 * scale,
     fontWeight: 'bold',
     color: '#fff',
     paddingVertical: 15 * scale,
-    width: '100%',
     marginBottom: 20,
   },
   searchContainer: {
@@ -244,8 +282,6 @@ const styles = StyleSheet.create({
     fontStyle: 'italic',
     fontSize: 12 * scale,
     marginBottom: 10,
-    textAlign: 'left',
-    opacity: 0.5,
     color: '#ffffff',
     width: '60%',
   },
@@ -292,7 +328,5 @@ const styles = StyleSheet.create({
     marginVertical: 10,
   },
 });
-
-
 
 export default SearchClub;

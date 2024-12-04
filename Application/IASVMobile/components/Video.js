@@ -123,6 +123,7 @@ const Video = () => {
     <ScrollView 
 	contentContainerStyle={styles.container}
           showsVerticalScrollIndicator={false}>
+      <View style={styles.content}>
       <Text style={styles.title}>
         {isRecording ? 'Enregistrement en cours' : 'Commencer un enregistrement'}
       </Text>
@@ -224,7 +225,7 @@ const Video = () => {
       />
     </TouchableOpacity>
   </View>
-
+  </View>
     </ScrollView>
   );
 };
@@ -232,7 +233,12 @@ const Video = () => {
 const styles = StyleSheet.create({
   container: {
     flexGrow: 1, // Allows ScrollView to grow if content is small
-    padding: 20,
+    padding: 10,
+    backgroundColor: '#010914',
+    alignItems: 'center',
+  },  
+  content: {
+    flex: 1, 
     backgroundColor: '#010914',
     alignItems: 'center',
   },
@@ -348,13 +354,12 @@ const styles = StyleSheet.create({
     color: '#ff4d4d',
   },
   buttonContainer: {
-    display: 'flex',
-    justifyContent: 'center',
-    position: 'absolute',
-    bottom: 2,
     width: '100%',
-    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'flex-end',
+    flex: 1, // Permet de prendre tout l'espace vertical disponible
   },
+  
   outerCircle: {
     width: 100,
     height: 100,
