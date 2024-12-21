@@ -4,10 +4,12 @@ import { View, Text, TouchableOpacity, Image, StyleSheet } from 'react-native';
 const UserProfile = ({ user, onLogout }) => {
   return (
     <View style={styles.container}>
+      <View style={styles.header}>
       {user.photo && <Image source={{ uri: user.photo }} style={styles.profileImage} />}
       <Text style={styles.title}>Bonjour, {user.name}</Text>
       <Text style={styles.email}>{user.email}</Text>
 
+      </View>
       <View style={styles.buttonsContainer}>
         <View style={styles.buttonRow}>
           <TouchableOpacity style={styles.squareButton}>
@@ -30,25 +32,28 @@ const UserProfile = ({ user, onLogout }) => {
           </TouchableOpacity>
         </View>
       </View>
-
-      <TouchableOpacity style={styles.logoutBtn} onPress={onLogout}>
+      
+      <View style={styles.logoutBtn}>
+      <TouchableOpacity style={styles.logoutBtncont} onPress={onLogout}>
         <Text style={styles.logoutBtnText}>Se déconnecter</Text>
       </TouchableOpacity>
+      
+    </View>
     </View>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
+    height:'100%', // Utilisez flex: 1 pour remplir toute la hauteur disponible.
+    justifyContent: 'space-between', // Assure que les éléments sont répartis avec de l'espace entre eux.
     alignItems: 'center',
-    height: '100%',
   },
   profileImage: {
     width: 50,
     height: 50,
     marginTop: 20,
     borderRadius: 50,
-    marginBottom: 15,
   },
   title: {
     fontSize: 16,
@@ -90,12 +95,22 @@ const styles = StyleSheet.create({
     height: 50,
     marginBottom: 10, // Espacement ajusté
   },
+
+  header: {
+    width: '100%',
+    alignItems: 'center',
+    justifyContent: 'flex-start',// Ajoute un espace vertical autour du bouton.
+  },
   logoutBtn: {
     width: '100%',
     alignItems: 'center',
-    marginBottom: 15,
-    justifyContent: 'flex-end',
-    flex: 1, 
+    justifyContent: 'flex-end', // Ajoute un espace vertical autour du bouton.
+  },
+  logoutBtncont: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 10,
+    borderRadius: 5, // Facultatif, pour arrondir les bords.
   },
   logoutBtnText: {
     padding: 15,

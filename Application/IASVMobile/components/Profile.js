@@ -1,73 +1,122 @@
-import React, { useEffect, useState } from 'react';
-import { View, StyleSheet } from 'react-native';
+import React, { useContext, useEffect, useState } from 'react';
+import { View, StyleSheet, ActivityIndicator } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { GoogleSignin } from '@react-native-google-signin/google-signin';
 import LoginForm from './LoginForm';
 import UserProfile from './UserProfile';
-
-const scale = 0.85; // Échelle pour ajuster les tailles
+import { UserContext } from './UserContext'; // Importez le contexte
 
 const Profile = () => {
-  const [user, setUser] = useState(null);
+  const { user, setUser } = useContext(UserContext); // Accédez au contexte utilisateur
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     GoogleSignin.configure({
       webClientId: '417232013163-of6mf1nmu8tqibvfmm864oq7uhp7ka8g.apps.googleusercontent.com',
     });
 
-    const checkCurrentUser = async () => {
+    const initializeUser = async () => {
       try {
-        const currentUser = await GoogleSignin.getCurrentUser();
-        if (currentUser && currentUser.data && currentUser.data.user) {
-          setUser(currentUser.data.user);
+        const storedUser = await AsyncStorage.getItem('user');
+        if (storedUser) {
+          setUser(JSON.parse(storedUser));
+        } else {
+          const userInfo = await GoogleSignin.getCurrentUser();
+          if (userInfo && userInfo.user) {
+            setUser(userInfo.user);
+            await saveUserToStorage(userInfo.user);
+          }
         }
       } catch (error) {
-        console.error('Erreur lors de la récupération de l\'utilisateur actuel:', error);
+        console.error('Erreur lors de l\'initialisation de l\'utilisateur :', error);
+      } finally {
+        setLoading(false);
       }
     };
 
-    checkCurrentUser();
+    initializeUser();
   }, []);
+
+  const saveUserToStorage = async (user) => {
+    try {
+      await AsyncStorage.setItem('user', JSON.stringify(user));
+    } catch (error) {
+      console.error('Erreur lors de la sauvegarde des informations utilisateur :', error);
+    }
+  };
+
+  const clearUserFromStorage = async () => {
+    try {
+      await AsyncStorage.removeItem('user');
+    } catch (error) {
+      console.error('Erreur lors de la suppression des informations utilisateur :', error);
+    }
+  };
 
   const handleGoogleLogin = async () => {
     try {
+      setLoading(true);
       await GoogleSignin.hasPlayServices();
       const userInfo = await GoogleSignin.signIn();
-      if (!userInfo || !userInfo.data || !userInfo.data.user) {
-        throw new Error('Impossible de récupérer les informations utilisateur.');
+      const userFromCurrent = await GoogleSignin.getCurrentUser();
+      const finalUser = userInfo?.user || userFromCurrent?.user;
+
+      if (finalUser) {
+        setUser(finalUser);
+        await saveUserToStorage(finalUser);
+      } else {
+        console.error('Connexion échouée, utilisateur introuvable.');
       }
-      setUser(userInfo.data.user);
     } catch (error) {
       console.error('Erreur lors de la connexion Google :', error);
+    } finally {
+      setLoading(false);
     }
   };
 
   const handleGoogleLogout = async () => {
     try {
+      setLoading(true);
       await GoogleSignin.signOut();
       setUser(null);
+      await clearUserFromStorage();
     } catch (error) {
       console.error('Erreur lors de la déconnexion :', error);
+    } finally {
+      setLoading(false);
     }
   };
 
+  if (loading) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color="#0000ff" />
+      </View>
+    );
+  }
+
   return (
     <View style={styles.profilePage}>
-        {user ? (
-          <UserProfile user={user} onLogout={handleGoogleLogout} />
-        ) : (
-          <LoginForm handleGoogleLogin={handleGoogleLogin} />
-        )}
+      {user ? (
+        <UserProfile user={user} onLogout={handleGoogleLogout} />
+      ) : (
+        <LoginForm handleGoogleLogin={handleGoogleLogin} />
+      )}
     </View>
   );
 };
 
 const styles = StyleSheet.create({
   profilePage: {
-    flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: '#010914',
-    height: '100%',
+    flex: 1,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
 });
 

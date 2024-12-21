@@ -1,12 +1,15 @@
-import React from 'react';
+import React, { useContext } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet } from 'react-native';
 
-const scale = 0.85; // Échelle pour ajuster les tailles
+const scale = 0.85;
 
 const LoginForm = ({ handleGoogleLogin }) => {
+
+  const handleLogin = () => {
+  };
+
   return (
     <View style={styles.profileContainer}>
-    <>
       <Text style={styles.title}>Connectez-vous à votre compte</Text>
 
       <View style={styles.inputGroup}>
@@ -29,7 +32,7 @@ const LoginForm = ({ handleGoogleLogin }) => {
         />
       </View>
 
-      <TouchableOpacity style={styles.loginBtn}>
+      <TouchableOpacity style={styles.loginBtn} onPress={handleLogin}>
         <Text style={styles.loginBtnText}>Se connecter</Text>
       </TouchableOpacity>
 
@@ -40,7 +43,6 @@ const LoginForm = ({ handleGoogleLogin }) => {
       <TouchableOpacity style={styles.loginBtn} onPress={handleGoogleLogin}>
         <Text style={styles.loginBtnText}>Se connecter avec Google</Text>
       </TouchableOpacity>
-    </>
     </View>
   );
 };

@@ -17,6 +17,8 @@ color: #00BFFF; /* Couleur bleu de texte / icon selectioner */
 		gradlew app:assembleRelease
 		/android/app/build/outputs/apk/release/
 
+--deployer sur app engine
+		gcloud app deploy
 
 
 
@@ -33,8 +35,6 @@ gradlew.bat assembleRelease
 --test sur navigateur 
 npm start
 
---deployer sur app engine
-gcloud app deploy
 
 
 https://ia-sport.oa.r.appspot.com/api/hello
