@@ -2,6 +2,9 @@ Backlog :
 		ticket 1 Onglet Live :
 			-Mettre la video en direct sur l'appli
 			-Supprimer la video dans la carte sd apres upload dans le cloud
+			-Pause (enregistrement)
+			-Lecture (enregistrement)
+			-Bouton action pour resumer
 			
 		ticket 2 Onglet Resultat :
 		
@@ -19,15 +22,12 @@ Backlog :
 				-Image touche  (gauche milleu droite) (bloc bas, millieu, haut)
 			
 		ticket 3 Onglet Video :
-			-Récupéré les statistique des joueurs :
-				-nombre de km parcourue, 
-				-nombre de passe, 
-				-nombre de tir,
-				-nombre de ballon touché
-				-nombre de ballon recuperer...
-			-Generer une video resumé du match
-			-changer l'image de couverture
-			-video presentation
+			-Publier sur les réseaux (insta, facebook, tiktok, youtube...) 
+				Facebook : Le partage fonctionne via le lien de partage direct.
+				Instagram : Le partage direct d'URL n'est pas supporté. Vous devrez informer l'utilisateur de copier le lien manuellement.
+				TikTok : TikTok a une API pour le partage, mais les liens de partage ne fonctionnent pas toujours comme prévu. Vous pouvez utiliser un lien direct vers une vidéo TikTok existante, mais cela nécessite que la vidéo soit déjà sur TikTok.
+				YouTube : YouTube ne permet pas de partager directement des vidéos par un lien de partage. Vous pouvez proposer à l'utilisateur de copier l'URL pour un partage manuel.
+				
 		
 		ticket 4 Onglet Explore :
 		
@@ -41,22 +41,42 @@ Backlog :
 			-Mettre sur play store
 			
 			
-SPRINT 2 :
+SPRINT 3 :			
 		ticket 1 Onglet Live :
 			-Pause (enregistrement)
 			-Lecture (enregistrement)
-			-Bouton action pour resumer
+			-Gestion des droit des utilisateurs
 			
+		ticket 2 Onglet Resultat :
+			
+		ticket 3 Onglet Video :
+			-afficher 2 mode vue liste et galerie
+			-Remplacer match resumer par effectif, compos global, compos phase ofensif, compos phase defensif
+			-Gestion des droit des utilisateurs
+			
+		ticket 4 Onglet Explore :
+		
+		ticket 5 Onglet Connexion :
+			-Gestion des droit des utilisateurs
+			-bouton se connecter
+			
+		server :
+		generer une image couverture
+			
+SPRINT 2 :			
 		ticket 5 Onglet Connexion :
 			-Gestion des droit des utilisateurs
 			
 		ticket 3 Onglet Video :
-			-Publier sur les réseaux (insta, facebook, tiktok, youtube...) 
-				Facebook : Le partage fonctionne via le lien de partage direct.
-				Instagram : Le partage direct d'URL n'est pas supporté. Vous devrez informer l'utilisateur de copier le lien manuellement.
-				TikTok : TikTok a une API pour le partage, mais les liens de partage ne fonctionnent pas toujours comme prévu. Vous pouvez utiliser un lien direct vers une vidéo TikTok existante, mais cela nécessite que la vidéo soit déjà sur TikTok.
-				YouTube : YouTube ne permet pas de partager directement des vidéos par un lien de partage. Vous pouvez proposer à l'utilisateur de copier l'URL pour un partage manuel.
-				
+			-Récupéré les statistique des joueurs :
+				-nombre de km parcourue, 
+				-nombre de passe, 
+				-nombre de tir,
+				-nombre de ballon touché
+				-nombre de ballon recuperer...
+			-Generer une video resumé du match
+			-changer l'image de couverture
+			-video presentation
 		ticket 2 Onglet Resultat :
 			-fixer le header du classement
 			-mettre les but pour et but contre

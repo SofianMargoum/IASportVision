@@ -33,6 +33,7 @@ const startRecordingRoute = require('./api/startRecording');
 const stopRecordingRoute = require('./api/stopRecording');
 const startLiveViewRoute = require('./api/startLiveView');
 const googleAuthRoute = require('./api/google'); // Importer la route Google Auth
+const mergeImagesRoute = require('./api/mergeImages'); // Importer la route
 //const analyzeVideoRoute = require('./api/analyzeVideo');
 
 // Utiliser les routes
@@ -45,6 +46,7 @@ app.use('/api', startRecordingRoute);
 app.use('/api', stopRecordingRoute); 
 app.use('/api', startLiveViewRoute); 
 app.use('/api', googleAuthRoute); // Utiliser la route Google Auth
+app.use('/api', mergeImagesRoute); // Ajouter la route à Express
 //app.use('/api', analyzeVideoRoute);
 
 // Démarrer le serveur
