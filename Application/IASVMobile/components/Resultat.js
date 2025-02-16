@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useMemo, Suspense } from 'react';
-import { View, Text, TouchableOpacity, ActivityIndicator, StyleSheet, Dimensions } from 'react-native';
+import { View, Text, TouchableOpacity, ActivityIndicator, StyleSheet, Dimensions, ScrollView, RefreshControl } from 'react-native';
 import { TabView, SceneMap } from 'react-native-tab-view';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
@@ -13,48 +13,83 @@ const initialLayout = { width: Dimensions.get('window').width };
 
 const Resultat = () => {
   const [index, setIndex] = useState(0);
+  const [refreshing, setRefreshing] = useState(false);
   const [routes] = useState([
     { key: 'matchs', title: 'MATCHS' },
     { key: 'classements', title: 'CLASSEMENTS' },
     { key: 'stats', title: 'STATS' },
   ]);
 
-  const renderScene = useMemo(() => 
-    SceneMap({
-      matchs: () => (
-        <Suspense fallback={<ActivityIndicator size="large" color="#00A0E9" />}>
-          <MatchsContent />
-        </Suspense>
-      ),
-      classements: () => (
-        <Suspense fallback={<ActivityIndicator size="large" color="#00A0E9" />}>
-          <ClassementsContent />
-        </Suspense>
-      ),
-      stats: () => (
-        <Suspense fallback={<ActivityIndicator size="large" color="#00A0E9" />}>
-          <StatsContent />
-        </Suspense>
-      ),
-    })
-  , []);
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    // Simulez une attente ou effectuez une action de rafraîchissement ici
+    setTimeout(() => {
+      setRefreshing(false);
+    }, 2000);
+  }, []);
 
-  const renderTabBar = useCallback((props) => (
-    <View style={styles.nav}>
-      {props.navigationState.routes.map((route, i) => (
-        <TouchableOpacity
-          key={i}
-          style={[styles.button, index === i && styles.activeButton]}
-          onPress={() => setIndex(i)}
-        >
-          <Text style={[styles.buttonText, index === i && styles.activeButtonText]}>
-            {route.title}
-          </Text>
-          {index === i && <View style={styles.activeIndicator} />}
-        </TouchableOpacity>
-      ))}
-    </View>
-  ), [index]);
+  const renderScene = useMemo(
+    () =>
+      SceneMap({
+        matchs: () => (
+          <Suspense fallback={<ActivityIndicator size="large" color="#00A0E9" />}>
+            <ScrollView
+              style={{ flex: 1 }}
+              refreshControl={
+                <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+              }
+            >
+              <MatchsContent />
+            </ScrollView>
+          </Suspense>
+        ),
+        classements: () => (
+          <Suspense fallback={<ActivityIndicator size="large" color="#00A0E9" />}>
+            <ScrollView
+              style={{ flex: 1 }}
+              refreshControl={
+                <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+              }
+            >
+              <ClassementsContent />
+            </ScrollView>
+          </Suspense>
+        ),
+        stats: () => (
+          <Suspense fallback={<ActivityIndicator size="large" color="#00A0E9" />}>
+            <ScrollView
+              style={{ flex: 1 }}
+              refreshControl={
+                <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+              }
+            >
+              <StatsContent />
+            </ScrollView>
+          </Suspense>
+        ),
+      }),
+    [refreshing]
+  );
+
+  const renderTabBar = useCallback(
+    (props) => (
+      <View style={styles.nav}>
+        {props.navigationState.routes.map((route, i) => (
+          <TouchableOpacity
+            key={i}
+            style={[styles.button, index === i && styles.activeButton]}
+            onPress={() => setIndex(i)}
+          >
+            <Text style={[styles.buttonText, index === i && styles.activeButtonText]}>
+              {route.title}
+            </Text>
+            {index === i && <View style={styles.activeIndicator} />}
+          </TouchableOpacity>
+        ))}
+      </View>
+    ),
+    [index]
+  );
 
   return (
     <GestureHandlerRootView style={styles.resultatContainer}>
@@ -68,6 +103,7 @@ const Resultat = () => {
     </GestureHandlerRootView>
   );
 };
+
 
 const styles = StyleSheet.create({
   resultatContainer: {

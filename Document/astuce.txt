@@ -22,27 +22,34 @@ color: #00BFFF; /* Couleur bleu de texte / icon selectioner */
 
 
 
-
-
-
-
 https://www.youtube.com/watch?v=DxRT-Z2E_x8&ab_channel=SFEIRTV 
 	-33min
 	
+	
+	
+--ffmpeg
+sudo apt install ffmpeg
+ffmpeg -version
+
+	
+npm install react-native-device-info --legacy-peer-deps
+
+npm install node-arp --legacy-peer-deps
+npm install arp-table --legacy-peer-deps
+
+	
+	
+	
+arp -a
+
 --cmd to APK
 gradlew.bat assembleRelease
 
 --test sur navigateur 
 npm start
 
-
-
-https://ia-sport.oa.r.appspot.com/api/hello
-https://ia-sport.oa.r.appspot.com/api/images
-
 --cmd download video
 ffmpeg -rtsp_transport tcp -i "rtsp://admin:Vidauban@192.168.1.4:55400/Streaming/tracks/101/?starttime=20240818T143531Z&endtime=20240818T143541Z&name=ch01_00000000000000206&size=4224544" -t 00:00:10 -c:v copy -c:a copy output.mp4
-
 
 --Verrouiller le Package avec apt-mark
 sudo apt-mark hold ffmpeg
@@ -50,24 +57,8 @@ sudo apt-mark hold ffmpeg
 --Annuler le verrouillage si nécessaire :
 sudo apt-mark unhold ffmpeg
 
-
-
---Generer apk
-	--cordova
-		1.cordova create "IA-Sport Vision" com.example.iasportvision "IA-Sport Vision" 
-		2.cordova platform add android
-	--nodeJS
-		0. go C:\perso\IA Sport Vision\Application\IASV\cmd.exe
-		1.npm run build
-		2.Copier  C:\perso\IA Sport Vision\Application\IASV\build\*  
-		3.Coller C:\perso\IA Sport Vision\Application\IA-Sport Vision\www\
-		4.0 go C:\perso\IA Sport Vision\Application\IA-Sport Vision\cmd.exe
-		4.1 cordova build android --release
-		4.2 cordova build android --release -- --packageType=apk
-
-
-
-
-
-
-
+--Cloud SQL
+ID d'instance:
+ia-sport-vision
+psw:
+iasportvision2025

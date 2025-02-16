@@ -27,6 +27,8 @@
 			</metadataList>
 		</CMSearchDescription>
 
+	-Supprimer de la carte SD PUT
+		http://[2a01:e0a:a75:f2a0:3e1b:f8ff:fefa:557b]:1000/ISAPI/ContentMgmt/storage/hdd/1/format
 
 
 
@@ -35,3 +37,6 @@
 -Rechercher le nom de son club
 https://api-dofa.prd-aws.fff.fr/api/clubs?clNom=vidauban
 
+
+https://ia-sport.oa.r.appspot.com/api/hello
+https://ia-sport.oa.r.appspot.com/api/images

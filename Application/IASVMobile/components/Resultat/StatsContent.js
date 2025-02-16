@@ -91,16 +91,6 @@ function StatsContent() {
     }, { ...data[0], goalDifference: data[0].goalsFor - data[0].goalsAgainst });
   };
   
-  // Affichage si les données sont en cours de chargement
-  if (loading) {
-    return (
-      <View style={styles.centered}>
-        <ActivityIndicator size="large" color="#00A0E9" />
-        <Text style={styles.loadingText}>Chargement des statistiques...</Text>
-      </View>
-    );
-  }
-
   // Affichage en cas d'erreur
   if (error) {
     return (

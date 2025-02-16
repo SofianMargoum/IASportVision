@@ -6,7 +6,7 @@ import LoginForm from './LoginForm';
 import UserProfile from './UserProfile';
 import { UserContext } from './UserContext'; // Importez le contexte
 
-const Profile = () => {
+const Profile = ({ navigation }) => { // Ajoutez navigation comme prop
   const { user, setUser } = useContext(UserContext); // Accédez au contexte utilisateur
   const [loading, setLoading] = useState(true);
 
@@ -98,7 +98,11 @@ const Profile = () => {
   return (
     <View style={styles.profilePage}>
       {user ? (
-        <UserProfile user={user} onLogout={handleGoogleLogout} />
+        <UserProfile
+          user={user}
+          onLogout={handleGoogleLogout}
+          navigation={navigation} // Transmettez navigation à UserProfile
+        />
       ) : (
         <LoginForm handleGoogleLogin={handleGoogleLogin} />
       )}
@@ -110,7 +114,6 @@ const styles = StyleSheet.create({
   profilePage: {
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#010914',
     flex: 1,
   },
   loadingContainer: {

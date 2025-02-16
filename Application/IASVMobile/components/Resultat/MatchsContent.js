@@ -44,11 +44,6 @@ const MatchsContent = () => {
   const filteredMatches = matches; // Pas de filtrage, on garde tous les matchs
  // Se met à jour lorsque matches, selectedClub ou competition changent
 
-  // Affiche un indicateur de chargement pendant que les données sont récupérées
-  if (loading) {
-    return <ActivityIndicator size="large" color="#ffffff" />;
-  }
-
   // Affiche une alerte si une erreur s'est produite
   if (error) {
     Alert.alert("Erreur", error);

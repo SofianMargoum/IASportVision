@@ -1,53 +1,91 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, Image, StyleSheet } from 'react-native';
+import Appareil from './Appareils'; // Import du composant Appareil
+import Effectif from './Effectif'; // Import du composant Effectif
+import Composition from './Composition'; // Import du composant Composition
+import Statistiques from './Statistiques'; // Import du composant Statistiques
 
 const UserProfile = ({ user, onLogout }) => {
+  const [activeComponent, setActiveComponent] = useState(null); // État pour afficher les composants dynamiques
+
+  const renderActiveComponent = () => {
+    switch (activeComponent) {
+      case 'Appareils':
+        return <Appareil onBack={() => setActiveComponent(null)} />;
+      case 'Effectif':
+        return <Effectif onBack={() => setActiveComponent(null)} />;
+      case 'Composition':
+        return <Composition onBack={() => setActiveComponent(null)} />;
+      case 'Statistiques':
+        return <Statistiques onBack={() => setActiveComponent(null)} />;
+      default:
+        return null;
+    }
+  };
+
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
-      {user.photo && <Image source={{ uri: user.photo }} style={styles.profileImage} />}
-      <Text style={styles.title}>Bonjour, {user.name}</Text>
-      <Text style={styles.email}>{user.email}</Text>
-
-      </View>
-      <View style={styles.buttonsContainer}>
-        <View style={styles.buttonRow}>
-          <TouchableOpacity style={styles.squareButton}>
-            <Image source={require('../assets/list.png')} style={styles.iconImage} />
-            <Text style={styles.logoutBtnTexts}>Effectif</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.squareButton}>
-            <Image source={require('../assets/stade.png')} style={styles.iconImage} />
-            <Text style={styles.logoutBtnTexts}>Composition</Text>
-          </TouchableOpacity>
-        </View>
-        <View style={styles.buttonRow}>
-          <TouchableOpacity style={styles.squareButton}>
-            <Image source={require('../assets/stat.png')} style={styles.iconImage} />
-            <Text style={styles.logoutBtnTexts}>Statistiques</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.squareButton}>
-            <Image source={require('../assets/cam.png')} style={styles.iconImage} />
-            <Text style={styles.logoutBtnTexts}>Appareils</Text>
-          </TouchableOpacity>
-        </View>
-      </View>
-      
-      <View style={styles.logoutBtn}>
-      <TouchableOpacity style={styles.logoutBtncont} onPress={onLogout}>
-        <Text style={styles.logoutBtnText}>Se déconnecter</Text>
-      </TouchableOpacity>
-      
-    </View>
+      {!activeComponent ? (
+        <>
+          <View style={styles.header}>
+            {user.photo && <Image source={{ uri: user.photo }} style={styles.profileImage} />}
+            <Text style={styles.title}>Bonjour, {user.name}</Text>
+            <Text style={styles.email}>{user.email}</Text>
+          </View>
+          <View style={styles.buttonsContainer}>
+            <View style={styles.buttonRow}>
+              <TouchableOpacity
+                style={styles.squareButton}
+                onPress={() => setActiveComponent('Effectif')} // Afficher Effectif
+              >
+                <Image source={require('../assets/list.png')} style={styles.iconImage} />
+                <Text style={styles.logoutBtnTexts}>Effectif</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.squareButton}
+                onPress={() => setActiveComponent('Composition')} // Afficher Composition
+              >
+                <Image source={require('../assets/stade.png')} style={styles.iconImage} />
+                <Text style={styles.logoutBtnTexts}>Composition</Text>
+              </TouchableOpacity>
+            </View>
+            <View style={styles.buttonRow}>
+              <TouchableOpacity
+                style={styles.squareButton}
+                onPress={() => setActiveComponent('Statistiques')} // Afficher Statistiques
+              >
+                <Image source={require('../assets/stat.png')} style={styles.iconImage} />
+                <Text style={styles.logoutBtnTexts}>Statistiques</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.squareButton}
+                onPress={() => setActiveComponent('Appareils')} // Afficher Appareils
+              >
+                <Image source={require('../assets/cam.png')} style={styles.iconImage} />
+                <Text style={styles.logoutBtnTexts}>Appareils</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+          <View style={styles.logoutBtn}>
+            <TouchableOpacity style={styles.logoutBtncont} onPress={onLogout}>
+              <Text style={styles.logoutBtnText}>Se déconnecter</Text>
+            </TouchableOpacity>
+          </View>
+        </>
+      ) : (
+        renderActiveComponent() // Afficher le composant actif
+      )}
     </View>
   );
 };
+
 
 const styles = StyleSheet.create({
   container: {
     height:'100%', // Utilisez flex: 1 pour remplir toute la hauteur disponible.
     justifyContent: 'space-between', // Assure que les éléments sont répartis avec de l'espace entre eux.
     alignItems: 'center',
+    width:'100%',
   },
   profileImage: {
     width: 50,

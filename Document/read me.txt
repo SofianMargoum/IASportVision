@@ -6,6 +6,9 @@ Passe83550.
 margoum.contact@gmail.com	
 Passe83550
 
+--Livebox
+admin
+Vidauban83.
 	
 --SADP
 	Model
@@ -23,5 +26,12 @@ Passe83550
 	idsite
 		-e6c7abde81
 	ip public
-		-http://192.168.1.4:60000/
-		-http://91.170.83.13:60000/
+		-http://192.168.1.4:1000/
+		-http://90.73.224.130:1000/
+		-http://[2a01:cb1c:fc0:9f00:3e1b:f8ff:fefa:557b]:1000/
+--DynDNS
+
+	https://www.dynu.com/
+	id: SofianMargoum
+	mail: margoum.contact@gmail.com
+	mdp : IAsportvision83

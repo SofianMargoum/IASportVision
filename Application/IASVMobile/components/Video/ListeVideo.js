@@ -1,30 +1,25 @@
 import React, { useState } from 'react';
-import {
-  View,
-  Text,
-  TouchableOpacity,
-  StyleSheet,
-} from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { TabView, SceneMap } from 'react-native-tab-view';
-import MatchComplet from './MatchComplet'; // Import du composant MatchComplet
-import MatchResume from './MatchResume';   // Import du composant MatchResume
+import MatchComplet from './MatchComplet';
+import MatchResume from './MatchResume'; // Onglet qui contient le drag-and-drop
 import StatsEquipes from './StatsEquipes';
 import StatsJoueurs from './StatsJoueurs';
 
 const scale = 0.85;
 
-const ListeVideo = ({ selectedVideo, resumeVideoUrl }) => {
+const ListeVideo = ({ selectedVideo }) => {
   const [index, setIndex] = useState(0);
   const [routes] = useState([
     { key: 'video', title: 'MATCH COMPLET' },
-    { key: 'resume', title: 'MATCH RESUME' },
+    { key: 'resume', title: 'COMPOS EFFECTIF' },
     { key: 'statsEquipes', title: 'STATS EQUIPES' },
     { key: 'statsJoueurs', title: 'STATS JOUEURS' },
   ]);
 
   const renderScene = SceneMap({
-    video: () => <MatchComplet selectedVideo={selectedVideo} />, // Utilisation du composant MatchComplet
-    resume: () => <MatchResume selectedVideo={selectedVideo} />, // Utilisation du composant MatchComplet
+    video: () => <MatchComplet selectedVideo={selectedVideo} />,
+    resume: () => <MatchResume selectedVideo={selectedVideo} />, // Drag-and-drop dans cet onglet
     statsEquipes: () => <StatsEquipes />,
     statsJoueurs: () => <StatsJoueurs />,
   });
@@ -35,8 +30,9 @@ const ListeVideo = ({ selectedVideo, resumeVideoUrl }) => {
         navigationState={{ index, routes }}
         renderScene={renderScene}
         onIndexChange={setIndex}
+        swipeEnabled={index !== 1} // Désactiver le swipe horizontal pour "COMPOS EFFECTIF"
         initialLayout={{ width: '100%' }}
-        renderTabBar={props => (
+        renderTabBar={(props) => (
           <View style={styles.nav}>
             {props.navigationState.routes.map((route, i) => (
               <TouchableOpacity
@@ -44,7 +40,14 @@ const ListeVideo = ({ selectedVideo, resumeVideoUrl }) => {
                 style={[styles.button, index === i && styles.activeButton]}
                 onPress={() => setIndex(i)}
               >
-                <Text style={[styles.buttonText, index === i && styles.activeButtonText]}>{route.title}</Text>
+                <Text
+                  style={[
+                    styles.buttonText,
+                    index === i && styles.activeButtonText,
+                  ]}
+                >
+                  {route.title}
+                </Text>
                 {index === i && <View style={styles.activeIndicator} />}
               </TouchableOpacity>
             ))}

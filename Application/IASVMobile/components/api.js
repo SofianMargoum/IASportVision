@@ -1,5 +1,4 @@
 // api.js
-
 // Fonction pour envoyer l'idToken au backend pour vérification
 export const sendIdTokenToBackend = async (idToken) => {
   try {
@@ -23,6 +22,141 @@ export const sendIdTokenToBackend = async (idToken) => {
   }
 };
 
+// Fonction pour appeler l'API de fusion d'images
+export const mergeImages = async ({ logo1Url, logo2Url, finalFolder, finalName }) => {
+  try {
+    const queryParams = new URLSearchParams({
+      logo1Url,
+      logo2Url,
+      finalFolder,
+      ...(finalName && { finalName }), // Ajoute finalName seulement s'il est défini
+    });
+
+    const url = `https://ia-sport.oa.r.appspot.com//api/mergeImages?${queryParams.toString()}`;
+    console.log('Fetching URL:', url); // Log de l'URL complète de la requête
+
+    const response = await fetch(url, {
+      method: 'GET',
+    });
+
+    console.log('Response status:', response.status); // Log du statut de la réponse
+    console.log('Response headers:', response.headers); // Log des en-têtes de la réponse
+
+    if (!response.ok) {
+      const errorText = await response.text(); // Lire le texte d'erreur renvoyé par le serveur
+      console.error('Server error response:', errorText);
+      throw new Error('Échec de la fusion des images');
+    }
+
+    const data = await response.json();
+    console.log('Response data:', data); // Log des données reçues
+    return data; // Réponse avec l'URL de l'image fusionnée
+  } catch (error) {
+    console.error('Error merging images:', error.message, error.stack);
+    throw error;
+  }
+};
+
+
+// Fonction pour rechercher l'device
+export const fetchDevice = async (nom) => {
+  try {
+    const queryParams = new URLSearchParams({
+      ...(nom && { nom }), // Ajoute nom seulement s'il est défini
+    });
+
+    const url = `https://ia-sport.oa.r.appspot.com/api/device?${queryParams.toString()}`;
+    console.log('Fetching URL:', url); // Log de l'URL complète de la requête
+
+    const response = await fetch(url, {
+      method: 'GET',
+    });
+
+    console.log('Response status:', response.status); // Log du statut de la réponse
+    console.log('Response headers:', response.headers); // Log des en-têtes de la réponse
+
+    if (!response.ok) {
+      const errorText = await response.text(); // Lire le texte d'erreur renvoyé par le serveur
+      console.error('Server error response:', errorText);
+      throw new Error('Échec de la récupération de l\'device');
+    }
+
+    const data = await response.json();
+    console.log('Response data:', data); // Log des données reçues
+    return data; // Retourne les données de l'effectif
+  } catch (error) {
+    console.error('Error fetching device:', error.message, error.stack);
+    throw error;
+  }
+};
+// Fonction pour rechercher l'effectif
+export const fetchEffectif = async (nom) => {
+  try {
+    const queryParams = new URLSearchParams({
+      ...(nom && { nom }), // Ajoute nom seulement s'il est défini
+    });
+
+    const url = `https://ia-sport.oa.r.appspot.com/api/effectif?${queryParams.toString()}`;
+    console.log('Fetching URL:', url); // Log de l'URL complète de la requête
+
+    const response = await fetch(url, {
+      method: 'GET',
+    });
+
+    console.log('Response status:', response.status); // Log du statut de la réponse
+    console.log('Response headers:', response.headers); // Log des en-têtes de la réponse
+
+    if (!response.ok) {
+      const errorText = await response.text(); // Lire le texte d'erreur renvoyé par le serveur
+      console.error('Server error response:', errorText);
+      throw new Error('Échec de la récupération de l\'effectif');
+    }
+
+    const data = await response.json();
+    console.log('Response data:', data); // Log des données reçues
+    return data; // Retourne les données de l'effectif
+  } catch (error) {
+    console.error('Error fetching effectif:', error.message, error.stack);
+    throw error;
+  }
+};
+// Fonction pour ajouter un joueur à l'effectif
+export const inputEffectif = async ({ nom, equipe, joueur }) => {
+  try {
+    const url = 'https://ia-sport.oa.r.appspot.com/api/inputEffectif'; // Remplacez par l'URL de votre API
+
+    // Log des données envoyées
+    console.log('Sending data to URL:', url);
+    console.log('Data to send:', { nom, equipe, joueur });
+
+    const response = await fetch(url, {
+      method: 'POST', // Méthode POST pour ajouter un joueur
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ nom, equipe, joueur }), // Conversion des données en JSON
+    });
+
+    // Logs pour débogage
+    console.log('Response status:', response.status);
+    console.log('Response headers:', response.headers);
+
+    if (!response.ok) {
+      const errorText = await response.text(); // Lire le texte d'erreur renvoyé par le serveur
+      console.error('Server error response:', errorText);
+      throw new Error('Échec de l\'ajout du joueur');
+    }
+
+    const data = await response.json();
+    console.log('Response data:', data); // Log des données reçues
+    return data; // Retourne les données du joueur ajouté
+  } catch (error) {
+    console.error('Error adding player:', error.message, error.stack);
+    throw error;
+  }
+};
+
+
 // Fonction pour rechercher des clubs
 export const searchClubs = async (searchTerm) => {
   try {
@@ -41,15 +175,20 @@ export const searchClubs = async (searchTerm) => {
 
 
 // Fonction pour démarrer l'enregistrement
-export const startRecording = async () => {
+export const startRecording = async ({ username, password, ipAddress, port }) => {
   try {
     const response = await fetch('https://ia-sport.oa.r.appspot.com/api/start-recording', {
-      method: 'PUT'
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ username, password, ipAddress, port }),
     });
+
     if (!response.ok) {
       throw new Error('Échec du démarrage de l\'enregistrement');
     }
-    return response;
+    return response.json(); // Parse la réponse si nécessaire
   } catch (error) {
     console.error('Error starting recording:', error);
     throw error;
@@ -57,39 +196,62 @@ export const startRecording = async () => {
 };
 
 // Fonction pour arrêter l'enregistrement
-export const stopRecording = async () => {
+export const stopRecording = async ({ username, password, ipAddress, port }) => {
   try {
     const response = await fetch('https://ia-sport.oa.r.appspot.com/api/stop-recording', {
-      method: 'PUT'
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ username, password, ipAddress, port }),
     });
+
     if (!response.ok) {
       throw new Error('Échec de l\'arrêt de l\'enregistrement');
     }
-    return response;
+    return response.json(); // Parse la réponse si nécessaire
   } catch (error) {
     console.error('Error stopping recording:', error);
     throw error;
   }
 };
 
+
 // Fonction pour récupérer l'URI de lecture et la durée de la vidéo
-export const getPlaybackURI = async () => {
+export const getPlaybackURI = async ({ username, password, ipAddress, port }) => {
   try {
+    // Effectuer la requête POST avec les paramètres dans le corps
     const response = await fetch('https://ia-sport.oa.r.appspot.com/api/search', {
-      method: 'GET'
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ username, password, ipAddress, port }),
     });
+
     if (!response.ok) {
       throw new Error('Échec de la récupération de l\'URI de lecture');
     }
-    return await response.json();
+
+    return await response.json(); // Parse la réponse en JSON
   } catch (error) {
     console.error('Error fetching playback URI:', error);
     throw error;
   }
 };
 
+
+
 // Fonction pour télécharger la vidéo
 export const uploadVideo = async (filename, playbackURI, directory, duration) => {
+  // Ajout d'un log pour afficher les paramètres
+  console.log('Paramètres reçus :', {
+    filename: directory + ` ${filename}.mp4`,
+    cameraRtspUrl: playbackURI,
+    directory: directory,
+    duration: duration,
+  });
+
   try {
     const response = await fetch('https://ia-sport.oa.r.appspot.com/api/upload', {
       method: 'POST',
@@ -97,7 +259,7 @@ export const uploadVideo = async (filename, playbackURI, directory, duration) =>
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        filename: directory + `${filename}.mp4`,
+        filename: directory + ` ${filename}.mp4`,
         cameraRtspUrl: playbackURI,
         directory: directory,
         duration: duration,
@@ -112,6 +274,7 @@ export const uploadVideo = async (filename, playbackURI, directory, duration) =>
     throw error;
   }
 };
+
 export const fetchCompetitionsForClub = async (cl_no) => {
   try {
     const response = await fetch(`https://api-dofa.fff.fr/api/clubs/${cl_no}/equipes`);
@@ -139,8 +302,6 @@ export const fetchCompetitionsForClub = async (cl_no) => {
 
 export const fetchMatchesForClub = async ( cp_no, phaseId, pouleId, cl_no) => {
   try {
-
-    console.log(`api : https://api-dofa.fff.fr/api/compets/${cp_no}/phases/${phaseId}/poules/${pouleId}/matchs?clNo=${cl_no}`);
     const response = await fetch(`https://api-dofa.fff.fr/api/compets/${cp_no}/phases/${phaseId}/poules/${pouleId}/matchs?clNo=${cl_no}`);
     if (!response.ok) {
       throw new Error('Échec de la récupération des matchs');

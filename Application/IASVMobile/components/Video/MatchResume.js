@@ -1,101 +1,98 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, Modal, Dimensions } from 'react-native';
-import VideoControls from 'react-native-video-controls';
-import Orientation from 'react-native-orientation-locker';
+import { View, TouchableOpacity, Text, StyleSheet } from 'react-native';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import Effectif from './Effectif';
+import Compos from './Compos';
 
-const { width, height } = Dimensions.get('window');
+const MatchTabs = () => {
+  const [activeTab, setActiveTab] = useState('EFFECTIF');
+  const [players, setPlayers] = useState(
+    Array.from({ length: 14 }, (_, i) => ({
+      id: i + 1,
+      number: i + 1,
+      name: `Joueur ${i + 1}`,
+    }))
+  );
 
-const MatchResume = ({ selectedVideo }) => {
-  const [isFullScreen, setIsFullScreen] = useState(false);
-
-  const handleFullScreenToggle = () => {
-    if (!isFullScreen) {
-      Orientation.lockToLandscape(); // Mode paysage
-    } else {
-      Orientation.lockToPortrait(); // Mode portrait
+  const renderContent = () => {
+    switch (activeTab) {
+      case 'EFFECTIF':
+        return <Effectif players={players} setPlayers={setPlayers} />;
+      case 'COMPOS':
+        return <Compos players={players} />;
+      default:
+        return null;
     }
-    setIsFullScreen(!isFullScreen);
-  };
-
-  const handleEnd = () => {
-    console.log('La vidéo est terminée !');
   };
 
   return (
-    <View style={styles.container}>
-      {selectedVideo ? (
-        <>
-          {/* Vidéo avec contrôles personnalisés */}
-          <VideoControls
-            source={{ uri: selectedVideo.url }}
-            style={styles.video}
-            resizeMode="contain"
-            isFullscreen={false}
-            onEnterFullscreen={handleFullScreenToggle}
-            onExitFullscreen={handleFullScreenToggle}
-            onEnd={handleEnd}
-            showOnStart
-            controlTimeout={3000}
-            tapAnywhereToPause={false} // Désactiver play/pause par clic
-            disableVolume // Désactive la barre de volume
-            disableBack // Désactive le bouton retour
-          />
-
-          {/* Mode Plein Écran */}
-          {isFullScreen && (
-            <Modal
-              visible={isFullScreen}
-              animationType="slide"
-              onRequestClose={handleFullScreenToggle}
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <View style={styles.container}>
+        <View style={styles.tabBar}>
+          <TouchableOpacity
+            style={[styles.tabButton, activeTab === 'EFFECTIF' && styles.activeTab]}
+            onPress={() => setActiveTab('EFFECTIF')}
+          >
+            <Text
+              style={[
+                styles.tabText,
+                activeTab === 'EFFECTIF' ? styles.activeTabText : styles.inactiveTabText,
+              ]}
             >
-              <View style={styles.fullScreenContainer}>
-                <VideoControls
-                  source={{ uri: selectedVideo.url }}
-                  style={styles.fullScreenVideo}
-                  resizeMode="contain"
-                  isFullscreen={true}
-                  onEnterFullscreen={handleFullScreenToggle}
-                  onExitFullscreen={handleFullScreenToggle}
-                  onEnd={handleEnd}
-                  showOnStart
-                  controlTimeout={3000}
-                  tapAnywhereToPause={false} // Désactiver play/pause par clic
-                  disableVolume // Désactive la barre de volume en plein écran
-                  disableBack // Désactive le bouton retour en plein écran
-                />
-              </View>
-            </Modal>
-          )}
-        </>
-      ) : (
-        <Text style={styles.noContentText}>Aucune vidéo sélectionnée.</Text>
-      )}
-    </View>
+              EFFECTIF
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.tabButton, activeTab === 'COMPOS' && styles.activeTab]}
+            onPress={() => setActiveTab('COMPOS')}
+          >
+            <Text
+              style={[
+                styles.tabText,
+                activeTab === 'COMPOS' ? styles.activeTabText : styles.inactiveTabText,
+              ]}
+            >
+              COMPOSITION
+            </Text>
+          </TouchableOpacity>
+        </View>
+        <View style={styles.content}>{renderContent()}</View>
+      </View>
+    </GestureHandlerRootView>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#000',
-    justifyContent: 'center',
-    alignItems: 'center',
+    backgroundColor: 'transparent',
   },
-  fullScreenContainer: {
-    flex: 1,
-    backgroundColor: '#000',
-    justifyContent: 'center',
-    alignItems: 'center',
+  tabBar: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    backgroundColor: 'transparent',
+    paddingVertical: 10,
   },
-  fullScreenVideo: {
-    width: '100%',
-    height: '100%',
+  tabButton: {
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: 5,
   },
-  noContentText: {
-    color: '#FFF',
-    textAlign: 'center',
+  activeTab: {
+    backgroundColor: 'transparent',
+  },
+  tabText: {
     fontSize: 16,
+  },
+  activeTabText: {
+    color: '#FFFFFF',
+  },
+  inactiveTabText: {
+    color: '#808080',
+  },
+  content: {
+    flex: 1,
   },
 });
 
-export default MatchResume;
+export default MatchTabs;

@@ -1,48 +1,72 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, FlatList, TouchableOpacity, ActivityIndicator, StyleSheet, Image } from 'react-native';
+import {View,Text,FlatList,TouchableOpacity,ActivityIndicator,StyleSheet,Image,RefreshControl} from 'react-native';
+import Icon from 'react-native-vector-icons/FontAwesome';
 import { useClubContext } from './../ClubContext';
 
-// Constante de scale
-const scale = 0.85;
-
-// Fonction pour reformater la date au format "dd/MM/yyyy"
 const formatDate = (dateString) => {
-  let date;
+  try {
+    const [datePart] = dateString.split(' ');
+    const [day, month, year] = datePart.split('/');
+    const isoDateString = `${year}-${month}-${day}`;
+    const date = new Date(isoDateString);
 
-  // Vérifier si la date est un timestamp Unix (en millisecondes)
-  if (!isNaN(dateString)) {
-    date = new Date(Number(dateString));
-  } else {
-    date = new Date(dateString);
-
-    // Si ce n'est pas valide, tenter de diviser et reformater
-    if (isNaN(date.getTime())) {
-      const parts = dateString.split('/');
-      if (parts.length === 3) {
-        const day = parseInt(parts[0], 10);
-        const month = parseInt(parts[1], 10) - 1; // Mois commence à 0
-        const year = parseInt(parts[2], 10);
-        date = new Date(year, month, day);
-      }
+    if (!isNaN(date.getTime())) {
+      const formattedDay = String(date.getDate()).padStart(2, '0');
+      const formattedMonth = String(date.getMonth() + 1).padStart(2, '0');
+      const formattedYear = date.getFullYear();
+      return `${formattedDay}/${formattedMonth}/${formattedYear}`;
     }
+    console.error("Date invalide détectée :", dateString);
+    return 'Date non valide';
+  } catch (error) {
+    console.error("Erreur lors de la conversion de la date :", error);
+    return 'Date non valide';
   }
-
-  // Vérification finale de la validité de la date
-  if (!isNaN(date.getTime())) {
-    const day = String(date.getDate()).padStart(2, '0');
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const year = date.getFullYear();
-    return `${day}/${month}/${year}`;
-  }
-
-  return 'Date non valide'; // Retourne un message si la date n'est pas valide
 };
 
+const VideoItem = ({ item, handleVideoSelect, isGridView }) => {
+  const [isPressed, setIsPressed] = useState(false);
+
+  return (
+    <TouchableOpacity
+      style={[
+        styles.videoItem,
+        isGridView && styles.gridItem,
+        {
+          opacity: isPressed ? 1 : 0.99, // Opacité dynamique pour toute la vue
+        },
+      ]}
+      onPress={() => handleVideoSelect(item)}
+      onPressIn={() => setIsPressed(true)}
+      onPressOut={() => setIsPressed(false)}
+    >
+     <Image
+        source={{
+          uri: item.coverUrl,
+        }}
+        style={[
+          styles.videoImage,
+          {
+            opacity:  isPressed ? 1 : 0.8, // Gardez l'opacité de l'image fixe ici pour qu'elle suive celle du conteneur
+          },
+        ]}
+        defaultSource={require('../../assets/cover.png')} // Image par défaut
+      />
+      <View style={styles.videoDetails}>
+        <Text style={styles.videoName}>{item.name || 'Nom non disponible'}</Text>
+        <Text style={styles.creationDate}>
+          {item.creationDate ? formatDate(item.creationDate) : 'Date non disponible'}
+        </Text>
+      </View>
+    </TouchableOpacity>
+  );
+};
 const ListeVideoSidebar = ({ onVideoSelect }) => {
   const [videos, setVideos] = useState([]);
-  const [selectedVideo, setSelectedVideo] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState(null);
+  const [isGridView, setIsGridView] = useState(false);
 
   const { selectedClub } = useClubContext();
 
@@ -61,10 +85,18 @@ const ListeVideoSidebar = ({ onVideoSelect }) => {
         }
 
         const data = await response.json();
-        const sortedVideos = (data.videos || []).sort((a, b) => new Date(b.creationDate) - new Date(a.creationDate));
+        const sortedVideos = (data.videos || []).sort((a, b) => {
+          const convertToISO = (dateStr) => {
+            const [datePart, timePart] = dateStr.split(' ');
+            const [day, month, year] = datePart.split('/');
+            return `${year}-${month}-${day}T${timePart || '00:00:00'}`;
+          };
+          const dateA = new Date(convertToISO(a.creationDate));
+          const dateB = new Date(convertToISO(b.creationDate));
+          return dateB - dateA; // Trie du plus récent au plus ancien
+        });
 
         setVideos(sortedVideos);
-        setSelectedVideo(null);
       } catch (error) {
         console.error("Erreur lors de la recherche des vidéos:", error);
         setError('Impossible de charger les vidéos. Veuillez réessayer plus tard.');
@@ -77,65 +109,90 @@ const ListeVideoSidebar = ({ onVideoSelect }) => {
     }
   };
 
+  const onRefresh = async () => {
+    setRefreshing(true);
+    await handleSearch();
+    setRefreshing(false);
+  };
+
   useEffect(() => {
     handleSearch();
   }, [selectedClub]);
 
-  const handleVideoSelect = (video) => {
-    setSelectedVideo(video);
-    onVideoSelect(video);
-  };
-
-  const renderVideoItem = ({ item }) => (
-    <TouchableOpacity
-      style={[styles.videoItem, selectedVideo === item ? styles.selectedVideo : null]}
-      onPress={() => handleVideoSelect(item)}
-    >
-      <Image source={require('../../assets/ImageDeConverture.jpg')} style={styles.videoImage} />
-      <View style={styles.videoDetails}>
-      <Text style={styles.videoName}>{item.name || 'Nom non disponible'}</Text>
-        <Text style={styles.creationDate}>
-          {item.creationDate ? formatDate(item.creationDate) : 'Date non disponible'}
-        </Text>
-      </View>
-    </TouchableOpacity>
-  );
-
   return (
     <View style={styles.container}>
+      <View style={styles.switchContainer}>
+        <TouchableOpacity
+          style={[styles.switchButton, isGridView ? styles.inactiveButton : styles.activeButton]}
+          onPress={() => setIsGridView(false)}
+        >
+          <Icon name="list" size={24} color={isGridView ? '#808080' : '#fff'} />
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.switchButton, isGridView ? styles.activeButton : styles.inactiveButton]}
+          onPress={() => setIsGridView(true)}
+        >
+          <Icon name="th-large" size={24} color={isGridView ? '#fff' : '#808080'} />
+        </TouchableOpacity>
+      </View>
       {loading && <ActivityIndicator size="large" color="#00A0E9" />}
       {error && <Text style={styles.errorMessage}>{error}</Text>}
       {!loading && !error && (
         <FlatList
+          key={isGridView ? 'grid' : 'list'} // Change la clé selon la vue
           data={videos}
-          renderItem={renderVideoItem}
+          renderItem={({ item }) => (
+            <VideoItem item={item} handleVideoSelect={onVideoSelect} isGridView={isGridView} />
+          )}
           keyExtractor={(item, index) => index.toString()}
           ListEmptyComponent={<Text style={styles.noVideos}>Aucune vidéo disponible</Text>}
-          ListHeaderComponent={<Text style={styles.header}></Text>}
-          contentContainerStyle={styles.listContent}
-          showsVerticalScrollIndicator={false} // Masquer la scrollbar verticale
+          numColumns={isGridView ? 3 : 1} // Définit le nombre de colonnes
+          contentContainerStyle={[
+            styles.listContent,
+            isGridView && styles.gridContent,
+          ]}
+          refreshControl={
+            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+          }
         />
       )}
     </View>
   );
 };
 
-// Styles ici (modifiés pour inclure le scale)
+const scale = 0.85;
 const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
+  switchContainer: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    marginVertical: 3,
+  },
+  switchButton: {
+    marginHorizontal: 85,
+    borderRadius: 5,
+    borderWidth: 1,
+    borderColor: 'transparent', // Bordure transparente si nécessaire
+    backgroundColor: 'transparent', // Fond transparent
+  },
   videoItem: {
+    flex: 1,
     flexDirection: 'column',
     alignItems: 'center',
-    elevation: 2,
-    marginVertical : 10,
+    marginBottom: 10,
+  },
+  gridItem: {
+    marginHorizontal: 5,
   },
   videoImage: {
-    width: '100%', // Utiliser 100% pour remplir l'espace disponible
-    height: undefined, // Ne pas définir la hauteur
-    aspectRatio: 256 / 144, // Maintenir le ratio d'aspect
-
+    width: '100%',
+    height: undefined,
+    aspectRatio: 256 / 144,
+  },
+  gridImage: {
+    aspectRatio: 16 / 9,
   },
   videoDetails: {
     flex: 1,
@@ -171,6 +228,9 @@ const styles = StyleSheet.create({
   },
   listContent: {
     paddingBottom: 20 * scale,
+  },
+  gridContent: {
+    paddingHorizontal: 5,
   },
 });
 

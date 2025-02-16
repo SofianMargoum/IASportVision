@@ -1,5 +1,3 @@
-// index.js
-
 const express = require('express');
 const { OAuth2Client } = require('google-auth-library');
 const app = express();
@@ -23,33 +21,50 @@ app.use((req, res, next) => {
   next();
 });
 
-// Importer les routes
-const helloRoute = require('./api/hello');
-const testRoute = require('./api/test');
-const searchRoute = require('./api/search');
-const videosRoute = require('./api/videos');
-const uploadRoute = require('./api/upload');
-const startRecordingRoute = require('./api/startRecording');
-const stopRecordingRoute = require('./api/stopRecording');
-const startLiveViewRoute = require('./api/startLiveView');
-const googleAuthRoute = require('./api/google'); // Importer la route Google Auth
-const mergeImagesRoute = require('./api/mergeImages'); // Importer la route
-//const analyzeVideoRoute = require('./api/analyzeVideo');
+// Fonction pour importer les routes en toute sécurité (évite que l'import d'une route plante le serveur)
+const safeRequire = (routePath) => {
+  try {
+    return require(routePath);
+  } catch (error) {
+    console.error(`Erreur lors du chargement de ${routePath}:`, error.message);
+    return null;
+  }
+};
 
-// Utiliser les routes
-app.use('/api', helloRoute);
-app.use('/api', testRoute);
-app.use('/api', searchRoute);
-app.use('/api', videosRoute);
-app.use('/api', uploadRoute);
-app.use('/api', startRecordingRoute); 
-app.use('/api', stopRecordingRoute); 
-app.use('/api', startLiveViewRoute); 
-app.use('/api', googleAuthRoute); // Utiliser la route Google Auth
-app.use('/api', mergeImagesRoute); // Ajouter la route à Express
-//app.use('/api', analyzeVideoRoute);
+// Importer les routes
+const routes = {
+  helloRoute: safeRequire('./api/hello'),
+  testRoute: safeRequire('./api/test'),
+  searchRoute: safeRequire('./api/search'),
+  videosRoute: safeRequire('./api/videos'),
+  uploadRoute: safeRequire('./api/upload'),
+  uploadandmergeRoute: safeRequire('./api/upload-and-merge'),
+  startRecordingRoute: safeRequire('./api/startRecording'),
+  stopRecordingRoute: safeRequire('./api/stopRecording'),
+  startLiveViewRoute: safeRequire('./api/startLiveView'),
+  googleAuthRoute: safeRequire('./api/google'),
+  mergeImagesRoute: safeRequire('./api/mergeImages'),
+  effectifRoute: safeRequire('./api/effectif'),
+  deviceRoute: safeRequire('./api/device'),
+  inputEffectifRoute: safeRequire('./api/inputEffectif'),
+};
+
+// Attacher les routes sans faire planter l'API
+Object.entries(routes).forEach(([name, route]) => {
+  if (route) {
+    app.use('/api', route);
+  } else {
+    console.warn(`⚠️  La route ${name} n'a pas été chargée.`);
+  }
+});
+
+// Middleware global pour capturer les erreurs
+app.use((err, req, res, next) => {
+  console.error('🚨 Erreur attrapée par le middleware global:', err);
+  res.status(500).json({ status: 'error', message: 'Une erreur interne est survenue.' });
+});
 
 // Démarrer le serveur
 app.listen(port, () => {
-  console.log(`Server running on http://localhost:${port}`);
+  console.log(`✅ Serveur en ligne sur http://localhost:${port}`);
 });

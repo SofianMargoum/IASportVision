@@ -9,8 +9,9 @@ router.get('/startLiveView', (req, res) => {
   if (ffmpegProcess) {
     return res.status(400).json({ message: 'Le flux est déjà en cours.' });
   }
-
-  const videoSource = 'rtsp://admin:Vidauban@91.170.83.13:55400/Streaming/Channels/101/';
+  
+  
+  const videoSource = 'rtsp://admin:Vidauban@[2a01:cb1c:fc0:9f00:3e1b:f8ff:fefa:557b]:55400/Streaming/Channels/101/';
   const stream = new PassThrough();
 
   res.writeHead(200, {

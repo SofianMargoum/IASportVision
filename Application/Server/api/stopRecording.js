@@ -4,13 +4,25 @@ const xml2js = require('xml2js');
 
 router.put('/stop-recording', async (req, res) => {
   try {
+    // Récupérer les paramètres depuis le corps de la requête
+    const { username, password, ipAddress, port } = req.body;
+
+    // Vérifier que tous les paramètres requis sont présents
+    if (!username || !password || !ipAddress || !port) {
+      return res.status(400).json({ message: 'Missing required parameters' });
+    }
+
     // Importer le module digest-fetch dynamiquement
     const { default: DigestFetch } = await import('digest-fetch');
 
-    const client = new DigestFetch('admin', 'Vidauban');
+    // Initialiser le client DigestFetch avec les identifiants fournis
+    const client = new DigestFetch(username, password);
+
+    // Construire l'URL avec l'adresse IP et le port
+    const url = `http://[${ipAddress}]:${port}/ISAPI/ContentMgmt/record/control/manual/stop/tracks/1`;
 
     // Requête PUT avec digest-fetch
-    const response = await client.fetch('http://91.170.83.13:60000/ISAPI/ContentMgmt/record/control/manual/stop/tracks/1', {
+    const response = await client.fetch(url, {
       method: 'PUT',
     });
 
@@ -30,7 +42,7 @@ router.put('/stop-recording', async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Error stoping recording:', error);
+    console.error('Error stopping recording:', error);
     res.status(500).json({ message: 'Failed to stop recording', error: error.message });
   }
 });

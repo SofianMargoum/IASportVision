@@ -1,1 +1,13 @@
 runtime: nodejs20
+
+# Variables d'environnement pour la configuration de la base de données
+env_variables:
+  DB_HOST: '34.163.248.199' # Adresse IP publique de votre instance Cloud SQL
+  DB_USER: 'postgres' # Remplacez par le nom d'utilisateur de votre base de données
+  DB_PASS: 'postgres' # Remplacez par le mot de passe de votre base de données
+  DB_NAME: 'iasportvision2025' # Remplacez par le nom de la base de données
+  DB_PORT: '5432' # Port par défaut de votre instance Cloud SQL
+
+# Connexion à Cloud SQL (format : <PROJECT_ID>:<REGION>:<INSTANCE_NAME>)
+beta_settings:
+  cloud_sql_instances: 'ia-sport:europe-west9:ia-sport-vision'

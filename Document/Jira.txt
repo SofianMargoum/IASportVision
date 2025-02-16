@@ -1,18 +1,11 @@
 Backlog :
 		ticket 1 Onglet Live :
 			-Mettre la video en direct sur l'appli
-			-Supprimer la video dans la carte sd apres upload dans le cloud
 			-Pause (enregistrement)
-			-Lecture (enregistrement)
 			-Bouton action pour resumer
 			
 		ticket 2 Onglet Resultat :
 		
-			-Récupéré les statistiques du championnat :
-			-Meilleur attaque
-			-Meilleur defense
-			-Meilleur equilibre
-			
 			-Récupéré les statistiques de l'equipe :
 				-Meilleur buteur
 				-Meilleur passeur
@@ -41,24 +34,29 @@ Backlog :
 			-Mettre sur play store
 			
 			
-SPRINT 3 :			
+SPRINT 4 :			
 		ticket 1 Onglet Live :
-			-Pause (enregistrement)
-			-Lecture (enregistrement)
-			-Gestion des droit des utilisateurs
+			-Supprimer la video dans la carte sd apres upload dans le cloud
 			
 		ticket 2 Onglet Resultat :
 			
 		ticket 3 Onglet Video :
-			-afficher 2 mode vue liste et galerie
-			-Remplacer match resumer par effectif, compos global, compos phase ofensif, compos phase defensif
-			-Gestion des droit des utilisateurs
+			-Remplacer match resumer par effectif, compos global
 			
 		ticket 4 Onglet Explore :
 		
 		ticket 5 Onglet Connexion :
 			-Gestion des droit des utilisateurs
-			-bouton se connecter
+			
+			
+			
+SPRINT 3 :			
+		ticket 1 Onglet Live :
+			-Lecture (enregistrement)
+			-Arret (enregistrement)
+			
+		ticket 3 Onglet Video :
+			-afficher 2 mode vue liste et galerie
 			
 		server :
 		generer une image couverture

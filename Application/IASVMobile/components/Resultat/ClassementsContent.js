@@ -37,15 +37,6 @@ function ClassementsContent() {
     loadClassements();
   }, [selectedClub, competition]);
 
-  // Affichage si les données sont en cours de chargement
-  if (loading) {
-    return (
-      <View style={styles.centered}>
-        <ActivityIndicator size="large" color="#00A0E9" />
-        <Text style={styles.loadingText}>Chargement des classements...</Text>
-      </View>
-    );
-  }
 
   // Affichage en cas d'erreur
   if (error) {
