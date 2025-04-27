@@ -31,7 +31,9 @@ https://www.youtube.com/watch?v=DxRT-Z2E_x8&ab_channel=SFEIRTV
 sudo apt install ffmpeg
 ffmpeg -version
 
-	
+npm install react-native-navigation-bar-color react-native-full-screen  --legacy-peer-deps
+
+	npm install react-native-full-screen@0.0.2  --legacy-peer-deps
 npm install react-native-device-info --legacy-peer-deps
 
 npm install node-arp --legacy-peer-deps

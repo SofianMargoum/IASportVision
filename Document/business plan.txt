@@ -3,9 +3,9 @@ Projet :
 	
 	-Avec les images d'un match de foot officiel pouvoir : 
 		
-		-Filmer et visionner les videos des match enregistrer
-		-Recuperer et afficher les resultat et le classement du compionat de l'equipe
-		-Recuperer et afficher les statistique de l'équipe et des joueur individuelle
+		-Filmer et visionner les videos des match officiel
+		-Recuperer et afficher les resultat et le classement du championnat de l'equipe
+		-Recuperer et afficher les statistique de l'équipe et des joueur individuelle a l'aide de l'IA
 		
 Mes produits:
 
@@ -18,10 +18,10 @@ Mes produits:
 Solution:
 	
 	-Google Cloud plateform
-	-Google Cloud Video Intelligence
+	-Verrtex AI
 	-App engine
 	-Node.js (backend)
-	-react (frontend)
+	-react, react native (frontend)
 	
 Application:
 une application pour le football amateur.
@@ -36,9 +36,9 @@ il y a deux type d'utilisateur:
 				-cinquieme onglet : parametre du compte, mdp, ip camera...
 	-Utilisateur lambda. 
 		-il devra renseigner le club qu'il cherche
-			-il aura accés à 3 onglets:
+			-il aura accés à 5 onglets:
 				-premiere onglet :  visionner un match en direct
 				-deuxiemme onglet : visionner le classement les resulat et le calendrier 
-				-troisieme onglet : liste des videos deja enregistrer et possibilité de les visionner
+				-troisieme onglet : liste des videos deja enregistrer et possibilité de les visionner + statistique
 				-quatrieme onglet : barre de recherche des autre club. pour visioner leur resulat et video
-				-cinquieme onglet : parametre du compte, mdp, ip camera...
+				-cinquieme onglet : effectif, composition, statistique, camera,

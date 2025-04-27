@@ -9,7 +9,7 @@
 
 --Astuce version simple Push
 	git add .
-	git commit -m "IASV update SPRINT 3 start"
+	git commit -m "IASV update SPRINT 4 start"
 	git push -u origin main
 
 --Astuce pull

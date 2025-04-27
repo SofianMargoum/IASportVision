@@ -10,6 +10,8 @@
     "test": "jest"
   },
   "dependencies": {
+    "@expo/vector-icons": "^14.0.4",
+    "@openspacelabs/react-native-zoomable-view": "^2.3.1",
     "@react-native-async-storage/async-storage": "^1.19.1",
     "@react-native-community/masked-view": "^0.1.11",
     "@react-native-community/slider": "^4.5.5",
@@ -28,9 +30,10 @@
     "react-native-device-info": "^14.0.2",
     "react-native-draggable-flatlist": "^4.0.1",
     "react-native-fast-image": "^8.6.3",
-    "react-native-gesture-handler": "^2.20.2",
+    "react-native-gesture-handler": "^2.23.1",
     "react-native-immersive": "^2.0.0",
     "react-native-linear-gradient": "^2.8.3",
+    "react-native-navigation-bar-color": "^2.0.2",
     "react-native-network-info": "^5.2.1",
     "react-native-orientation-locker": "^1.7.0",
     "react-native-pager-view": "^6.4.1",
@@ -42,8 +45,10 @@
     "react-native-tab-view": "^3.5.2",
     "react-native-udp": "^4.1.7",
     "react-native-vector-icons": "^10.2.0",
-    "react-native-video": "^6.7.0",
-    "react-native-video-controls": "^2.8.1"
+    "react-native-video": "^6.10.1",
+    "react-native-video-controls": "^2.8.1",
+    "react-native-webview": "^13.13.2",
+    "react-native-zoomable-view": "^0.3.1"
   },
   "devDependencies": {
     "@babel/core": "^7.20.0",

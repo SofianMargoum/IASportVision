@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { TabView, SceneMap } from 'react-native-tab-view';
 import MatchComplet from './MatchComplet';
-import MatchResume from './MatchResume'; // Onglet qui contient le drag-and-drop
+import MatchResume from './MatchResume';
 import StatsEquipes from './StatsEquipes';
 import StatsJoueurs from './StatsJoueurs';
 
@@ -19,7 +19,7 @@ const ListeVideo = ({ selectedVideo }) => {
 
   const renderScene = SceneMap({
     video: () => <MatchComplet selectedVideo={selectedVideo} />,
-    resume: () => <MatchResume selectedVideo={selectedVideo} />, // Drag-and-drop dans cet onglet
+    resume: () => <MatchResume selectedVideo={selectedVideo} />,
     statsEquipes: () => <StatsEquipes />,
     statsJoueurs: () => <StatsJoueurs />,
   });
@@ -30,7 +30,7 @@ const ListeVideo = ({ selectedVideo }) => {
         navigationState={{ index, routes }}
         renderScene={renderScene}
         onIndexChange={setIndex}
-        swipeEnabled={index !== 1} // Désactiver le swipe horizontal pour "COMPOS EFFECTIF"
+        swipeEnabled={index !== 0} // ❌ Désactiver le swipe pour l'onglet "MATCH COMPLET"
         initialLayout={{ width: '100%' }}
         renderTabBar={(props) => (
           <View style={styles.nav}>
