@@ -30,7 +30,7 @@ const ListeVideo = ({ selectedVideo }) => {
         navigationState={{ index, routes }}
         renderScene={renderScene}
         onIndexChange={setIndex}
-        swipeEnabled={index !== 0} // ❌ Désactiver le swipe pour l'onglet "MATCH COMPLET"
+        swipeEnabled={index !== 0}
         initialLayout={{ width: '100%' }}
         renderTabBar={(props) => (
           <View style={styles.nav}>

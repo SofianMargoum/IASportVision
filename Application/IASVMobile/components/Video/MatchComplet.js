@@ -7,7 +7,7 @@ const MatchComplet = ({ selectedVideo }) => {
     if (!selectedVideo) {
       return <Text style={styles.noContentText}>Aucune vidéo sélectionnée.</Text>;
     }
-    return <OptimizedVideoPlayer key={selectedVideo.url} videoUri={selectedVideo.url} />;
+    return <OptimizedVideoPlayer key={selectedVideo.url} videoUri={selectedVideo.url} zoomMap={selectedVideo.jsonUrl} />;
   }, [selectedVideo]);
 
   return <View style={styles.container}>{videoComponent}</View>;

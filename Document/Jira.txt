@@ -25,6 +25,7 @@ Backlog :
 		ticket 4 Onglet Explore :
 		
 		ticket 5 Onglet Connexion :
+		
 			-Gestion des droit des utilisateurs
 			-Prendre en photo les maillots
 			-renseigner l'adresse ip externe et la detecter automatiquement

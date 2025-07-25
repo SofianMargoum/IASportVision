@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { View, StyleSheet, BackHandler } from 'react-native';
-import { PanGestureHandler, State } from 'react-native-gesture-handler';
 import ListeVideo from './Video/ListeVideo';
 import ListeVideoSidebar from './Video/ListeVideoSidebar';
 
@@ -18,12 +17,6 @@ const Home = () => {
     return true;
   };
 
-  const handleSwipeRight = ({ nativeEvent }) => {
-    if (nativeEvent.translationX > 50) { // Si on détecte un swipe de 50px vers la droite
-      handleBackClick();
-    }
-  };
-
   useEffect(() => {
     if (selectedVideo) {
       const backHandler = BackHandler.addEventListener('hardwareBackPress', handleBackClick);
@@ -33,13 +26,10 @@ const Home = () => {
 
   return (
     <View style={styles.container}>
-      {/* Détection du swipe seulement sur l'écran de la vidéo sélectionnée */}
       {selectedVideo ? (
-        <PanGestureHandler onGestureEvent={handleSwipeRight} activeOffsetX={[-10, 10]}>
-          <View style={styles.listeVideo}>
-            <ListeVideo selectedVideo={selectedVideo} />
-          </View>
-        </PanGestureHandler>
+        <View style={styles.listeVideo}>
+          <ListeVideo selectedVideo={selectedVideo} />
+        </View>
       ) : (
         <View style={styles.listeVideoSidebar}>
           <ListeVideoSidebar onVideoSelect={handleVideoSelect} />

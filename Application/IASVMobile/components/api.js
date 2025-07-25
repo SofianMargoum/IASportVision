@@ -22,6 +22,62 @@ export const sendIdTokenToBackend = async (idToken) => {
   }
 };
 
+// api.js
+export const uploadZoomMapToApi = async (zoomMapExport, filename) => {
+  if (!filename) {
+    console.error('❌ filename est requis pour uploadZoomMapToApi');
+    return;
+  }
+
+  try {
+    const response = await fetch('https://ia-sport.oa.r.appspot.com/api/uploadZoomMap', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        filename: filename,
+        data: zoomMapExport,
+      }),
+    });
+
+    const result = await response.json();
+
+    if (response.ok) {
+      console.log('✅ ZoomMap uploaded:', result.gcsUrl);
+    } else {
+      console.error('Erreur API:', result.message);
+    }
+  } catch (error) {
+    console.error('Erreur fetch:', error);
+  }
+};
+
+
+
+
+export const fetchVideosByClub = async (clubName) => {
+  const url = `https://ia-sport.oa.r.appspot.com/api/videos?folder=${encodeURIComponent(clubName)}`;
+
+  const response = await fetch(url);
+  if (!response.ok) {
+    throw new Error('Erreur lors de la récupération des vidéos');
+  }
+
+  const data = await response.json();
+
+  const sortedVideos = (data.videos || []).sort((a, b) => {
+    const convertToISO = (dateStr) => {
+      const [datePart, timePart] = dateStr.split(' ');
+      const [day, month, year] = datePart.split('/');
+      return `${year}-${month}-${day}T${timePart || '00:00:00'}`;
+    };
+    return new Date(convertToISO(b.creationDate)) - new Date(convertToISO(a.creationDate));
+  });
+
+  return sortedVideos;
+};
+
 // Fonction pour appeler l'API de fusion d'images
 export const mergeImages = async ({ logo1Url, logo2Url, finalFolder, finalName }) => {
   try {

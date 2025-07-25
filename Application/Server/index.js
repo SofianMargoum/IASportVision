@@ -47,6 +47,7 @@ const routes = {
   effectifRoute: safeRequire('./api/effectif'),
   deviceRoute: safeRequire('./api/device'),
   inputEffectifRoute: safeRequire('./api/inputEffectif'),
+  uploadZoomMapRoute: safeRequire('./api/uploadZoomMap'),
 };
 
 // Attacher les routes sans faire planter l'API

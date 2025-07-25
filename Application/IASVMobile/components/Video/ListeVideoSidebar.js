@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import {View,Text,FlatList,TouchableOpacity,ActivityIndicator,StyleSheet,Image,RefreshControl} from 'react-native';
 import Icon from 'react-native-vector-icons/FontAwesome';
 import { useClubContext } from './../ClubContext';
+import { fetchVideosByClub } from './../api'; // ou './api' selon l'emplacement
 
 const formatDate = (dateString) => {
   try {
@@ -70,44 +71,26 @@ const ListeVideoSidebar = ({ onVideoSelect }) => {
 
   const { selectedClub } = useClubContext();
 
-  const handleSearch = async () => {
-    setLoading(true);
-    setError(null);
+const handleSearch = async () => {
+  setLoading(true);
+  setError(null);
 
-    if (selectedClub) {
-      const folder = selectedClub.name;
-      const url = `https://ia-sport.oa.r.appspot.com/api/videos?folder=${encodeURIComponent(folder)}`;
-
-      try {
-        const response = await fetch(url);
-        if (!response.ok) {
-          throw new Error('Erreur lors de la récupération des vidéos');
-        }
-
-        const data = await response.json();
-        const sortedVideos = (data.videos || []).sort((a, b) => {
-          const convertToISO = (dateStr) => {
-            const [datePart, timePart] = dateStr.split(' ');
-            const [day, month, year] = datePart.split('/');
-            return `${year}-${month}-${day}T${timePart || '00:00:00'}`;
-          };
-          const dateA = new Date(convertToISO(a.creationDate));
-          const dateB = new Date(convertToISO(b.creationDate));
-          return dateB - dateA; // Trie du plus récent au plus ancien
-        });
-
-        setVideos(sortedVideos);
-      } catch (error) {
-        console.error("Erreur lors de la recherche des vidéos:", error);
-        setError('Impossible de charger les vidéos. Veuillez réessayer plus tard.');
-      } finally {
-        setLoading(false);
-      }
-    } else {
-      setVideos([]);
+  if (selectedClub) {
+    try {
+      const sortedVideos = await fetchVideosByClub(selectedClub.name);
+      setVideos(sortedVideos);
+    } catch (error) {
+      console.error("Erreur lors de la recherche des vidéos:", error);
+      setError('Impossible de charger les vidéos. Veuillez réessayer plus tard.');
+    } finally {
       setLoading(false);
     }
-  };
+  } else {
+    setVideos([]);
+    setLoading(false);
+  }
+};
+
 
   const onRefresh = async () => {
     setRefreshing(true);
