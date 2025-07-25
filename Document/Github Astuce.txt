@@ -4,13 +4,18 @@
 	git add README.md
 	git commit -m "first commit"
 	git branch -M main
-	git remote add origin https://github.com/SofianMargoum/test.git
+	git remote add origin https://github.com/SofianMargoum/IASportVision.git
 	git push -u origin main
 
 --Astuce version simple Push
 	git add .
-	git commit -m "IASV update SPRINT 4 start"
+	git commit -m "IASV update SPRINT 5 start"
 	git push -u origin main
 
 --Astuce pull
 	git pull origin main
+
+
+git rev-list --objects --all | git cat-file --batch-check='%(objecttype) %(objectname) %(objectsize) %(rest)' |
+  grep '^blob' | sort -k3 -n | tail -n 20
+test
