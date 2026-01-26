@@ -1,19 +1,43 @@
-import React, { useState, useCallback, useMemo, Suspense } from 'react';
-import { View, Text, TouchableOpacity, ActivityIndicator, StyleSheet, Dimensions, ScrollView, RefreshControl } from 'react-native';
+import React, { useState, useCallback, useMemo, Suspense, useEffect } from 'react';
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  ActivityIndicator,
+  StyleSheet,
+  Dimensions,
+  ScrollView,
+  RefreshControl,
+  Animated,
+} from 'react-native';
 import { TabView, SceneMap } from 'react-native-tab-view';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import { useClubContext } from './../tools/ClubContext'; // 👈 ton contexte
 
-// Lazy loading components to optimize initial load time
-const MatchsContent = React.lazy(() => import('./Resultat/MatchsContent'));
-const ClassementsContent = React.lazy(() => import('./Resultat/ClassementsContent'));
-const StatsContent = React.lazy(() => import('./Resultat/StatsContent'));
+// Lazy loading components
+const MatchsContent = React.lazy(() =>
+  import('./Resultat/MatchsContent')
+);
+const ClassementsContent = React.lazy(() =>
+  import('./Resultat/ClassementsContent')
+);
+const StatsContent = React.lazy(() =>
+  import('./Resultat/StatsContent')
+);
 
-const scale = 0.85; // Adjust this value as needed
-const initialLayout = { width: Dimensions.get('window').width };
 
-const Resultat = () => {
+const scale = 0.85;
+const { width } = Dimensions.get('window');
+const initialLayout = { width };
+
+const Resultat = ({ isActive }) => {
   const [index, setIndex] = useState(0);
   const [refreshing, setRefreshing] = useState(false);
+  const [hasContent, setHasContent] = useState(false);
+  const fadeAnim = useState(new Animated.Value(0))[0];
+
+  const { selectedClub } = useClubContext(); // 👈 on se base sur le club sélectionné
+
   const [routes] = useState([
     { key: 'matchs', title: 'MATCHS' },
     { key: 'classements', title: 'CLASSEMENTS' },
@@ -22,34 +46,45 @@ const Resultat = () => {
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
-    // Simulez une attente ou effectuez une action de rafraîchissement ici
-    setTimeout(() => {
-      setRefreshing(false);
-    }, 2000);
+    setTimeout(() => setRefreshing(false), 2000);
   }, []);
+
+  // ⚙️ Détection du contenu (basé sur selectedClub)
+  useEffect(() => {
+    setHasContent(!!selectedClub);
+  }, [selectedClub]);
+
+  // 🎞️ Animation d’apparition de la vidéo
+  useEffect(() => {
+    if (!hasContent) {
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 800,
+        useNativeDriver: true,
+      }).start();
+    } else {
+      fadeAnim.setValue(0);
+    }
+  }, [hasContent]);
 
   const renderScene = useMemo(
     () =>
       SceneMap({
         matchs: () => (
-          <Suspense fallback={<ActivityIndicator size="large" color="#00A0E9" />}>
+          <Suspense fallback={null}>
             <ScrollView
               style={{ flex: 1 }}
-              refreshControl={
-                <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-              }
+              refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
             >
               <MatchsContent />
             </ScrollView>
           </Suspense>
         ),
         classements: () => (
-          <Suspense fallback={<ActivityIndicator size="large" color="#00A0E9" />}>
+          <Suspense fallback={null}>
             <ScrollView
               style={{ flex: 1 }}
-              refreshControl={
-                <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-              }
+              refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
             >
               <ClassementsContent />
             </ScrollView>
@@ -59,9 +94,7 @@ const Resultat = () => {
           <Suspense fallback={<ActivityIndicator size="large" color="#00A0E9" />}>
             <ScrollView
               style={{ flex: 1 }}
-              refreshControl={
-                <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-              }
+              refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
             >
               <StatsContent />
             </ScrollView>
@@ -72,38 +105,44 @@ const Resultat = () => {
   );
 
   const renderTabBar = useCallback(
-    (props) => (
-      <View style={styles.nav}>
-        {props.navigationState.routes.map((route, i) => (
-          <TouchableOpacity
-            key={i}
-            style={[styles.button, index === i && styles.activeButton]}
-            onPress={() => setIndex(i)}
-          >
-            <Text style={[styles.buttonText, index === i && styles.activeButtonText]}>
-              {route.title}
-            </Text>
-            {index === i && <View style={styles.activeIndicator} />}
-          </TouchableOpacity>
-        ))}
-      </View>
-    ),
-    [index]
+    (props) =>
+      hasContent && (
+        <View style={styles.nav}>
+          {props.navigationState.routes.map((route, i) => (
+            <TouchableOpacity
+              key={i}
+              style={[styles.button, index === i && styles.activeButton]}
+              onPress={() => setIndex(i)}
+            >
+              <Text style={[styles.buttonText, index === i && styles.activeButtonText]}>
+                {route.title}
+              </Text>
+              {index === i && <View style={styles.activeIndicator} />}
+            </TouchableOpacity>
+          ))}
+        </View>
+      ),
+    [index, hasContent]
   );
 
   return (
     <GestureHandlerRootView style={styles.resultatContainer}>
-      <TabView
-        navigationState={{ index, routes }}
-        renderScene={renderScene}
-        onIndexChange={setIndex}
-        initialLayout={initialLayout}
-        renderTabBar={renderTabBar}
-      />
+      {hasContent ? (
+        <TabView
+          navigationState={{ index, routes }}
+          renderScene={renderScene}
+          onIndexChange={setIndex}
+          initialLayout={initialLayout}
+          renderTabBar={renderTabBar}
+        />
+      ) : (
+        <Animated.View style={[styles.videoContainer, { opacity: fadeAnim }]}>
+          <Text style={styles.noContentText}>Aucun résultat trouvé</Text>
+        </Animated.View>
+      )}
     </GestureHandlerRootView>
   );
 };
-
 
 const styles = StyleSheet.create({
   resultatContainer: {
@@ -140,10 +179,19 @@ const styles = StyleSheet.create({
     height: 3,
     backgroundColor: '#00A0E9',
   },
-  contentContainer: {
+  videoContainer: {
     flex: 1,
-    padding: 8 * scale,
-    borderRadius: 8,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#010914',
+  },
+  video: {
+    alignSelf: 'center',
+  },
+  noContentText: {
+    color: '#ffffff',
+    fontSize: 18,
+    textAlign: 'center',
   },
 });
 

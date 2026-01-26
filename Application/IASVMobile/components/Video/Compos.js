@@ -50,7 +50,7 @@ const Compos = ({ players }) => {
     >
       {players.map((player, index) => (
         <View
-          key={player.id}
+          key={player.id || `compos-${index}`}
           {...panResponders[index].panHandlers}
           style={[
             styles.playerItem,

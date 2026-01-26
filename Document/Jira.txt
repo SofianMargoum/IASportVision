@@ -6,6 +6,13 @@ Backlog :
 			
 		ticket 2 Onglet Resultat :
 		
+			-Récupéré les statistique des joueurs :
+				-nombre de km parcourue, 
+				-nombre de passe, 
+				-nombre de tir,
+				-nombre de ballon touché
+				-nombre de ballon recuperer...
+				
 			-Récupéré les statistiques de l'equipe :
 				-Meilleur buteur
 				-Meilleur passeur
@@ -27,13 +34,21 @@ Backlog :
 		ticket 5 Onglet Connexion :
 		
 			-Gestion des droit des utilisateurs
-			-Prendre en photo les maillots
-			-renseigner l'adresse ip externe et la detecter automatiquement
-			-faire compo 
 			
 		Autre :
 			-Mettre sur play store
+			-990 solution pour club : camera 
+			-99 solution individuelle :   pack sportif (chaussette antiderapante + haute de chaussette + bandage) + tracker micro + accès compte
+			-Premiere connexion entre un club et une equipe ou ignorer
 			
+			
+SPRINT 5 :			
+		Creer un site internet OK
+		Creer un insta OK
+		Creer un facebook
+		Creer des slide de presentation
+		Creer une carte de visite
+		
 			
 SPRINT 4 :			
 		ticket 1 Onglet Live :
@@ -67,18 +82,12 @@ SPRINT 2 :
 			-Gestion des droit des utilisateurs
 			
 		ticket 3 Onglet Video :
-			-Récupéré les statistique des joueurs :
-				-nombre de km parcourue, 
-				-nombre de passe, 
-				-nombre de tir,
-				-nombre de ballon touché
-				-nombre de ballon recuperer...
 			-Generer une video resumé du match
 			-changer l'image de couverture
 			-video presentation
+			
 		ticket 2 Onglet Resultat :
 			-fixer le header du classement
-			-mettre les but pour et but contre
 			
 		ticket 4 Onglet Explore :
 			-suggestion les 3 derniers clubs

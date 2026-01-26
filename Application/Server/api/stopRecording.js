@@ -19,7 +19,7 @@ router.put('/stop-recording', async (req, res) => {
     const client = new DigestFetch(username, password);
 
     // Construire l'URL avec l'adresse IP et le port
-    const url = `http://[${ipAddress}]:${port}/ISAPI/ContentMgmt/record/control/manual/stop/tracks/1`;
+    const url = `http://${ipAddress}:${port}/ISAPI/ContentMgmt/record/control/manual/stop/tracks/1`;
 
     // Requête PUT avec digest-fetch
     const response = await client.fetch(url, {

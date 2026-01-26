@@ -40,6 +40,7 @@ const routes = {
   uploadRoute: safeRequire('./api/upload'),
   uploadandmergeRoute: safeRequire('./api/upload-and-merge'),
   startRecordingRoute: safeRequire('./api/startRecording'),
+  startRecordingCloudRoute: safeRequire('./api/startRecordingCloud'),
   stopRecordingRoute: safeRequire('./api/stopRecording'),
   startLiveViewRoute: safeRequire('./api/startLiveView'),
   googleAuthRoute: safeRequire('./api/google'),
@@ -48,6 +49,7 @@ const routes = {
   deviceRoute: safeRequire('./api/device'),
   inputEffectifRoute: safeRequire('./api/inputEffectif'),
   uploadZoomMapRoute: safeRequire('./api/uploadZoomMap'),
+  diagRoute: safeRequire('./api/diag'),
 };
 
 // Attacher les routes sans faire planter l'API

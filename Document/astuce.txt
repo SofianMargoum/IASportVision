@@ -6,6 +6,10 @@ color: #ffffff; /* Couleur blanc claire de texte / icon */
 color: #00A0E9; /* Couleur bleu de texte / icon selectioner */
 color: #00BFFF; /* Couleur bleu de texte / icon selectioner */
 
+
+ #010914;  #010E1E; #ffffff;
+
+
 --react native
 	adb uninstall com.iasvmobile
 	npx react-native run-android
@@ -31,9 +35,11 @@ https://www.youtube.com/watch?v=DxRT-Z2E_x8&ab_channel=SFEIRTV
 sudo apt install ffmpeg
 ffmpeg -version
 
+npm install @react-native-community/geolocation react-native-geocoder   --legacy-peer-deps
+
 npm install react-native-navigation-bar-color react-native-full-screen  --legacy-peer-deps
 
-	npm install react-native-full-screen@0.0.2  --legacy-peer-deps
+npm install react-native-full-screen@0.0.2  --legacy-peer-deps
 npm install react-native-device-info --legacy-peer-deps
 
 npm install node-arp --legacy-peer-deps
@@ -64,3 +70,6 @@ ID d'instance:
 ia-sport-vision
 psw:
 iasportvision2025
+
+
+openssl req -x509 -newkey rsa:2048 -nodes -keyout cam.key -out cam.crt -days 365 -subj "/CN=192.168.1.50"

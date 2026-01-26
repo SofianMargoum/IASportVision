@@ -22,11 +22,11 @@ router.post('/search', async (req, res) => {
         <trackIDList>
           <trackID>101</trackID>
         </trackIDList>
-        <maxResults>50</maxResults>
+        <maxResults>-1</maxResults>
       </CMSearchDescription>`;
 
     // Construire l'URL cible
-    const url = `http://[${ipAddress}]:${port}/ISAPI/ContentMgmt/search`;
+    const url = `http://${ipAddress}:${port}/ISAPI/ContentMgmt/search`;
 
     // Envoyer la requête
     const response = await client.fetch(url, {
@@ -61,7 +61,7 @@ router.post('/search', async (req, res) => {
 
         playbackURI = playbackURI.replace(
           /rtsp:\/\/[\d\.]+/,
-          `rtsp://${username}:${password}@[${ipAddress}]:55400`
+          `rtsp://${username}:${password}@${ipAddress}:55400`
         ).replace('&amp;', '&');
 
         // Extraire les informations de temps depuis l'URI

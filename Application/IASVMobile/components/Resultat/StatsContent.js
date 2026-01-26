@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, ActivityIndicator, Image, ScrollView } from 'react-native';
-import { fetchMatchesForClub, fetchClassementJournees } from './../api';
-import { useClubContext } from './../ClubContext';
+import { fetchMatchesForClub, fetchClassementJournees } from './../../tools/api';
+import { useClubContext } from './../../tools/ClubContext';
 import LinearGradient from 'react-native-linear-gradient';
 
 const scale = 0.85;
@@ -22,41 +22,46 @@ function StatsContent() {
 
   // Podium des 3 premières équipes
   const [topThree, setTopThree] = useState([]);
+useEffect(() => {
+  let isMounted = true;
 
-  useEffect(() => {
-    const loadClassements = async () => {
-      setLoading(true);
-      setError(null);
+  const loadClassements = async () => {
+    setLoading(true);
+    setError(null);
 
-      if (!selectedClub) {
-        setError(new Error('Aucun club sélectionné.'));
-        setLoading(false);
-        return;
-      }
+    // Attendre que le club soit prêt (pas une erreur)
+    if (!selectedClub?.cl_no) {
+      if (isMounted) setLoading(false);
+      return;
+    }
 
-      try {
-        const classementsData = await fetchClassementJournees(cp_no, phase, poule);
+    try {
+      const classementsData = await fetchClassementJournees(cp_no, phase, poule);
 
-        // Calcul des statistiques supplémentaires
-        setBestAttack(findBestAttack(classementsData));
-        setWorstAttack(findWorstAttack(classementsData));
-        setBestDefense(findBestDefense(classementsData));
-        setWorstDefense(findWorstDefense(classementsData));
-        setMostBalanced(findMostBalanced(classementsData));
-        setLeastBalanced(findLeastBalanced(classementsData));
+      if (!isMounted) return;
 
-        // Sélection des trois meilleures équipes pour le podium
-        const sortedTeams = classementsData.sort((a, b) => b.points - a.points); // Trie par points
-        setTopThree(sortedTeams.slice(0, 3)); // Les trois premières équipes
-      } catch (error) {
-        setError(error);
-      } finally {
-        setLoading(false);
-      }
-    };
+      // Calcul des statistiques supplémentaires (inchangé)
+      setBestAttack(findBestAttack(classementsData));
+      setWorstAttack(findWorstAttack(classementsData));
+      setBestDefense(findBestDefense(classementsData));
+      setWorstDefense(findWorstDefense(classementsData));
+      setMostBalanced(findMostBalanced(classementsData));
+      setLeastBalanced(findLeastBalanced(classementsData));
 
-    loadClassements();
-  }, [selectedClub, competition]);
+      // Podium (inchangé)
+      const sortedTeams = classementsData.sort((a, b) => b.points - a.points);
+      setTopThree(sortedTeams.slice(0, 3));
+    } catch (error) {
+      if (isMounted) setError(error);
+    } finally {
+      if (isMounted) setLoading(false);
+    }
+  };
+
+  loadClassements();
+  return () => { isMounted = false; };
+}, [selectedClub?.cl_no, competition, cp_no, phase, poule]);
+
 
   // Fonctions de calcul pour les meilleures et pires statistiques
   const findBestAttack = (data) => {
@@ -92,13 +97,34 @@ function StatsContent() {
   };
   
   // Affichage en cas d'erreur
-  if (error) {
-    return (
-      <View style={styles.centered}>
-        <Text style={styles.errorText}>Erreur lors du chargement des statistiques : {error.message}</Text>
-      </View>
-    );
-  }
+// Attente d'un club sélectionné (pas une erreur)
+if (!selectedClub?.cl_no && !loading) {
+  return (
+    <View style={styles.centered}>
+      <Text style={styles.loadingText}>Sélectionne un club pour voir les statistiques.</Text>
+    </View>
+  );
+}
+
+// En cours de chargement
+if (loading) {
+  return (
+    <View style={styles.centered}>
+      <ActivityIndicator />
+      <Text style={styles.loadingText}>Calcul des statistiques…</Text>
+    </View>
+  );
+}
+
+// Erreur
+if (error) {
+  return (
+    <View style={styles.centered}>
+      <Text style={styles.errorText}>Erreur lors du chargement des statistiques : {error.message}</Text>
+    </View>
+  );
+}
+
 
   return (
     <ScrollView style={{ flex: 1 }}
@@ -245,14 +271,16 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+    color: '#aaaaaa',
   },
   errorText: {
     color: 'red',
     fontSize: 14,
   },
   loadingText: {
-    color: '#000',
+    color: '#aaaaaa',
     fontSize: 14,
+    margin: 10,
   },
   statsContainer: {
     marginTop: 10,

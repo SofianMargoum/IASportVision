@@ -21,19 +21,57 @@ const PlayerControls = ({
   isFullScreen,
   isUploadMode,
   setIsUploadMode,
+  balloonActive,
+  setBalloonActive,
 }) => {
+
+  const handleBalloonPress = () => {
+    setBalloonActive(prev => !prev);
+  };
+
   return (
     <View style={styles.overlay}>
+
+      {/* 📍 TOP BAR — Upload en haut à droite */}
+      <View style={{
+        position: 'absolute',
+        top: 10,
+        right: 10,
+        flexDirection: 'row',
+        alignItems: 'center',
+        zIndex: 20,
+      }}>
+        <Text style={[styles.switchLabel, { marginRight: 8 }]}>Upload</Text>
+        <Switch value={isUploadMode} onValueChange={setIsUploadMode} />
+      </View>
+
+      {/* 🎛 BOUTON PLAY / PAUSE AU CENTRE */}
       <View style={styles.centerButtonContainer}>
         <TouchableOpacity onPress={togglePlayPause} style={styles.centerPlayButton}>
           <Icon name={paused ? 'play' : 'pause'} size={48} color="white" />
         </TouchableOpacity>
       </View>
 
-      <View style={styles.bottomBar}>
-        <Text style={styles.timeText}>{formatTime(currentTime)} / {formatTime(duration)}</Text>
+      {/* 📍 BOTTOM BAR COLLÉE AU BAS */}
+      <View
+        style={[
+          styles.bottomBar,
+          {
+            position: 'absolute',
+            left: 0,
+            right: 0,
+            bottom: 0,        // 👈 collé parfaitement en bas
+            paddingHorizontal: 15,
+            paddingBottom: 10,
+          },
+        ]}
+      >
+        <Text style={styles.timeText}>
+          {formatTime(currentTime)} / {formatTime(duration)}
+        </Text>
+
         <Slider
-          style={styles.slider}
+          style={[styles.slider, { flex: 1 }]}
           minimumValue={0}
           maximumValue={duration}
           value={currentTime}
@@ -42,17 +80,21 @@ const PlayerControls = ({
           maximumTrackTintColor="#888"
           thumbTintColor="#FF0000"
         />
-        <TouchableOpacity onPress={toggleFullScreen} style={styles.fullScreenButton}>
-          <Icon name={isFullScreen ? 'compress' : 'expand'} size={24} color="white" />
+
+        <TouchableOpacity onPress={toggleFullScreen} style={{ marginHorizontal: 10 }}>
+          <Icon name={isFullScreen ? 'compress' : 'expand'} size={22} color="white" />
         </TouchableOpacity>
-        <View style={styles.switchContainer}>
-          <Text style={styles.switchLabel}>Upload</Text>
-          <Switch
-            value={isUploadMode}
-            onValueChange={setIsUploadMode}
+
+        {/* ⚽ BALLON TOUT À DROITE */}
+        <TouchableOpacity onPress={handleBalloonPress}>
+          <Icon
+            name="soccer-ball-o"
+            size={20}
+            color={balloonActive ? '#010E1E' : 'white'}
           />
-        </View>
+        </TouchableOpacity>
       </View>
+
     </View>
   );
 };

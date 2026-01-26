@@ -1,8 +1,11 @@
+// components/Video/ListeVideo.js
+// Conteneur pour afficher les détails d'une vidéo sélectionnée.
+// Utilise TabView avec 4 onglets : Match Complet, Composition/Effectif, Stats Équipes, Stats Joueurs.
 import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { TabView, SceneMap } from 'react-native-tab-view';
 import MatchComplet from './MatchComplet';
-import MatchResume from './MatchResume';
+import CompositionEffectif from './CompositionEffectif';
 import StatsEquipes from './StatsEquipes';
 import StatsJoueurs from './StatsJoueurs';
 
@@ -19,7 +22,7 @@ const ListeVideo = ({ selectedVideo }) => {
 
   const renderScene = SceneMap({
     video: () => <MatchComplet selectedVideo={selectedVideo} />,
-    resume: () => <MatchResume selectedVideo={selectedVideo} />,
+    resume: () => <CompositionEffectif selectedVideo={selectedVideo} />,
     statsEquipes: () => <StatsEquipes />,
     statsJoueurs: () => <StatsJoueurs />,
   });

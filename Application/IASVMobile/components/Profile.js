@@ -2,9 +2,9 @@ import React, { useContext, useEffect, useState } from 'react';
 import { View, StyleSheet, ActivityIndicator } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { GoogleSignin } from '@react-native-google-signin/google-signin';
-import LoginForm from './LoginForm';
-import UserProfile from './UserProfile';
-import { UserContext } from './UserContext'; // Importez le contexte
+import LoginForm from './Profile/LoginForm';
+import UserProfile from './Profile/UserProfile';
+import { UserContext } from './../tools/UserContext'; // Importez le contexte
 
 const Profile = ({ navigation }) => { // Ajoutez navigation comme prop
   const { user, setUser } = useContext(UserContext); // Accédez au contexte utilisateur
@@ -73,6 +73,12 @@ const Profile = ({ navigation }) => { // Ajoutez navigation comme prop
       setLoading(false);
     }
   };
+// Profile.js
+const handleLocalLogin = async (userData) => {
+  setUser(userData);                // on met l'objet tel quel
+  await saveUserToStorage(userData);
+};
+
 
   const handleGoogleLogout = async () => {
     try {
@@ -103,8 +109,10 @@ const Profile = ({ navigation }) => { // Ajoutez navigation comme prop
           onLogout={handleGoogleLogout}
           navigation={navigation} // Transmettez navigation à UserProfile
         />
-      ) : (
-        <LoginForm handleGoogleLogin={handleGoogleLogin} />
+      ) : (<LoginForm
+            onLocalLogin={handleLocalLogin}
+            handleGoogleLogin={handleGoogleLogin}
+          />
       )}
     </View>
   );

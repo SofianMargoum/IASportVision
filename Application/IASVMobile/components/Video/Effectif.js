@@ -15,8 +15,8 @@ const Effectif = ({ players, setPlayers }) => {
       style={styles.listContainer}
       showsVerticalScrollIndicator={false} // Cache la barre de défilement (optionnel)
     >
-      {players.map((player) => (
-        <View style={styles.playerRow} key={player.id}>
+      {players.map((player, index) => (
+        <View style={styles.playerRow} key={player.id || `player-${index}`}>
           <Text style={styles.number}>{player.number}</Text>
           <TextInput
             style={styles.input}

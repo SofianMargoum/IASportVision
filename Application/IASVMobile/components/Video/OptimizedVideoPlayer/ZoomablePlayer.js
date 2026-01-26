@@ -1,4 +1,3 @@
-// components/ZoomablePlayer.js
 import React from 'react';
 import { View, StyleSheet } from 'react-native';
 import Animated from 'react-native-reanimated';
@@ -23,26 +22,25 @@ const ZoomablePlayer = ({
   currentTime,
   setZoomMapExport,
   tapped,
-  renderControls
+  renderControls,
+  balloonActive, // 👈 ajouté
 }) => {
   return (
-    <View style={[containerStyle, { backgroundColor: 'black' }]}> 
+    <View style={[containerStyle, { backgroundColor: 'black' }]}>
       <ReactNativeZoomableView
         ref={zoomableViewRef}
         maxZoom={3}
-        minZoom={3}
+        minZoom={1}
         initialZoom={3}
-        zoomEnabled={false}
+        zoomEnabled={!balloonActive}  // ⚪ OFF => zoomEnabled = true, 🔵 ON => false
         style={{ flex: 1 }}
         onTransform={(event) => {
           if (!event) return;
           const { offsetX, offsetY, zoomLevel } = event;
           
-          console.log("🌀 onTransform event", { offsetX, offsetY, zoomLevel });
           const time = currentTimeRef.current;
-
-          const percentX = ((-offsetX + windowWidth / 2) / windowWidth) * 100;
-          const percentY = ((-offsetY + windowHeight / 2) / windowHeight) * 100;
+          const percentX = (Math.round(offsetX)/Math.round(windowWidth)*3-1)*-50;
+          const percentY = (Math.round(offsetY)/Math.round(windowHeight)*3-1)*-50;
 
           setZoomMapExport(prev => {
             if (prev[time]) return prev;

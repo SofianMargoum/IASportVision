@@ -13,6 +13,7 @@
     "@expo/vector-icons": "^14.0.4",
     "@openspacelabs/react-native-zoomable-view": "^2.3.1",
     "@react-native-async-storage/async-storage": "^1.19.1",
+    "@react-native-community/geolocation": "^3.4.0",
     "@react-native-community/masked-view": "^0.1.11",
     "@react-native-community/slider": "^4.5.5",
     "@react-native-google-signin/google-signin": "^13.1.0",
@@ -43,11 +44,13 @@
     "react-native-svg": "^15.8.0",
     "react-native-system-navigation-bar": "^2.6.4",
     "react-native-tab-view": "^3.5.2",
+    "react-native-tcp-socket": "^6.3.0",
     "react-native-udp": "^4.1.7",
     "react-native-vector-icons": "^10.2.0",
     "react-native-video": "^6.10.1",
     "react-native-video-controls": "^2.8.1",
     "react-native-webview": "^13.13.2",
+    "react-native-youtube-iframe": "^2.4.1",
     "react-native-zoomable-view": "^0.3.1"
   },
   "devDependencies": {

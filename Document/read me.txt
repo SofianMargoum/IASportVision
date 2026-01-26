@@ -35,3 +35,15 @@ Vidauban83.
 	id: SofianMargoum
 	mail: margoum.contact@gmail.com
 	mdp : IAsportvision83
+	
+--TTP hikvison
+margoum.contact@gmail.com
+IAsportvision83.
+
+--OnehikID Login hik-Partner Pro
+margoum.contact@gmail.com
+IAsportvision83.
+
+--Wordpress
+admin1560
+zk3skd8cXENJ

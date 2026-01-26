@@ -14,49 +14,53 @@ export const getFilenameFromVideoUri = (uri) => {
     return 'zoommaps/invalid.json';
   }
 };
-
 export const smoothMoveTo = (
-  targetX,
-  targetY,
+  positions,
   zoomableViewRef,
   lastPositionRef,
-  currentAnimationIdRef
+  currentAnimationIdRef,
+  onComplete
 ) => {
-  const MAX_STEPS = 40;
-  const MIN_STEPS = 10;
-  const DELAY = 16; // ~60 fps
-  let step = 0;
+  if (!Array.isArray(positions) || positions.length === 0) return;
+
+  const totalDurationMs = 5000;
+  const frameRate = 60;
+  const totalFrames = (totalDurationMs / 1000) * frameRate;
 
   const animationId = ++currentAnimationIdRef.current;
 
-  const current = lastPositionRef.current ?? { x: targetX, y: targetY };
-  const dx = targetX - current.x;
-  const dy = targetY - current.y;
-  const distance = Math.hypot(dx, dy);
+  // On démarre depuis la dernière position connue (même si elle ne fait pas partie des positions)
+  const start = lastPositionRef.current || positions[0];
+  const fullPositions = [start, ...positions];
 
-  // Auto-calcule le nombre de steps selon la distance
-  const steps = Math.min(MAX_STEPS, Math.max(MIN_STEPS, Math.floor(distance / 10)));
+  let frame = 0;
 
-  const easeInOutQuad = (t) =>
-    t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t;
-
-  const animateStep = () => {
+  const animate = () => {
     if (animationId !== currentAnimationIdRef.current) return;
 
-    if (step <= steps) {
-      const t = step / steps;
-      const easedT = easeInOutQuad(t);
+    const progress = frame / totalFrames;
+    const totalSegments = fullPositions.length - 1;
+    const segmentIndex = Math.min(Math.floor(progress * totalSegments), totalSegments - 1);
 
-      const x = current.x + dx * easedT;
-      const y = current.y + dy * easedT;
+    const localT = (progress * totalSegments) - segmentIndex;
+    const easedT = localT; // 👈 ici, pas d'easing, juste interpolation linéaire
 
-      zoomableViewRef.current?.moveTo?.(x, y);
-      lastPositionRef.current = { x, y };
+    const p0 = fullPositions[segmentIndex];
+    const p1 = fullPositions[segmentIndex + 1];
 
-      step++;
-      setTimeout(animateStep, DELAY);
+    const x = p0.x + (p1.x - p0.x) * easedT;
+    const y = p0.y + (p1.y - p0.y) * easedT;
+
+    zoomableViewRef.current?.moveTo?.(x, y);
+    lastPositionRef.current = { x, y };
+
+    if (frame < totalFrames) {
+      frame++;
+      requestAnimationFrame(animate);
+    } else {
+      if (onComplete) onComplete();
     }
   };
 
-  animateStep();
+  animate();
 };

@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, FlatList, ActivityIndicator, ScrollView } from 'react-native';
-import { fetchMatchesForClub, fetchClassementJournees } from './../api';
-import { useClubContext } from './../ClubContext';
+import { fetchClassementJournees } from './../../tools/api';
+import { useClubContext } from './../../tools/ClubContext';
 
-const scale = 0.85; // Ajustez cette valeur selon vos besoins
+const scale = 0.85;
 
 function ClassementsContent() {
   const [classements, setClassements] = useState([]);
@@ -13,36 +13,72 @@ function ClassementsContent() {
   const { selectedClub, competition, phase, poule, cp_no } = useClubContext();
 
   useEffect(() => {
+    let isMounted = true;
+
     const loadClassements = async () => {
       setLoading(true);
       setError(null);
-      setClassements([]);
 
-      if (!selectedClub) {
-        setError(new Error('Aucun club sélectionné.'));
-        setLoading(false);
+      // Contexte pas prêt → on n'appelle pas l’API
+      if (!selectedClub?.cl_no) {
+        if (isMounted) {
+          setClassements([]);
+          setLoading(false);
+        }
         return;
       }
 
       try {
-        const classementsData = await fetchClassementJournees(cp_no, phase, poule);
-        setClassements(classementsData);
-      } catch (error) {
-        setError(error);
+        const data = await fetchClassementJournees(cp_no, phase, poule);
+        if (isMounted) setClassements(Array.isArray(data) ? data : []);
+      } catch (e) {
+        if (isMounted) setError("Erreur lors du chargement des classements.");
       } finally {
-        setLoading(false);
+        if (isMounted) setLoading(false);
       }
     };
 
     loadClassements();
-  }, [selectedClub, competition]);
+    return () => { isMounted = false; };
+  }, [selectedClub?.cl_no, competition, cp_no, phase, poule]);
 
+  // --- Rendu ---
 
-  // Affichage en cas d'erreur
+  // Contexte pas prêt (pas de club)
+  if (!selectedClub?.cl_no && !loading && !error) {
+    return (
+      <View style={styles.centered}>
+        <Text style={styles.infoText}>Sélectionne un club pour voir le classement.</Text>
+      </View>
+    );
+  }
+
+  // En cours de chargement
+  if (loading) {
+    return (
+      <View style={styles.centered}>
+        <ActivityIndicator />
+        <Text style={styles.loadingText}>Chargement du classement…</Text>
+      </View>
+    );
+  }
+
+  // Erreur
   if (error) {
     return (
       <View style={styles.centered}>
-        <Text style={styles.errorText}>Erreur lors du chargement des classements : {error.message}</Text>
+        <Text style={styles.errorText}>{error}</Text>
+      </View>
+    );
+  }
+
+  // Aucun résultat après chargement
+  if (classements.length === 0) {
+    return (
+      <View style={styles.centered}>
+        <Text style={styles.infoText}>
+          Aucun classement trouvé {selectedClub?.name ? `pour ${selectedClub.name}` : ''}.
+        </Text>
       </View>
     );
   }
@@ -57,18 +93,18 @@ function ClassementsContent() {
       <Text style={styles.cell}>{item.lostGames}</Text>
       <Text style={styles.cell}>{item.goalsFor}</Text>
       <Text style={styles.cell}>{item.goalsAgainst}</Text>
-      <Text style={styles.cell}>{item.goalsFor - item.goalsAgainst}</Text>
+      <Text style={styles.cell}>{(item.goalsFor ?? 0) - (item.goalsAgainst ?? 0)}</Text>
     </View>
   );
 
   return (
-  <ScrollView
-    contentContainerStyle={{ flexGrow: 1 }}
-    style={{ flex: 1 }}
-    showsVerticalScrollIndicator={false} // Masquer la barre verticale
-  >
+    <ScrollView
+      contentContainerStyle={{ flexGrow: 1 }}
+      style={{ flex: 1 }}
+      showsVerticalScrollIndicator={false}
+    >
       <View style={styles.container}>
-        {/* Conteneur principal avec les classements */}
+        {/* Colonne fixe : rang + club */}
         <View style={styles.fixedColumn}>
           <View style={styles.headerRow}>
             <Text style={styles.headerCell}>Rang</Text>
@@ -76,7 +112,7 @@ function ClassementsContent() {
           </View>
           <FlatList
             data={classements}
-            keyExtractor={(item) => item.teamId || item.teamName}
+            keyExtractor={(item, idx) => String(item.teamId ?? item.teamName ?? idx)}
             renderItem={({ item }) => (
               <View style={styles.row}>
                 <Text style={styles.cell}>{item.rank}</Text>
@@ -93,7 +129,7 @@ function ClassementsContent() {
           />
         </View>
 
-        {/* Section défilable avec les détails des classements */}
+        {/* Colonnes scrollables : stats */}
         <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.scrollableContent}>
           <View>
             <View style={styles.headerRow}>
@@ -108,7 +144,7 @@ function ClassementsContent() {
             </View>
             <FlatList
               data={classements}
-              keyExtractor={(item) => item.teamId || item.teamName}
+              keyExtractor={(item, idx) => String(item.teamId ?? item.teamName ?? idx)}
               renderItem={renderClassementItem}
               contentContainerStyle={{ paddingBottom: 20 * scale }}
               scrollEnabled={false}
@@ -130,15 +166,23 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+    padding: 16,
   },
   loadingText: {
     color: '#00A0E9',
     fontSize: 16 * scale,
     marginTop: 10,
+    textAlign: 'center',
+  },
+  infoText: {
+    color: '#aaaaaa',
+    fontSize: 14 * scale,
+    textAlign: 'center',
   },
   errorText: {
-    color: '#FF0000',
+    color: '#FF4444',
     fontSize: 16 * scale,
+    textAlign: 'center',
   },
   fixedColumn: {
     width: 200,
