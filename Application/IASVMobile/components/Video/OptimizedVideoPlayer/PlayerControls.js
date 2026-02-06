@@ -32,18 +32,20 @@ const PlayerControls = ({
   return (
     <View style={styles.overlay}>
 
-      {/* 📍 TOP BAR — Upload en haut à droite */}
-      <View style={{
-        position: 'absolute',
-        top: 10,
-        right: 10,
-        flexDirection: 'row',
-        alignItems: 'center',
-        zIndex: 20,
-      }}>
-        <Text style={[styles.switchLabel, { marginRight: 8 }]}>Upload</Text>
-        <Switch value={isUploadMode} onValueChange={setIsUploadMode} />
-      </View>
+      {/* 📍 TOP BAR — Upload en haut à droite (plein écran uniquement) */}
+      {isFullScreen && (
+        <View style={{
+          position: 'absolute',
+          top: 10,
+          right: 10,
+          flexDirection: 'row',
+          alignItems: 'center',
+          zIndex: 20,
+        }}>
+          <Text style={[styles.switchLabel, { marginRight: 8 }]}>Upload</Text>
+          <Switch value={isUploadMode} onValueChange={setIsUploadMode} />
+        </View>
+      )}
 
       {/* 🎛 BOUTON PLAY / PAUSE AU CENTRE */}
       <View style={styles.centerButtonContainer}>
@@ -85,14 +87,16 @@ const PlayerControls = ({
           <Icon name={isFullScreen ? 'compress' : 'expand'} size={22} color="white" />
         </TouchableOpacity>
 
-        {/* ⚽ BALLON TOUT À DROITE */}
-        <TouchableOpacity onPress={handleBalloonPress}>
-          <Icon
-            name="soccer-ball-o"
-            size={20}
-            color={balloonActive ? '#010E1E' : 'white'}
-          />
-        </TouchableOpacity>
+        {/* ⚽ BALLON TOUT À DROITE (plein écran uniquement) */}
+        {isFullScreen && (
+          <TouchableOpacity onPress={handleBalloonPress}>
+            <Icon
+              name="soccer-ball-o"
+              size={20}
+              color={balloonActive ? '#010E1E' : 'white'}
+            />
+          </TouchableOpacity>
+        )}
       </View>
 
     </View>

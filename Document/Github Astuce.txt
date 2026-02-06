@@ -9,7 +9,7 @@
 
 --Astuce version simple Push
 	git add .
-	git commit -m "IASV update SPRINT 5 start"
+	git commit -m "Video plein ecran zoom darg ok"
 	git push -u origin main
 
 --Astuce pull

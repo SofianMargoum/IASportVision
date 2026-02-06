@@ -1,19 +1,24 @@
 import { useState, useRef, useEffect } from 'react';
-import { Dimensions, Platform, StatusBar } from 'react-native';
-import Orientation from 'react-native-orientation-locker';
-import SystemNavigationBar from 'react-native-system-navigation-bar';
+import { Dimensions } from 'react-native';
 import { uploadZoomMapToApi } from '../../../tools/api';
 import { getFilenameFromVideoUri, smoothMoveTo } from './utils';
 import ZoomablePlayer from './ZoomablePlayer';
 import PlayerControls from './PlayerControls';
 
-const useVideoLogic = (videoUri, zoomMap) => {
+const useVideoLogic = (videoUri, zoomMap, ui = {}) => {
+  const {
+    isFullScreen = false,
+    isTransitioning = false,
+    onToggleFullScreen,
+    onExitFullScreen,
+    containerWidth,
+    containerHeight,
+  } = ui;
+
   const [tapped, setTapped] = useState(false);
   const [paused, setPaused] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
-  const [isFullScreen, setIsFullScreen] = useState(false);
-  const isFullScreenRef = useRef(false);
   const [zoomData, setZoomData] = useState({});
   const [zoomMapExport, setZoomMapExport] = useState({});
   const [sentTimes, setSentTimes] = useState([]);
@@ -21,25 +26,24 @@ const useVideoLogic = (videoUri, zoomMap) => {
   const [videoDimensions, setVideoDimensions] = useState({ width: 3040, height: 1368 }); // dimensions réelles
   const [balloonActive, setBalloonActive] = useState(false); // 🔵 ballon ON = zoom auto actif
   const [windowDimensions, setWindowDimensions] = useState(Dimensions.get('window'));
-  const [isTransitioning, setIsTransitioning] = useState(false);
 
   const videoRef = useRef(null);
   const zoomableViewRef = useRef(null);
   const touchStartTimeRef = useRef(0);
   const currentTimeRef = useRef(0);
+  const resumeAfterModeSwitchRef = useRef(false);
   const lastOffsetRef = useRef({ x: null, y: null });
   const lastAnimationSecondRef = useRef(-1); // pas 0 !
 
   const currentAnimationIdRef = useRef(0);
   const hasLaunchedAtZeroRef = useRef(false);
-  const lastToggleTimeRef = useRef(0);
-  const isManuallyToggledRef = useRef(false);
 
   const { width: windowWidth, height: windowHeight } = windowDimensions;
 
   const aspectRatio = videoDimensions.width / videoDimensions.height;
-  const videoWidth = windowWidth;
-  const videoHeight = windowWidth / aspectRatio;
+  const baseWidth = isFullScreen ? windowWidth : (containerWidth ?? windowWidth);
+  const videoWidth = baseWidth;
+  const videoHeight = (containerHeight && !isFullScreen) ? containerHeight : (baseWidth / aspectRatio);
 
   const filename = getFilenameFromVideoUri(videoUri);
 
@@ -51,30 +55,15 @@ const useVideoLogic = (videoUri, zoomMap) => {
   const toggleTapped = () => setTapped(prev => !prev);
   const togglePlayPause = () => setPaused(prev => !prev);
   const toggleFullScreen = () => {
-    console.log('toggleFullScreen called, isTransitioning:', isTransitioning, 'isFullScreen before:', isFullScreen);
-    if (isTransitioning) {
-      console.log('blocked by isTransitioning');
-      return;
-    }
-    const now = Date.now();
-    if (now - lastToggleTimeRef.current < 500) {
-      console.log('blocked by debounce');
-      return;
-    }
-    lastToggleTimeRef.current = now;
-    setIsTransitioning(true);
-    const newValue = !isFullScreenRef.current;
-    isFullScreenRef.current = newValue;
-    setIsFullScreen(newValue);
-    isManuallyToggledRef.current = true;
-    setTimeout(() => {
-      isManuallyToggledRef.current = false;
-    }, 1000);
-    console.log('setting isFullScreen to:', newValue);
-    setTimeout(() => {
-      console.log('ending transition');
-      setIsTransitioning(false);
-    }, 1000);
+    // Pause pendant le changement de mode pour éviter flash / restart.
+    resumeAfterModeSwitchRef.current = !paused;
+    setPaused(true);
+    onToggleFullScreen?.();
+  };
+  const exitFullScreen = () => {
+    resumeAfterModeSwitchRef.current = !paused;
+    setPaused(true);
+    onExitFullScreen?.();
   };
   const handleTouchStart = () => { touchStartTimeRef.current = Date.now(); };
   const handleTouchEnd = () => {
@@ -89,32 +78,26 @@ const useVideoLogic = (videoUri, zoomMap) => {
     return () => subscription?.remove();
   }, []);
 
-  // Écouter les changements d'orientation
+  // À la sortie du plein écran, on désactive les modes spécifiques.
   useEffect(() => {
-    const listener = Orientation.addOrientationListener(({ orientation }) => {
-      console.log('orientation changed to:', orientation);
-      if (isManuallyToggledRef.current) {
-        console.log('skipping orientation change due to manual toggle');
-        return;
-      }
-      if (orientation === 'LANDSCAPE-LEFT' || orientation === 'LANDSCAPE-RIGHT') {
-        if (!isFullScreenRef.current) {
-          console.log('setting fullscreen to true due to landscape orientation');
-          setIsFullScreen(true);
-          isFullScreenRef.current = true;
-        }
-      } else if (orientation === 'PORTRAIT' || orientation === 'PORTRAIT-UPSIDEDOWN') {
-        if (isFullScreenRef.current) {
-          console.log('setting fullscreen to false due to portrait orientation');
-          setIsFullScreen(false);
-          isFullScreenRef.current = false;
-        }
-      }
-    });
-    return () => {
-      Orientation.removeOrientationListener(listener);
-    };
-  }, []);
+    if (!isFullScreen) {
+      setIsUploadMode(false);
+      setBalloonActive(false);
+    }
+  }, [isFullScreen]);
+
+  // Pause/reprise calées sur la vraie transition overlay (plus fiable qu'un timeout fixe).
+  useEffect(() => {
+    if (isTransitioning) {
+      setPaused(true);
+      return;
+    }
+
+    if (resumeAfterModeSwitchRef.current) {
+      resumeAfterModeSwitchRef.current = false;
+      setPaused(false);
+    }
+  }, [isTransitioning]);
 
   const getZoomedOffset = ({ x, y }, videoWidth, videoHeight) => {
     const baseOffsetX = (x / 100) * videoWidth;
@@ -135,7 +118,11 @@ const useVideoLogic = (videoUri, zoomMap) => {
     };
   };
 
-  const renderPlayer = (containerStyle, videoStyle) => ZoomablePlayer({
+  const renderPlayer = (containerStyle, videoStyle) => {
+    const playerWidth = containerStyle?.width ?? videoWidth;
+    const playerHeight = containerStyle?.height ?? videoHeight;
+
+    return ZoomablePlayer({
     zoomableViewRef,
     videoRef,
     paused,
@@ -147,8 +134,8 @@ const useVideoLogic = (videoUri, zoomMap) => {
     setDuration,
     handleTouchStart,
     handleTouchEnd,
-    windowWidth: videoWidth,
-    windowHeight: videoHeight,
+    windowWidth: playerWidth,
+    windowHeight: playerHeight,
     currentTime,
     setZoomMapExport,
     tapped,
@@ -180,6 +167,7 @@ const useVideoLogic = (videoUri, zoomMap) => {
       }
     }
   });
+  };
 
   // Chargement du zoomMap (fichier / objet)
   useEffect(() => {
@@ -299,65 +287,13 @@ const useVideoLogic = (videoUri, zoomMap) => {
     }
   }, [currentTime, isUploadMode]);
 
-  // Gestion du fullscreen / orientation / UI système
-  useEffect(() => {
-    console.log('fullscreen useEffect triggered, isFullScreen:', isFullScreen, 'isTransitioning:', isTransitioning);
-    if (isTransitioning) {
-      console.log('skipping due to isTransitioning');
-      return;
-    }
-
-    const showUI = () => {
-      console.log('showUI called');
-      StatusBar.setHidden(false, 'fade');
-      if (Platform.OS === 'android') SystemNavigationBar.navigationShow();
-    };
-    const hideUI = () => {
-      console.log('hideUI called');
-      StatusBar.setHidden(true, 'fade');
-      if (Platform.OS === 'android') SystemNavigationBar.immersive();
-    };
-
-    const timer = setTimeout(() => {
-      console.log('timeout executed, isFullScreenRef:', isFullScreenRef.current);
-      if (isFullScreenRef.current) {
-        console.log('locking to landscape');
-        Orientation.getOrientation((orientation) => {
-          console.log('current orientation:', orientation);
-          if (orientation !== 'LANDSCAPE') {
-            Orientation.lockToLandscape();
-          }
-        });
-        setTimeout(hideUI, 5);
-      } else {
-        console.log('locking to portrait');
-        Orientation.getOrientation((orientation) => {
-          console.log('current orientation:', orientation);
-          if (orientation !== 'PORTRAIT') {
-            Orientation.lockToPortrait();
-          }
-        });
-        setTimeout(showUI, 5);
-      }
-    }, 100); // delay to avoid immediate re-render issues
-
-    return () => {
-      console.log('cleanup called');
-      clearTimeout(timer);
-      // Only cleanup if not transitioning to fullscreen
-      if (!isFullScreenRef.current) {
-        Orientation.lockToPortrait();
-        showUI();
-      }
-    };
-  }, [isFullScreen, isTransitioning]);
-
   return {
     isFullScreen,
     videoHeight,
-    windowWidth: videoWidth,
-    windowHeight: videoHeight,
-    renderPlayer
+    windowWidth,
+    windowHeight,
+    renderPlayer,
+    exitFullScreen,
   };
 };
 

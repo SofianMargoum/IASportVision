@@ -24,6 +24,7 @@ const ZoomablePlayer = ({
   tapped,
   renderControls,
   balloonActive, // 👈 ajouté
+  onLoad,
 }) => {
   return (
     <View style={[containerStyle, { backgroundColor: 'black' }]}>
@@ -63,12 +64,21 @@ const ZoomablePlayer = ({
               style={videoStyle}
               resizeMode="contain"
               paused={paused}
+              bufferConfig={{
+                minBufferMs: 15000,
+                maxBufferMs: 50000,
+                bufferForPlaybackMs: 250,
+                bufferForPlaybackAfterRebufferMs: 500,
+              }}
               repeat
               onProgress={(data) => {
                 setCurrentTime(data.currentTime);
                 currentTimeRef.current = Math.floor(data.currentTime);
               }}
-              onLoad={(data) => setDuration(data.duration)}
+              onLoad={(data) => {
+                setDuration(data.duration);
+                onLoad?.(data);
+              }}
             />
             <View
               style={StyleSheet.absoluteFill}

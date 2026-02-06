@@ -1,8 +1,9 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { View, Dimensions, Text } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { TabView, SceneMap } from 'react-native-tab-view';
 import { useClubContext } from './../tools/ClubContext';
+import { VideoOverlayProvider } from '../tools/VideoOverlayContext';
 import Record from './Record';
 import Resultat from './Resultat';
 import Video from './Video';
@@ -11,9 +12,12 @@ import Profile from './Profile';
 import Welcome from './Welcome';
 import Header from './Header';
 import BottomTabNavigator from './BottomTabNavigator';
+import VideoOverlayHost from './Video/VideoOverlayHost';
 
 const Main = ({ windowWidth }) => {
   const { selectedClub, isLoading } = useClubContext();
+
+  const rootRef = useRef(null);
 
   const [index, setIndex] = useState(2); // Onglet par défaut
   const [showHeader, setShowHeader] = useState(true);
@@ -56,18 +60,23 @@ const Main = ({ windowWidth }) => {
 
   return (
     <NavigationContainer>
-      <View style={{ flex: 1, backgroundColor: '#010914' }}>
-        {showHeader && <Header windowWidth={windowWidth} />}
-        <TabView
-          navigationState={{ index, routes }}
-          renderScene={renderScene}
-          onIndexChange={setIndex}
-          initialLayout={{ width: Dimensions.get('window').width }}
-          renderTabBar={() => null}
-          swipeEnabled={false}
-        />
-        <BottomTabNavigator index={index} setIndex={setIndex} />
-      </View>
+      <VideoOverlayProvider rootRef={rootRef}>
+        <View ref={rootRef} style={{ flex: 1, backgroundColor: '#010914' }}>
+          {showHeader && <Header windowWidth={windowWidth} />}
+          <TabView
+            navigationState={{ index, routes }}
+            renderScene={renderScene}
+            onIndexChange={setIndex}
+            initialLayout={{ width: Dimensions.get('window').width }}
+            renderTabBar={() => null}
+            swipeEnabled={false}
+          />
+          <BottomTabNavigator index={index} setIndex={setIndex} />
+
+          {/* Overlay global pour le player (style YouTube), sans remount */}
+          <VideoOverlayHost />
+        </View>
+      </VideoOverlayProvider>
     </NavigationContainer>
   );
 };
