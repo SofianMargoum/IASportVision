@@ -1,11 +1,12 @@
 // components/Video/ListeVideo.js
 // Conteneur pour afficher les détails d'une vidéo sélectionnée.
 // Utilise TabView avec 4 onglets : Match Complet, Composition/Effectif, Stats Équipes, Stats Joueurs.
-import React, { useState } from 'react';
+import React, { useCallback, useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
-import { TabView, SceneMap } from 'react-native-tab-view';
+import { TabView } from 'react-native-tab-view';
 import MatchComplet from './MatchComplet';
-import CompositionEffectif from './CompositionEffectif';
+import Effectif from './Effectif';
+import Compos from './Compos';
 import StatsEquipes from './StatsEquipes';
 import StatsJoueurs from './StatsJoueurs';
 
@@ -13,27 +14,43 @@ const scale = 0.85;
 
 const ListeVideo = ({ selectedVideo }) => {
   const [index, setIndex] = useState(0);
+  const [players, setPlayers] = useState(
+    Array.from({ length: 14 }, (_, i) => ({
+      id: i + 1,
+      number: i + 1,
+      name: `Joueur ${i + 1}`,
+    }))
+  );
   const [routes] = useState([
-    { key: 'video', title: 'MATCH COMPLET' },
-    { key: 'resume', title: 'COMPOS EFFECTIF' },
+    { key: 'effectif', title: 'EFFECTIF' },
+    { key: 'composition', title: 'COMPOSITION' },
     { key: 'statsEquipes', title: 'STATS EQUIPES' },
     { key: 'statsJoueurs', title: 'STATS JOUEURS' },
   ]);
 
-  const renderScene = SceneMap({
-    video: () => <MatchComplet selectedVideo={selectedVideo} />,
-    resume: () => <CompositionEffectif selectedVideo={selectedVideo} />,
-    statsEquipes: () => <StatsEquipes />,
-    statsJoueurs: () => <StatsJoueurs />,
-  });
+  const renderScene = useCallback(({ route }) => {
+    switch (route.key) {
+      case 'effectif':
+        return <Effectif players={players} setPlayers={setPlayers} />;
+      case 'composition':
+        return <Compos players={players} />;
+      case 'statsEquipes':
+        return <StatsEquipes />;
+      case 'statsJoueurs':
+        return <StatsJoueurs />;
+      default:
+        return null;
+    }
+  }, [players]);
 
   return (
     <View style={styles.resultatContainer}>
+      <MatchComplet selectedVideo={selectedVideo} />
       <TabView
         navigationState={{ index, routes }}
         renderScene={renderScene}
         onIndexChange={setIndex}
-        swipeEnabled={index !== 0}
+        swipeEnabled
         initialLayout={{ width: '100%' }}
         renderTabBar={(props) => (
           <View style={styles.nav}>
@@ -74,8 +91,8 @@ const styles = StyleSheet.create({
   },
   button: {
     flex: 1,
-    paddingVertical: 12 * scale,
-    paddingHorizontal: 16 * scale,
+    paddingVertical: 8 * scale,
+    paddingHorizontal: 10 * scale,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -84,7 +101,7 @@ const styles = StyleSheet.create({
   },
   buttonText: {
     color: '#ffffff',
-    fontSize: 14 * scale,
+    fontSize: 11 * scale,
     textAlign: 'center',
     fontWeight: 'bold',
   },

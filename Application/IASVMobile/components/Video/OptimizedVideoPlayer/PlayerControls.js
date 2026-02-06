@@ -18,6 +18,7 @@ const PlayerControls = ({
   duration,
   videoRef,
   toggleFullScreen,
+  exitFullScreen,
   isFullScreen,
   isUploadMode,
   setIsUploadMode,
@@ -83,7 +84,10 @@ const PlayerControls = ({
           thumbTintColor="#FF0000"
         />
 
-        <TouchableOpacity onPress={toggleFullScreen} style={{ marginHorizontal: 10 }}>
+        <TouchableOpacity
+          onPress={isFullScreen ? exitFullScreen : toggleFullScreen}
+          style={{ marginHorizontal: 10 }}
+        >
           <Icon name={isFullScreen ? 'compress' : 'expand'} size={22} color="white" />
         </TouchableOpacity>
 

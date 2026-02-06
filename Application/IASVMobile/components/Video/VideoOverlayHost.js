@@ -31,6 +31,7 @@ const VideoOverlayHost = () => {
   const window = useWindowDimensions();
   const windowRef = useRef({ width: window.width, height: window.height });
   const [fullLayout, setFullLayout] = useState({ width: window.width, height: window.height });
+  const lastCollapsedRectRef = useRef(null);
 
   useEffect(() => {
     windowRef.current = { width: window.width, height: window.height };
@@ -54,19 +55,26 @@ const VideoOverlayHost = () => {
     if (!videoUri) return null;
 
     if (!anchorRectInWindow) {
+      if (lastCollapsedRectRef.current) return lastCollapsedRectRef.current;
       const width = window.width;
       const height = Math.round((width * 9) / 16);
       return { x: 0, y: 0, width, height };
     }
 
     const rootOffset = rootOffsetRef.current || { x: 0, y: 0 };
-    return {
+    const rect = {
       x: Math.max(0, anchorRectInWindow.x - rootOffset.x),
       y: Math.max(0, anchorRectInWindow.y - rootOffset.y),
       width: anchorRectInWindow.width,
       height: anchorRectInWindow.height,
     };
+
+    lastCollapsedRectRef.current = rect;
+
+    return rect;
   }, [videoUri, anchorRectInWindow, rootOffsetRef, window.width]);
+
+  const effectiveCollapsedRect = collapsedRect || lastCollapsedRectRef.current;
 
   // Pas d'animation: layout instantané (évite les saccades).
   const playerLayoutStyle = useMemo(() => {
@@ -80,19 +88,19 @@ const VideoOverlayHost = () => {
       };
     }
 
-    const width = collapsedRect?.width ?? window.width;
-    const height = collapsedRect?.height ?? Math.round((width * 9) / 16);
+    const width = effectiveCollapsedRect?.width ?? window.width;
+    const height = effectiveCollapsedRect?.height ?? Math.round((width * 9) / 16);
 
     return {
       position: 'absolute',
-      top: collapsedRect?.y ?? 0,
-      left: collapsedRect?.x ?? 0,
+      top: effectiveCollapsedRect?.y ?? 0,
+      left: effectiveCollapsedRect?.x ?? 0,
       width,
       height,
       borderRadius: 12,
       overflow: 'hidden',
     };
-  }, [videoUri, isFullScreen, collapsedRect, window.width, window.height]);
+  }, [videoUri, isFullScreen, collapsedRect, effectiveCollapsedRect, window.width, window.height]);
 
   // Transition la plus fluide: petit fade-out -> switch -> fade-in (native driver),
   // sans animer la taille/position pour éviter les saccades.
@@ -198,8 +206,12 @@ const VideoOverlayHost = () => {
 
   if (!videoUri) return null;
 
-  const containerWidth = isFullScreen ? (fullLayout.width || window.width) : collapsedRect?.width ?? window.width;
-  const containerHeight = isFullScreen ? (fullLayout.height || window.height) : collapsedRect?.height ?? window.height;
+  const containerWidth = isFullScreen
+    ? (fullLayout.width || window.width)
+    : effectiveCollapsedRect?.width ?? window.width;
+  const containerHeight = isFullScreen
+    ? (fullLayout.height || window.height)
+    : effectiveCollapsedRect?.height ?? window.height;
 
   return (
     <View style={styles.host} pointerEvents="box-none">
@@ -208,8 +220,15 @@ const VideoOverlayHost = () => {
         pointerEvents="auto"
         renderToHardwareTextureAndroid
         onLayout={(e) => {
+          if (!isFullScreen) return;
           const { width, height } = e?.nativeEvent?.layout || {};
           if (!width || !height) return;
+          if (
+            Math.abs((fullLayout?.width ?? 0) - width) < 1 &&
+            Math.abs((fullLayout?.height ?? 0) - height) < 1
+          ) {
+            return;
+          }
           setFullLayout({ width, height });
         }}
       >

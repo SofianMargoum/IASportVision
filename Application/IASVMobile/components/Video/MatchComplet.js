@@ -3,34 +3,44 @@
 // Si aucune vidéo sélectionnée, affiche un message informatif.
 
 import React, { useEffect, useRef } from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet, Dimensions } from 'react-native';
 import { useVideoOverlay } from '../../tools/VideoOverlayContext';
 
 const MatchComplet = ({ selectedVideo }) => {
   const anchorRef = useRef(null);
-  const { openVideo, closeVideo, setAnchorRectInWindow } = useVideoOverlay();
+  const lastRectRef = useRef(null);
+  const measuredForUrlRef = useRef(null);
+  const prevFullScreenRef = useRef(false);
+  const { openVideo, setAnchorRectInWindow, isFullScreen, isTransitioning } = useVideoOverlay();
 
   useEffect(() => {
     if (selectedVideo?.url) {
       openVideo(selectedVideo.url, selectedVideo.jsonUrl);
-      return;
     }
-    closeVideo();
-  }, [selectedVideo?.url, selectedVideo?.jsonUrl, openVideo, closeVideo]);
+  }, [selectedVideo?.url, selectedVideo?.jsonUrl, openVideo]);
 
-  useEffect(() => {
-    // Si on quitte cet écran, on coupe le player.
-    return () => {
-      closeVideo();
-    };
-  }, [closeVideo]);
 
   const measureAnchor = () => {
     const node = anchorRef.current;
     if (!node?.measureInWindow) return;
     node.measureInWindow((x, y, width, height) => {
       if (width > 0 && height > 0) {
-        setAnchorRectInWindow({ x, y, width, height });
+        const prev = lastRectRef.current;
+        const delta = prev
+          ? Math.max(
+              Math.abs((prev.x ?? 0) - x),
+              Math.abs((prev.y ?? 0) - y),
+              Math.abs((prev.width ?? 0) - width),
+              Math.abs((prev.height ?? 0) - height)
+            )
+          : Infinity;
+
+
+        if (delta < 2) return;
+        const nextRect = { x, y, width, height };
+        lastRectRef.current = nextRect;
+        measuredForUrlRef.current = selectedVideo?.url || null;
+        setAnchorRectInWindow(nextRect);
       }
     });
   };
@@ -46,11 +56,45 @@ const MatchComplet = ({ selectedVideo }) => {
     );
   }
 
+  useEffect(() => {
+    if (!selectedVideo?.url) return;
+    if (isFullScreen || isTransitioning) return;
+    measuredForUrlRef.current = null;
+    lastRectRef.current = null;
+    const id = requestAnimationFrame(measureAnchor);
+    return () => cancelAnimationFrame(id);
+  }, [selectedVideo?.url, isFullScreen, isTransitioning]);
+
+  useEffect(() => {
+    const wasFull = prevFullScreenRef.current;
+    prevFullScreenRef.current = isFullScreen;
+    if (wasFull && !isFullScreen && selectedVideo?.url && !isTransitioning) {
+      const id = requestAnimationFrame(measureAnchor);
+      return () => cancelAnimationFrame(id);
+    }
+  }, [isFullScreen, selectedVideo?.url, isTransitioning]);
+
+  useEffect(() => {
+    if (!selectedVideo?.url) return;
+    const subscription = Dimensions.addEventListener('change', () => {
+      if (isFullScreen || isTransitioning) return;
+      measuredForUrlRef.current = null;
+      lastRectRef.current = null;
+      measureAnchor();
+    });
+    return () => subscription?.remove();
+  }, [selectedVideo?.url, isFullScreen, isTransitioning]);
+
   return (
     <View style={styles.container}>
       <View
         ref={anchorRef}
-        onLayout={measureAnchor}
+        onLayout={() => {
+          if (!selectedVideo?.url) return;
+          if (isFullScreen || isTransitioning) return;
+          if (measuredForUrlRef.current === selectedVideo.url) return;
+          measureAnchor();
+        }}
         style={styles.playerAnchor}
       />
     </View>
@@ -59,9 +103,9 @@ const MatchComplet = ({ selectedVideo }) => {
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
+    width: '100%',
     backgroundColor: '#000',
-    justifyContent: 'center',
+    justifyContent: 'flex-start',
     alignItems: 'center',
   },
   playerAnchor: {

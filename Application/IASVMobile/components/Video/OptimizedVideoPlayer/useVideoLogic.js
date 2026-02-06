@@ -147,6 +147,7 @@ const useVideoLogic = (videoUri, zoomMap, ui = {}) => {
       duration,
       videoRef,
       toggleFullScreen,
+      exitFullScreen,
       isFullScreen,
       isUploadMode,
       setIsUploadMode,

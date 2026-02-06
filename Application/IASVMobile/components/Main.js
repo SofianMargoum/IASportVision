@@ -4,6 +4,7 @@ import { NavigationContainer } from '@react-navigation/native';
 import { TabView, SceneMap } from 'react-native-tab-view';
 import { useClubContext } from './../tools/ClubContext';
 import { VideoOverlayProvider } from '../tools/VideoOverlayContext';
+import { ActiveTabProvider } from '../tools/ActiveTabContext';
 import Record from './Record';
 import Resultat from './Resultat';
 import Video from './Video';
@@ -35,6 +36,8 @@ const Main = ({ windowWidth }) => {
     setShowHeader(index !== routes.findIndex((route) => route.key === 'profile'));
   }, [index, routes]);
 
+
+
   const renderScene = SceneMap({
     record: Record,
     resultat: Resultat,
@@ -58,24 +61,27 @@ const Main = ({ windowWidth }) => {
     return <Welcome />;
   }
 
+
   return (
     <NavigationContainer>
       <VideoOverlayProvider rootRef={rootRef}>
-        <View ref={rootRef} style={{ flex: 1, backgroundColor: '#010914' }}>
-          {showHeader && <Header windowWidth={windowWidth} />}
-          <TabView
-            navigationState={{ index, routes }}
-            renderScene={renderScene}
-            onIndexChange={setIndex}
-            initialLayout={{ width: Dimensions.get('window').width }}
-            renderTabBar={() => null}
-            swipeEnabled={false}
-          />
-          <BottomTabNavigator index={index} setIndex={setIndex} />
+        <ActiveTabProvider activeKey={routes[index]?.key}>
+          <View ref={rootRef} style={{ flex: 1, backgroundColor: '#010914' }}>
+            {showHeader && <Header windowWidth={windowWidth} />}
+            <TabView
+              navigationState={{ index, routes }}
+              renderScene={renderScene}
+              onIndexChange={setIndex}
+              initialLayout={{ width: Dimensions.get('window').width }}
+              renderTabBar={() => null}
+              swipeEnabled={false}
+            />
+            <BottomTabNavigator index={index} setIndex={setIndex} />
 
-          {/* Overlay global pour le player (style YouTube), sans remount */}
-          <VideoOverlayHost />
-        </View>
+            {/* Overlay global pour le player (style YouTube), sans remount */}
+            <VideoOverlayHost />
+          </View>
+        </ActiveTabProvider>
       </VideoOverlayProvider>
     </NavigationContainer>
   );

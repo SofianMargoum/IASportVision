@@ -2,9 +2,15 @@ import React, { useState, useEffect } from 'react';
 import { View, StyleSheet, BackHandler } from 'react-native';
 import ListeVideo from './Video/ListeVideo';
 import ListeVideoSidebar from './Video/ListeVideoSidebar';
+import { useVideoOverlay } from '../tools/VideoOverlayContext';
+import { useActiveTab } from '../tools/ActiveTabContext';
 
 const Video = () => {
   const [selectedVideo, setSelectedVideo] = useState(null);
+  const { closeVideo, videoListResetPending, acknowledgeVideoListReset } = useVideoOverlay();
+  const { activeKey } = useActiveTab();
+  const isActive = activeKey === 'video';
+
 
   const handleVideoSelect = (video) => {
     setSelectedVideo(video);
@@ -21,6 +27,27 @@ const Video = () => {
       return () => backHandler.remove();
     }
   }, [selectedVideo]);
+
+  useEffect(() => {
+    if (!selectedVideo) {
+      closeVideo();
+    }
+  }, [selectedVideo, closeVideo]);
+
+  useEffect(() => {
+    if (!videoListResetPending) return;
+    if (selectedVideo) {
+      setSelectedVideo(null);
+    }
+    acknowledgeVideoListReset?.();
+  }, [videoListResetPending, selectedVideo, acknowledgeVideoListReset]);
+
+  useEffect(() => {
+    if (!isActive) {
+      closeVideo();
+      setSelectedVideo(null);
+    }
+  }, [isActive, closeVideo]);
 
   return (
     <View style={styles.container}>

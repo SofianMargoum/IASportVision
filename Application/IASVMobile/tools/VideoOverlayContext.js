@@ -10,6 +10,7 @@ export const VideoOverlayProvider = ({ rootRef, children }) => {
   const [anchorRectInWindow, setAnchorRectInWindow] = useState(null);
 
   const rootOffsetRef = useRef({ x: 0, y: 0 });
+  const anchorRectRef = useRef(null);
 
   const measureRootOffset = useCallback(() => {
     return new Promise((resolve) => {
@@ -37,6 +38,7 @@ export const VideoOverlayProvider = ({ rootRef, children }) => {
     setVideoUri(null);
     setZoomMap(null);
     setAnchorRectInWindow(null);
+    anchorRectRef.current = null;
   }, []);
 
   const setTransitioning = useCallback((value) => {
@@ -54,7 +56,21 @@ export const VideoOverlayProvider = ({ rootRef, children }) => {
   const setAnchorRect = useCallback(async (rect) => {
     // Rect is in window coords; we store it as-is and compute root offset separately.
     if (!rect) return;
+    const prev = anchorRectRef.current;
+    const delta = prev
+      ? Math.max(
+          Math.abs((prev.x ?? 0) - rect.x),
+          Math.abs((prev.y ?? 0) - rect.y),
+          Math.abs((prev.width ?? 0) - rect.width),
+          Math.abs((prev.height ?? 0) - rect.height)
+        )
+      : Infinity;
+
+    // Ignore tiny/no-op changes to avoid layout loops.
+    if (delta < 1) return;
+
     await measureRootOffset();
+    anchorRectRef.current = rect;
     setAnchorRectInWindow(rect);
   }, [measureRootOffset]);
 
