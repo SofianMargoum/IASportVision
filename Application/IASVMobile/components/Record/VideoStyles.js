@@ -3,6 +3,8 @@ import { StyleSheet, Dimensions } from 'react-native';
 const { width } = Dimensions.get('window');
 const scale = 0.85; // Ajustez cette valeur selon vos besoins
 
+export const SUCCESS_GREEN = '#7BC47F';
+
 export default StyleSheet.create({
     container: {
         flexGrow: 1, // Allows ScrollView to grow if content is small
@@ -21,6 +23,7 @@ export default StyleSheet.create({
       },
       content: {
         flex: 1,
+        width: '100%',
         backgroundColor: '#010914',
         alignItems: 'center',
       },
@@ -134,6 +137,47 @@ export default StyleSheet.create({
       },
       messageText: {
         color: '#ff4d4d',
+      },
+      messageTextSuccess: {
+        color: SUCCESS_GREEN,
+      },
+
+      progressWrapper: {
+        marginTop: 16,
+        width: '100%',
+        alignSelf: 'stretch',
+        paddingHorizontal: 0,
+      },
+      progressHeader: {
+        width: '100%',
+        flexDirection: 'row',
+        justifyContent: 'flex-end',
+        marginBottom: 6,
+      },
+      progressPercentText: {
+        fontSize: 11,
+        color: '#9aa0a6',
+      },
+      progressBarBg: {
+        width: '100%',
+        alignSelf: 'stretch',
+        height: 8,
+        borderRadius: 8,
+        backgroundColor: '#010E1E',
+        overflow: 'hidden',
+        borderWidth: 1,
+        borderColor: '#0b1a33',
+      },
+      progressBarFill: {
+        height: '100%',
+        backgroundColor: '#ffffff',
+      },
+      progressMessages: {
+        marginTop: 8,
+      },
+      progressMessageText: {
+        fontSize: 11,
+        color: '#9aa0a6',
       },
       buttonContainer: {
         width: '100%',

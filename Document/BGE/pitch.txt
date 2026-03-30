@@ -1,0 +1,120 @@
+Bonjour...
+
+
+Slide 1 :
+Je vais dabord vous presenter le projet de façon globale et ensuite je rentrer dans les details petit a petit. et a la fin je pourrais repondre a vos question si vous en avait.
+
+IA Sport Vision est une solution video proposer au club amateur.
+l'idée est simple :
+	-1 camera pour filmer.
+	-1 application mobile pour gerer la camera et les videos enregistré.
+	
+	
+Slide 2 :
+L’utilisation de la vidéo dans le football amateur commence a ce repandre.
+
+De nombreux clubs font apelle a :
+	-Des videaste profesionnelle se deplace le jours du match et sont payer a la prestation.
+	-Utilisent des solutions qui existe deja comme Veo danoise, Spiideo suedoise. 
+
+ne sont pas orienter football
+Aucune solution française personaliser pour le football amateur n'existe
+
+ce que je veux apporter c'est tout un ecosystem, centraliser dans une application, pour repondre au besoin du coach des joueur et des supporter. 
+Tout cela avec les données reel de la fff
+
+Slide 3 :
+
+La camera c'est celle ci: qualiter 4k, double objectif pour couvrir tout le terrain. elle assurer par une assurance responsabilité civile professionnelle 
+tres simple a installer ou a desinstaller. Concretement en 5 min elle est installer. Desintallation prend 5 min sur une simple demande.
+
+Slide 4 :
+
+Concernant l'application
+5 onglet:
+-commencer et arreter l'enregistrement 
+-ici c'est pour revisualiser les video enregistrer
+-ici on a les resultat officiel le classement et les statistique.
+-ici c'est pour parcourir d'autre club et d'autre equipe
+-ici c'est longlet profile ou on va gerer les parametre de notre camera, l'effectif, la composition, les statistique
+
+
+Slide 5 :
+
+la partie R&D a été faite, lapplication a été develloper elle fonctionne bien.
+aujourd'hui on veux passer a la deuxieme etape celle de la validation. Donc pour cela le club pilote sera Vidauban. 
+on aimerai faire nos test pendant une periode definit. 3 mois, 6 mois, 9 mois. ça va dependre des retours. Corriger ce qui ne va pas et passer a l'etape suivante.
+
+la production ou la commercialisation. Si possible a la rentrer de septembre. Sinon debut 2027.
+Donc on aimerai proposer ça a tout les club de la CAD. et si possible installer au 23 club.
+
+slide 6
+Donc pour conclure 
+Je vous propose toute cette solution 100% gratuitement. 
+je ne demande aucune subvention ni aucun accompagnement. 
+seulement une autorisation a installer pour m'aider a me lancer.
+
+
+Slide 1 — Présentation du projet
+
+IA Sport Vision est une solution vidéo destinée aux clubs de football amateur.
+Le principe est très simple :
+une caméra installée au stade pour filmer le match
+une application mobile pour piloter la caméra et gérer les vidéos
+L’objectif est de permettre aux clubs amateurs de revoir leurs matchs et d’analyser les actions facilement.
+
+Slide 2 — Contexte
+
+L’utilisation de la vidéo dans le football amateur commence à se développer.
+Aujourd’hui, certains clubs :
+font appel à des vidéastes professionnels qui se déplacent le jour du match
+utilisent des solutions existantes comme Veo Technologies (Danemark) ou Spiideo (Suède)
+Cependant ces solutions ne sont pas toujours entièrement adaptées au football amateur local.
+L’objectif d’IA Sport Vision est de proposer une solution simple, centralisée dans une application, qui répond aux besoins :
+des entraîneurs
+des joueurs
+des supporters
+avec des données issues des compétitions de la Fédération Française de Football.
+
+Slide 3 — La caméra
+
+La solution utilise une caméra 4K avec double objectif, ce qui permet de couvrir l’ensemble du terrain.
+Quelques points importants :
+installation très simple
+installation ou retrait en environ 5 minutes
+aucune modification du stade
+Le matériel sera couvert par une assurance responsabilité civile professionnelle.
+Si la commune ou le club souhaite arrêter l’expérience, la caméra peut être retirée immédiatement.
+
+Slide 4 — L’application
+
+L’application est organisée autour de plusieurs fonctionnalités principales.
+Elle permet notamment :
+de démarrer et arrêter l’enregistrement des matchs
+de revoir les vidéos enregistrées
+d’accéder aux résultats, classements et statistiques officielles
+de parcourir les autres clubs et équipes
+de gérer l’effectif, la composition d’équipe et les paramètres de la caméra
+L’objectif est de centraliser toutes les informations utiles dans une seule application.
+
+Slide 5 — Phase actuelle du projet
+
+La phase de recherche et développement a déjà été réalisée.
+L’application a été développée et elle est aujourd’hui fonctionnelle.
+La prochaine étape consiste à tester la solution dans des conditions réelles.
+Pour cela, nous souhaitons mettre en place un club pilote, et le club de Vidauban est intéressé par cette expérimentation.
+L’idée serait de tester la solution pendant une période définie :
+3 mois
+6 mois
+ou 9 mois
+afin de recueillir des retours et améliorer la solution.
+Si les résultats sont positifs, l’objectif serait ensuite de proposer la solution à d’autres clubs du territoire, notamment ceux de la CAD.
+
+Slide 6 — Conclusion
+
+Pour conclure :
+Je vous propose de tester cette solution entièrement gratuitement.
+Je ne demande :
+aucune subvention
+aucun financement de la commune
+Je demande simplement l’autorisation d’installer la caméra au stade afin de réaliser ce test et lancer le projet.

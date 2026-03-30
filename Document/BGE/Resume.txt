@@ -1,0 +1,51 @@
+Projet :
+	-Vente et installation de caméra dans des stades de foot amateurs.
+	
+	-Avec les images d'un match de foot officiel pouvoir : 
+		
+		-Filmer et visionner les videos des match officiel
+		-Recuperer et afficher les resultat et le classement du championnat de l'equipe
+		-Recuperer et afficher les statistique de l'équipe et des joueur individuelle a l'aide de l'IA
+		
+Mes produits:
+
+	-Camera Hikvision (DS-2CD2T47G2P-LSU/SL 4MP , DS-2CD2T87G2P-LSU/SL 8MP)
+	-Alimentation 12V
+	-carte sd 16go
+	-Cable internet
+	-Tablette
+	
+Solution:
+	
+	-Google Cloud plateform
+	-Verrtex AI
+	-App engine
+	-Node.js (backend)
+	-react, react native (frontend)
+	
+Application:
+une application pour le football amateur.
+il y a deux type d'utilisateur:
+	-Utilisateur admin. 
+		-Chaque club aura un compte ou il pourras s'authentifier.
+			-il aura accés à 5 onglets:
+				-premiere onglet : possibilité d'enregistrer une video d'un match avec la camera installer dans le stade
+				-deuxiemme onglet : visionner le classement les resulat et le calendrier 
+				-troisieme onglet : liste des videos deja enregistrer et possibilité de les visionner
+				-quatrieme onglet : barre de recherche des autre club. pour visioner leur resulat et video
+				-cinquieme onglet : parametre du compte, mdp, ip camera...
+	-Utilisateur lambda. 
+		-il devra renseigner le club qu'il cherche
+			-il aura accés à 5 onglets:
+				-premiere onglet :  visionner un match en direct
+				-deuxiemme onglet : visionner le classement les resulat et le calendrier 
+				-troisieme onglet : liste des videos deja enregistrer et possibilité de les visionner + statistique
+				-quatrieme onglet : barre de recherche des autre club. pour visioner leur resulat et video
+				-cinquieme onglet : effectif, composition, statistique, camera,
+				
+				
+				
+-INIPI cherche si ma marque existe et la creer
+-DPVA
+-protocole de confidentialité avocat + exploitation de la marque
+-Assurance responsabilité civile

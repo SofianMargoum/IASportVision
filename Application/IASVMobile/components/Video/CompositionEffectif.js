@@ -2,26 +2,37 @@
 // Affiche la composition et l'effectif pour un match.
 // Utilise des onglets internes : EFFECTIF (liste éditable) et COMPOS (terrain avec positions).
 
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { View, TouchableOpacity, Text, StyleSheet } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import Effectif from './Effectif';
 import Compos from './Compos';
+import { useEffectifContext } from './../../tools/EffectifContext';
 
 const MatchTabs = () => {
   const [activeTab, setActiveTab] = useState('EFFECTIF');
-  const [players, setPlayers] = useState(
-    Array.from({ length: 14 }, (_, i) => ({
+  const { effectif } = useEffectifContext();
+
+  const players = useMemo(() => {
+    if (effectif.length > 0) {
+      return effectif.map((player, index) => ({
+        id: player.numero || index + 1,
+        number: player.numero || index + 1,
+        name: player.joueur || `Joueur ${index + 1}`,
+      }));
+    }
+
+    return Array.from({ length: 14 }, (_, i) => ({
       id: i + 1,
       number: i + 1,
       name: `Joueur ${i + 1}`,
-    }))
-  );
+    }));
+  }, [effectif]);
 
   const renderContent = () => {
     switch (activeTab) {
       case 'EFFECTIF':
-        return <Effectif players={players} setPlayers={setPlayers} />;
+        return <Effectif />;
       case 'COMPOS':
         return <Compos players={players} />;
       default:

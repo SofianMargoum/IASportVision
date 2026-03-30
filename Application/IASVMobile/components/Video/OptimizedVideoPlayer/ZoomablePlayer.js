@@ -62,7 +62,7 @@ const ZoomablePlayer = ({
               ref={videoRef}
               source={{ uri: videoUri }}
               style={videoStyle}
-              resizeMode="contain"
+              resizeMode="cover"
               paused={paused}
               bufferConfig={{
                 minBufferMs: 15000,

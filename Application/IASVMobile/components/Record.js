@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -7,23 +7,14 @@ import {
   TouchableOpacity,
   ScrollView,
   ActivityIndicator,
+  Animated,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/FontAwesome';
 import { useVideoContent } from './Record/VideoContent';
-import styles from './Record/VideoStyles';
-import TcpSocket from 'react-native-tcp-socket'; // ✅ TCP only
+import styles, { SUCCESS_GREEN } from './Record/VideoStyles';
 
-// ---------- Helper TCP (une seule fois, hors composant) ----------
-const tcpProbe = (host, port, ms = 4000) =>
-  new Promise((resolve) => {
-    const socket = TcpSocket.createConnection({ host, port, timeout: ms }, () => {
-      socket.destroy();
-      resolve(true); // connexion TCP OK
-    });
-    socket.on('error', () => { socket.destroy(); resolve(false); });
-    socket.on('timeout', () => { socket.destroy(); resolve(false); });
-  });
-// -----------------------------------------------------------------
+// ✅ adapte ce chemin selon ton projet (là j’assume que Record.js est à côté de tools/)
+import { fetchAllCameras } from '../tools/api';
 
 const Record = () => {
   const {
@@ -35,6 +26,9 @@ const Record = () => {
     isRecording,
     timeElapsed,
     message,
+    progressVisible,
+    progressValue,
+    progressLines,
     counter,
     secondCounter,
     handleInputChange,
@@ -46,30 +40,66 @@ const Record = () => {
     decrementCounter,
     incrementSecondCounter,
     decrementSecondCounter,
-    params,
     selectedDevice,
   } = useVideoContent();
+
+  // Animation pour rendre la progression visible (même si ça "saute")
+  const [progressBarWidth, setProgressBarWidth] = useState(0);
+  const progressAnimPx = useRef(new Animated.Value(0)).current;
+  useEffect(() => {
+    if (!progressVisible) {
+      progressAnimPx.setValue(0);
+      return;
+    }
+
+    const w = Number(progressBarWidth) || 0;
+    const target = w * Math.max(0, Math.min(1, progressValue ?? 0));
+    Animated.timing(progressAnimPx, {
+      toValue: target,
+      duration: 250,
+      useNativeDriver: false,
+    }).start();
+  }, [progressVisible, progressValue, progressBarWidth, progressAnimPx]);
 
   // ---- États locaux ----
   const [deviceStatus, setDeviceStatus] = useState('');
   const [isChecking, setIsChecking] = useState(false);
 
-  // ---- Vérification: TCP uniquement ----
+  // ---- Vérification: Hik-Connect (online) ----
   const checkDeviceStatus = async (device) => {
-    if (!device?.domaine || !device?.port) {
+    if (!device?.cameraId) {
       setDeviceStatus('Non connecté ❌');
       return;
     }
+
     setIsChecking(true);
     setDeviceStatus('Vérification...');
 
     try {
-      const ok = await tcpProbe(device.domaine, device.port, 400); // timeout 4s
-      if (ok) {
-        setDeviceStatus('Connecté (TCP) ✅');
-      } else {
-        setDeviceStatus('Non connecté ❌');
+      const res = await fetchAllCameras();
+
+      // axios => res.data, sinon on accepte payload direct
+      const payload = res?.data ?? res;
+
+      // Ton exemple: { data: { camera: [...] }, errorCode: "0" }
+      const cams =
+        payload?.data?.camera ??
+        payload?.data?.cameras ??
+        payload?.camera ??
+        payload?.cameras ??
+        [];
+
+      const cam = Array.isArray(cams) ? cams.find((c) => c?.id === device.cameraId) : null;
+
+      if (!cam) {
+        setDeviceStatus('Inconnu ❔');
+        return;
       }
+
+      const isOnline = cam?.online === '1';
+      setDeviceStatus(isOnline ? 'Connecté' : 'Non connecté ❌');
+    } catch (e) {
+      setDeviceStatus('Erreur réseau ⚠️');
     } finally {
       setIsChecking(false);
     }
@@ -78,33 +108,30 @@ const Record = () => {
   // Vérifie à chaque changement de device
   useEffect(() => {
     if (selectedDevice) {
-      setDeviceStatus('Vérification...');
-      setIsChecking(true);
       checkDeviceStatus(selectedDevice);
     } else {
       setDeviceStatus('');
       setIsChecking(false);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedDevice]);
+  }, [selectedDevice?.cameraId]); // on suit surtout la caméra
 
-if (!user) {
-  return (
-    <View style={styles.notConnectedContainer}>
-      <Image
-        source={require('../assets/connexionR.png')}
-        style={{
-          width: '100%',         // pleine largeur
-          resizeMode: 'contain', // garde le ratio
-        }}
-      />
-    </View>
-  );
-}
+  if (!user) {
+    return (
+      <View style={styles.notConnectedContainer}>
+        <Image
+          source={require('../assets/connexionR.png')}
+          style={{
+            width: '100%',
+            resizeMode: 'contain',
+          }}
+        />
+      </View>
+    );
+  }
 
-
-
-
+  // Optionnel: empêcher de démarrer un enregistrement si caméra offline/inconnue
+  const canRecord = !!filename && deviceStatus.startsWith('Connecté');
 
   return (
     <ScrollView contentContainerStyle={styles.container} showsVerticalScrollIndicator={false}>
@@ -124,33 +151,32 @@ if (!user) {
                 marginRight: 8,
                 flexDirection: 'row',
                 alignItems: 'center',
-                padding: 6,
-                backgroundColor: isChecking ? '#3a3a3a' : '#2A2A2A',
+                padding: 2,
                 borderRadius: 6,
                 opacity: !selectedDevice || isChecking ? 0.7 : 1,
               }}
             >
-              <Icon name="refresh" size={14} color="#fff" />
+              <Icon name="refresh" size={12} color="#fff" />
             </TouchableOpacity>
           )}
 
           {/* Texte Appareil sélectionné (couleur selon état) */}
           <Text
             style={{
-              fontSize: 16,
+              fontSize: 12,
               fontWeight: 'bold',
               marginVertical: 10,
               marginRight: 8,
               color: isChecking
-                ? '#f1c40f' // jaune si vérification
+                ? '#f1c40f'
                 : deviceStatus.startsWith('Connecté')
-                ? 'lightgreen' // vert si connecté
+                ? SUCCESS_GREEN
                 : deviceStatus.startsWith('Non connecté')
-                ? '#ff6b6b' // rouge si non connecté
-                : 'white', // blanc par défaut
+                ? '#ff6b6b'
+                : 'white',
             }}
           >
-          {selectedDevice?.nom || 'aucun'}
+            {selectedDevice?.nom || 'aucun'}
           </Text>
 
           {/* Icône état WiFi à droite */}
@@ -159,10 +185,12 @@ if (!user) {
               {isChecking ? (
                 <ActivityIndicator size="small" color="#f1c40f" />
               ) : deviceStatus.startsWith('Connecté') ? (
-                <Icon name="wifi" size={18} color="lightgreen" />
+                <Icon name="wifi" size={12} color={SUCCESS_GREEN} />
               ) : deviceStatus.startsWith('Non connecté') ? (
-                <Icon name="wifi" size={18} color="#ff6b6b" />
-              ) : null}
+                <Icon name="wifi" size={12} color="#ff6b6b" />
+              ) : (
+                <Icon name="question-circle" size={12} color="#bbb" />
+              )}
             </View>
           )}
         </View>
@@ -242,25 +270,66 @@ if (!user) {
 
         {isRecording && (
           <View style={styles.timer}>
-            <Text style={styles.timerText}>Recording Time: {formatTime(timeElapsed)}</Text>
+            <Text style={styles.timerText}>
+              {formatTime(timeElapsed)}
+            </Text>
           </View>
         )}
 
-        {message && (
+        {message && !progressVisible ? (
           <View style={styles.message}>
-            <Text style={styles.messageText}>{message}</Text>
+            <Text
+              style={
+                /succès|reussi|réussi|enregistrement\s+en\s+cours/i.test(String(message))
+                  ? styles.messageTextSuccess
+                  : styles.messageText
+              }
+            >
+              {message}
+            </Text>
+          </View>
+        ) : null}
+
+        {progressVisible && (
+          <View style={styles.progressWrapper}>
+            <View style={styles.progressHeader}>
+              <Text style={styles.progressPercentText}>
+                {Math.round((progressValue ?? 0) * 100)}%
+              </Text>
+            </View>
+            <View
+              style={styles.progressBarBg}
+              onLayout={(e) => {
+                const w = e?.nativeEvent?.layout?.width;
+                if (typeof w === 'number' && w > 0) setProgressBarWidth(w);
+              }}
+            >
+              <Animated.View
+                style={[
+                  styles.progressBarFill,
+                  {
+                    width: progressAnimPx,
+                  },
+                ]}
+              />
+            </View>
+            <View style={styles.progressMessages}>
+              <Text style={styles.progressMessageText}>
+                {(progressLines && progressLines[progressLines.length - 1]) || ''}
+              </Text>
+            </View>
           </View>
         )}
 
         <View style={styles.buttonContainer}>
           <TouchableOpacity
             onPress={handleButtonClick}
-            disabled={!filename}
+            disabled={!canRecord}
             style={[
               styles.outerCircle,
               isRecording
                 ? styles.recordingOuter
-                : !filename
+                : !canRecord
                 ? styles.disabledButton
                 : styles.defaultOuter,
             ]}
@@ -272,6 +341,13 @@ if (!user) {
               ]}
             />
           </TouchableOpacity>
+
+          {/* petit hint si disabled */}
+          {!isRecording && !deviceStatus.startsWith('Connecté') && selectedDevice ? (
+            <Text style={{ color: '#bbb', marginTop: 10, textAlign: 'center' }}>
+              Caméra hors ligne ou inconnue — enregistrement désactivé
+            </Text>
+          ) : null}
         </View>
       </View>
     </ScrollView>

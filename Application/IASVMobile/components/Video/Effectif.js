@@ -1,30 +1,44 @@
 import React from 'react';
-import { View, Text, TextInput, StyleSheet, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Image } from 'react-native';
+import { useEffectifContext } from './../../tools/EffectifContext';
 
-const Effectif = ({ players, setPlayers }) => {
-  const handlePlayerChange = (id, value) => {
-    setPlayers((prevPlayers) =>
-      prevPlayers.map((player) =>
-        player.id === id ? { ...player, name: value } : player
-      )
-    );
-  };
+const Effectif = () => {
+  const { effectif } = useEffectifContext();
 
   return (
     <ScrollView
       style={styles.listContainer}
       showsVerticalScrollIndicator={false} // Cache la barre de défilement (optionnel)
     >
-      {players.map((player, index) => (
-        <View style={styles.playerRow} key={player.id || `player-${index}`}>
-          <Text style={styles.number}>{player.number}</Text>
-          <TextInput
-            style={styles.input}
-            value={player.name}
-            onChangeText={(text) => handlePlayerChange(player.id, text)}
-          />
+      {effectif.length === 0 ? (
+        <View style={styles.emptyRow}>
+          <Text style={styles.emptyText}>Aucun joueur dans l'effectif.</Text>
         </View>
-      ))}
+      ) : (
+        effectif.map((player, index) => {
+          const showTitulaireHeader = index === 0;
+          const showRemplacantHeader = index === 11 && effectif.length > 11;
+
+          return (
+            <React.Fragment key={`${player.numero || 'x'}-${index}`}>
+              {showTitulaireHeader && (
+                <Text style={styles.sectionTitle}>Titulaire</Text>
+              )}
+              {showRemplacantHeader && (
+                <Text style={styles.sectionTitle}>Remplacant</Text>
+              )}
+              <View style={styles.playerRow}>
+                <Image
+                  source={require('./../../assets/player.png')}
+                  style={styles.icon}
+                />
+                <Text style={styles.number}>{player.numero}</Text>
+                <Text style={styles.name}>{player.joueur}</Text>
+              </View>
+            </React.Fragment>
+          );
+        })
+      )}
     </ScrollView>
   );
 };
@@ -32,33 +46,49 @@ const Effectif = ({ players, setPlayers }) => {
 const styles = StyleSheet.create({
   listContainer: {
     flex: 1,
-    padding: 10,
+    paddingHorizontal: 10,
   },
   playerRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 10,
+    paddingVertical: 6,
     paddingHorizontal: 10,
-    marginVertical: 5, // Espace entre les items
+    marginVertical: 4, // Espace entre les items
     width: '100%', // Les items occupent toute la largeur
     backgroundColor: 'transparent',
   },
   number: {
-    width: 40,
+    width: 32,
     textAlign: 'center',
-    fontSize: 16,
+    fontSize: 14,
     color: '#FFFFFF',
-    marginRight: 10,
+    marginRight: 6,
   },
-  input: {
+  name: {
     flex: 1,
-    textAlign: 'center',
-    padding: 10,
-    borderWidth: 1,
-    borderColor: '#001A31',
-    borderRadius: 5,
+    textAlign: 'left',
+    paddingVertical: 6,
     color: '#FFFFFF',
-    fontSize: 16,
+    fontSize: 14,
+  },
+  sectionTitle: {
+    color: '#A8B4C0',
+    fontSize: 14,
+    fontWeight: '600',
+    textAlign: 'center',
+  },
+  icon: {
+    width: 18,
+    height: 18,
+    marginRight: 6,
+  },
+  emptyRow: {
+    paddingVertical: 20,
+    alignItems: 'center',
+  },
+  emptyText: {
+    color: '#FFFFFF',
+    fontSize: 14,
   },
 });
 

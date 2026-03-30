@@ -1,0 +1,284 @@
+starting build "4e904ca9-e970-4d31-9f96-12492158a522"
+
+FETCHSOURCE
+BUILD
+Starting Step #0 - "fetch"
+Step #0 - "fetch": Pulling image: europe-west6-docker.pkg.dev/serverless-runtimes/utilities/gcs-fetcher:base_20251219_18_04_RC00
+Step #0 - "fetch": base_20251219_18_04_RC00: Pulling from serverless-runtimes/utilities/gcs-fetcher
+Step #0 - "fetch": Digest: sha256:096a29efcfa8dc6c3b204d02fbc0939ca306f0733f40a5e2db2081a4f0ceb316
+Step #0 - "fetch": Status: Downloaded newer image for europe-west6-docker.pkg.dev/serverless-runtimes/utilities/gcs-fetcher:base_20251219_18_04_RC00
+Step #0 - "fetch": europe-west6-docker.pkg.dev/serverless-runtimes/utilities/gcs-fetcher:base_20251219_18_04_RC00
+Step #0 - "fetch": Fetching manifest gs://staging.ia-sport.appspot.com/ae/0eeed0e9-8512-4441-8f11-fc005c66dce2/manifest.json.
+Step #0 - "fetch": Processing 29 files.
+Step #0 - "fetch": ******************************************************
+Step #0 - "fetch": Status:                      SUCCESS
+Step #0 - "fetch": Started:                     2026-02-02T21:05:46Z
+Step #0 - "fetch": Completed:                   2026-02-02T21:05:46Z
+Step #0 - "fetch": Requested workers:    200
+Step #0 - "fetch": Actual workers:        29
+Step #0 - "fetch": Total files:           29
+Step #0 - "fetch": Total retries:          0
+Step #0 - "fetch": GCS timeouts:           0
+Step #0 - "fetch": MiB downloaded:         0.22 MiB
+Step #0 - "fetch": MiB/s throughput:       2.06 MiB/s
+Step #0 - "fetch": Time for manifest:     60.96 ms
+Step #0 - "fetch": Total time:             0.17 s
+Step #0 - "fetch": ******************************************************
+Finished Step #0 - "fetch"
+Starting Step #1 - "pre-buildpack"
+Step #1 - "pre-buildpack": Pulling image: europe-west6-docker.pkg.dev/serverless-runtimes/google-22-full/builder/nodejs:nodejs_20260125_RC00
+Step #1 - "pre-buildpack": nodejs_20260125_RC00: Pulling from serverless-runtimes/google-22-full/builder/nodejs
+Step #1 - "pre-buildpack": 63e5bc7682b8: Already exists
+Step #1 - "pre-buildpack": 17580a49e77d: Already exists
+Step #1 - "pre-buildpack": aeceeaeeae51: Already exists
+Step #1 - "pre-buildpack": a05d38eeaed2: Pulling fs layer
+Step #1 - "pre-buildpack": 386d8ce06ba0: Pulling fs layer
+Step #1 - "pre-buildpack": 9ee9b864a68f: Pulling fs layer
+Step #1 - "pre-buildpack": 8cf8597cb5ca: Pulling fs layer
+Step #1 - "pre-buildpack": a7eb43691955: Pulling fs layer
+Step #1 - "pre-buildpack": cc15455772db: Pulling fs layer
+Step #1 - "pre-buildpack": fe0a88c014e5: Pulling fs layer
+Step #1 - "pre-buildpack": 1a82443b3661: Pulling fs layer
+Step #1 - "pre-buildpack": 338bebec5060: Pulling fs layer
+Step #1 - "pre-buildpack": 7372a49f8ddf: Pulling fs layer
+Step #1 - "pre-buildpack": 3a6c474d92e1: Pulling fs layer
+Step #1 - "pre-buildpack": b2a49bbbd2b8: Pulling fs layer
+Step #1 - "pre-buildpack": 5920b9236b6b: Pulling fs layer
+Step #1 - "pre-buildpack": 92cb201d1f29: Pulling fs layer
+Step #1 - "pre-buildpack": 6659ee1f0dc0: Pulling fs layer
+Step #1 - "pre-buildpack": 8f7a4961fd26: Pulling fs layer
+Step #1 - "pre-buildpack": 87cb6812faf6: Pulling fs layer
+Step #1 - "pre-buildpack": 13a4f3c5d713: Pulling fs layer
+Step #1 - "pre-buildpack": 99df1e3bc1ad: Pulling fs layer
+Step #1 - "pre-buildpack": a5aac4af8490: Pulling fs layer
+Step #1 - "pre-buildpack": c6d3a3e470bb: Pulling fs layer
+Step #1 - "pre-buildpack": 1f87f0b2c428: Pulling fs layer
+Step #1 - "pre-buildpack": 14902fa70ed7: Pulling fs layer
+Step #1 - "pre-buildpack": 8d0f1302ef61: Pulling fs layer
+Step #1 - "pre-buildpack": ff62c84ddca6: Pulling fs layer
+Step #1 - "pre-buildpack": c720c0d3e8d1: Pulling fs layer
+Step #1 - "pre-buildpack": 78613c92ea9e: Pulling fs layer
+Step #1 - "pre-buildpack": 34ce8ba30961: Pulling fs layer
+Step #1 - "pre-buildpack": e6178d2c0976: Pulling fs layer
+Step #1 - "pre-buildpack": 4f4fb700ef54: Pulling fs layer
+Step #1 - "pre-buildpack": fe0a88c014e5: Waiting
+Step #1 - "pre-buildpack": 1a82443b3661: Waiting
+Step #1 - "pre-buildpack": 338bebec5060: Waiting
+Step #1 - "pre-buildpack": 7372a49f8ddf: Waiting
+Step #1 - "pre-buildpack": 3a6c474d92e1: Waiting
+Step #1 - "pre-buildpack": b2a49bbbd2b8: Waiting
+Step #1 - "pre-buildpack": 5920b9236b6b: Waiting
+Step #1 - "pre-buildpack": 92cb201d1f29: Waiting
+Step #1 - "pre-buildpack": 6659ee1f0dc0: Waiting
+Step #1 - "pre-buildpack": 8f7a4961fd26: Waiting
+Step #1 - "pre-buildpack": 87cb6812faf6: Waiting
+Step #1 - "pre-buildpack": 13a4f3c5d713: Waiting
+Step #1 - "pre-buildpack": 99df1e3bc1ad: Waiting
+Step #1 - "pre-buildpack": a5aac4af8490: Waiting
+Step #1 - "pre-buildpack": c6d3a3e470bb: Waiting
+Step #1 - "pre-buildpack": 1f87f0b2c428: Waiting
+Step #1 - "pre-buildpack": 14902fa70ed7: Waiting
+Step #1 - "pre-buildpack": 8d0f1302ef61: Waiting
+Step #1 - "pre-buildpack": ff62c84ddca6: Waiting
+Step #1 - "pre-buildpack": c720c0d3e8d1: Waiting
+Step #1 - "pre-buildpack": 78613c92ea9e: Waiting
+Step #1 - "pre-buildpack": 34ce8ba30961: Waiting
+Step #1 - "pre-buildpack": e6178d2c0976: Waiting
+Step #1 - "pre-buildpack": 4f4fb700ef54: Waiting
+Step #1 - "pre-buildpack": 8cf8597cb5ca: Verifying Checksum
+Step #1 - "pre-buildpack": 8cf8597cb5ca: Download complete
+Step #1 - "pre-buildpack": 386d8ce06ba0: Verifying Checksum
+Step #1 - "pre-buildpack": 386d8ce06ba0: Download complete
+Step #1 - "pre-buildpack": a05d38eeaed2: Verifying Checksum
+Step #1 - "pre-buildpack": a05d38eeaed2: Download complete
+Step #1 - "pre-buildpack": 9ee9b864a68f: Verifying Checksum
+Step #1 - "pre-buildpack": 9ee9b864a68f: Download complete
+Step #1 - "pre-buildpack": cc15455772db: Verifying Checksum
+Step #1 - "pre-buildpack": cc15455772db: Download complete
+Step #1 - "pre-buildpack": fe0a88c014e5: Verifying Checksum
+Step #1 - "pre-buildpack": fe0a88c014e5: Download complete
+Step #1 - "pre-buildpack": a7eb43691955: Verifying Checksum
+Step #1 - "pre-buildpack": a7eb43691955: Download complete
+Step #1 - "pre-buildpack": a05d38eeaed2: Pull complete
+Step #1 - "pre-buildpack": 338bebec5060: Verifying Checksum
+Step #1 - "pre-buildpack": 338bebec5060: Download complete
+Step #1 - "pre-buildpack": 1a82443b3661: Verifying Checksum
+Step #1 - "pre-buildpack": 1a82443b3661: Download complete
+Step #1 - "pre-buildpack": 7372a49f8ddf: Verifying Checksum
+Step #1 - "pre-buildpack": 7372a49f8ddf: Download complete
+Step #1 - "pre-buildpack": 3a6c474d92e1: Verifying Checksum
+Step #1 - "pre-buildpack": 3a6c474d92e1: Download complete
+Step #1 - "pre-buildpack": 386d8ce06ba0: Pull complete
+Step #1 - "pre-buildpack": b2a49bbbd2b8: Verifying Checksum
+Step #1 - "pre-buildpack": b2a49bbbd2b8: Download complete
+Step #1 - "pre-buildpack": 92cb201d1f29: Verifying Checksum
+Step #1 - "pre-buildpack": 92cb201d1f29: Download complete
+Step #1 - "pre-buildpack": 5920b9236b6b: Verifying Checksum
+Step #1 - "pre-buildpack": 5920b9236b6b: Download complete
+Step #1 - "pre-buildpack": 8f7a4961fd26: Download complete
+Step #1 - "pre-buildpack": 6659ee1f0dc0: Verifying Checksum
+Step #1 - "pre-buildpack": 6659ee1f0dc0: Download complete
+Step #1 - "pre-buildpack": 9ee9b864a68f: Pull complete
+Step #1 - "pre-buildpack": 87cb6812faf6: Download complete
+Step #1 - "pre-buildpack": a5aac4af8490: Verifying Checksum
+Step #1 - "pre-buildpack": a5aac4af8490: Download complete
+Step #1 - "pre-buildpack": 99df1e3bc1ad: Verifying Checksum
+Step #1 - "pre-buildpack": 99df1e3bc1ad: Download complete
+Step #1 - "pre-buildpack": 13a4f3c5d713: Verifying Checksum
+Step #1 - "pre-buildpack": 13a4f3c5d713: Download complete
+Step #1 - "pre-buildpack": 8cf8597cb5ca: Pull complete
+Step #1 - "pre-buildpack": c6d3a3e470bb: Verifying Checksum
+Step #1 - "pre-buildpack": c6d3a3e470bb: Download complete
+Step #1 - "pre-buildpack": 14902fa70ed7: Verifying Checksum
+Step #1 - "pre-buildpack": 14902fa70ed7: Download complete
+Step #1 - "pre-buildpack": 1f87f0b2c428: Verifying Checksum
+Step #1 - "pre-buildpack": 1f87f0b2c428: Download complete
+Step #1 - "pre-buildpack": 78613c92ea9e: Verifying Checksum
+Step #1 - "pre-buildpack": 78613c92ea9e: Download complete
+Step #1 - "pre-buildpack": ff62c84ddca6: Verifying Checksum
+Step #1 - "pre-buildpack": ff62c84ddca6: Download complete
+Step #1 - "pre-buildpack": 8d0f1302ef61: Download complete
+Step #1 - "pre-buildpack": c720c0d3e8d1: Verifying Checksum
+Step #1 - "pre-buildpack": c720c0d3e8d1: Download complete
+Step #1 - "pre-buildpack": 34ce8ba30961: Verifying Checksum
+Step #1 - "pre-buildpack": 34ce8ba30961: Download complete
+Step #1 - "pre-buildpack": e6178d2c0976: Verifying Checksum
+Step #1 - "pre-buildpack": e6178d2c0976: Download complete
+Step #1 - "pre-buildpack": 4f4fb700ef54: Verifying Checksum
+Step #1 - "pre-buildpack": 4f4fb700ef54: Download complete
+Step #1 - "pre-buildpack": a7eb43691955: Pull complete
+Step #1 - "pre-buildpack": cc15455772db: Pull complete
+Step #1 - "pre-buildpack": fe0a88c014e5: Pull complete
+Step #1 - "pre-buildpack": 1a82443b3661: Pull complete
+Step #1 - "pre-buildpack": 338bebec5060: Pull complete
+Step #1 - "pre-buildpack": 7372a49f8ddf: Pull complete
+Step #1 - "pre-buildpack": 3a6c474d92e1: Pull complete
+Step #1 - "pre-buildpack": b2a49bbbd2b8: Pull complete
+Step #1 - "pre-buildpack": 5920b9236b6b: Pull complete
+Step #1 - "pre-buildpack": 92cb201d1f29: Pull complete
+Step #1 - "pre-buildpack": 6659ee1f0dc0: Pull complete
+Step #1 - "pre-buildpack": 8f7a4961fd26: Pull complete
+Step #1 - "pre-buildpack": 87cb6812faf6: Pull complete
+Step #1 - "pre-buildpack": 13a4f3c5d713: Pull complete
+Step #1 - "pre-buildpack": 99df1e3bc1ad: Pull complete
+Step #1 - "pre-buildpack": a5aac4af8490: Pull complete
+Step #1 - "pre-buildpack": c6d3a3e470bb: Pull complete
+Step #1 - "pre-buildpack": 1f87f0b2c428: Pull complete
+Step #1 - "pre-buildpack": 14902fa70ed7: Pull complete
+Step #1 - "pre-buildpack": 8d0f1302ef61: Pull complete
+Step #1 - "pre-buildpack": ff62c84ddca6: Pull complete
+Step #1 - "pre-buildpack": c720c0d3e8d1: Pull complete
+Step #1 - "pre-buildpack": 78613c92ea9e: Pull complete
+Step #1 - "pre-buildpack": 34ce8ba30961: Pull complete
+Step #1 - "pre-buildpack": e6178d2c0976: Pull complete
+Step #1 - "pre-buildpack": 4f4fb700ef54: Pull complete
+Step #1 - "pre-buildpack": Digest: sha256:38b6b8549197b580d841cd8435c7b9008927247122e0abcf9ee8d76b222d1e34
+Step #1 - "pre-buildpack": Status: Downloaded newer image for europe-west6-docker.pkg.dev/serverless-runtimes/google-22-full/builder/nodejs:nodejs_20260125_RC00
+Step #1 - "pre-buildpack": europe-west6-docker.pkg.dev/serverless-runtimes/google-22-full/builder/nodejs:nodejs_20260125_RC00
+Step #1 - "pre-buildpack": Preparing directory /layers
+Step #1 - "pre-buildpack": Preparing directory /workspace
+Step #1 - "pre-buildpack": Preparing directory /builder/home
+Step #1 - "pre-buildpack": Preparing directory /builder/outputs
+Step #1 - "pre-buildpack": Preparing directory /platform/env
+Step #1 - "pre-buildpack": Passing build environment variable BUILDER_OUTPUT to buildpacks
+Step #1 - "pre-buildpack": Passing build environment variable GOOGLE_RUNTIME to buildpacks
+Step #1 - "pre-buildpack": Passing build environment variable GOOGLE_LABEL_BUILDER_VERSION to buildpacks
+Step #1 - "pre-buildpack": Passing build environment variable GOOGLE_LABEL_BUILDER_IMAGE to buildpacks
+Step #1 - "pre-buildpack": Passing build environment variable GOOGLE_LABEL_RUN_IMAGE to buildpacks
+Step #1 - "pre-buildpack": Passing build environment variable GOOGLE_LABEL_SOURCE to buildpacks
+Step #1 - "pre-buildpack": Passing build environment variable GOOGLE_USE_SERVERLESS_RUNTIMES_TARBALLS to buildpacks
+Step #1 - "pre-buildpack": Passing build environment variable GOOGLE_RUNTIME_IMAGE_REGION to buildpacks
+Step #1 - "pre-buildpack": Passing build environment variable GOOGLE_RUNTIME_VERSION to buildpacks
+Step #1 - "pre-buildpack": Passing build environment variable X_GOOGLE_SKIP_RUNTIME_LAUNCH to buildpacks
+Step #1 - "pre-buildpack": Passing build environment variable GOOGLE_BUILD_ENV to buildpacks
+Step #1 - "pre-buildpack": Passing build environment variable GOOGLE_BUILD_UNIVERSE to buildpacks
+Step #1 - "pre-buildpack": Passing build environment variable GAE_APP_ENGINE_APIS to buildpacks
+Step #1 - "pre-buildpack": Passing build environment variable X_GOOGLE_TARGET_PLATFORM to buildpacks
+Step #1 - "pre-buildpack": Passing build environment variable X_GOOGLE_SET_NODE_HEAP_SIZE to buildpacks
+Step #1 - "pre-buildpack": Checking if image europe-west6-docker.pkg.dev/ia-sport/gae-standard/build-cache/default:latest exists
+Step #1 - "pre-buildpack": Image europe-west6-docker.pkg.dev/ia-sport/gae-standard/build-cache/default:latest exists
+Step #1 - "pre-buildpack": Checking if image europe-west6-docker.pkg.dev/ia-sport/gae-standard/build-cache/default:latest is valid
+Step #1 - "pre-buildpack": Image europe-west6-docker.pkg.dev/ia-sport/gae-standard/build-cache/default:latest is valid
+Finished Step #1 - "pre-buildpack"
+Starting Step #2 - "build"
+Step #2 - "build": Already have image (with digest): europe-west6-docker.pkg.dev/serverless-runtimes/google-22-full/builder/nodejs:nodejs_20260125_RC00
+Step #2 - "build": ===> ANALYZING
+Step #2 - "build": Restoring data for SBOM from previous image
+Step #2 - "build": ===> DETECTING
+Step #2 - "build": target distro name/version labels not found, reading /etc/os-release file
+Step #2 - "build": google.nodejs.runtime    1.0.0
+Step #2 - "build": google.nodejs.npm        1.1.1
+Step #2 - "build": google.nodejs.appengine  0.9.0
+Step #2 - "build": google.utils.label-image 0.0.2
+Step #2 - "build": ===> RESTORING
+Step #2 - "build": Restoring metadata for "google.nodejs.runtime:heapsize" from app image
+Step #2 - "build": Restoring metadata for "google.nodejs.runtime:node" from cache
+Step #2 - "build": Restoring metadata for "google.nodejs.npm:npm_modules" from cache
+Step #2 - "build": Restoring metadata for "google.nodejs.appengine:config" from app image
+Step #2 - "build": Restoring data for "google.nodejs.runtime:node" from cache
+Step #2 - "build": Restoring data for "google.nodejs.npm:npm_modules" from cache
+Step #2 - "build": ===> BUILDING
+Step #2 - "build": target distro name/version labels not found, reading /etc/os-release file
+Step #2 - "build": === Node.js - Runtime (google.nodejs.runtime@1.0.0) ===
+Step #2 - "build": Using runtime version from GOOGLE_RUNTIME_VERSION: 20.20.0
+Step #2 - "build": Using exact version 20.20.0 for Node.js
+Step #2 - "build": ***** CACHE HIT: "nodejs"
+Step #2 - "build": Node.js v20.20.0 cache hit, skipping installation.
+Step #2 - "build": Installing the heapsize.sh exec.d script.
+Step #2 - "build": === Node.js - Npm (google.nodejs.npm@1.1.1) ===
+Step #2 - "build": ***** CACHE HIT: "npm_modules"
+Step #2 - "build": --------------------------------------------------------------------------------
+Step #2 - "build": Running "npm install --quiet (NODE_ENV=production)"
+Step #2 - "build": 
+Step #2 - "build": up to date, audited 378 packages in 5s
+Step #2 - "build": 
+Step #2 - "build": 45 packages are looking for funding
+Step #2 - "build":   run `npm fund` for details
+Step #2 - "build": 
+Step #2 - "build": 19 vulnerabilities (2 low, 4 moderate, 10 high, 3 critical)
+Step #2 - "build": 
+Step #2 - "build": To address issues that do not require attention, run:
+Step #2 - "build":   npm audit fix
+Step #2 - "build": 
+Step #2 - "build": To address all issues (including breaking changes), run:
+Step #2 - "build":   npm audit fix --force
+Step #2 - "build": 
+Step #2 - "build": Run `npm audit` for details.
+Step #2 - "build": Done "npm install --quiet (NODE_ENV=production)" (5.459390336s)
+Step #2 - "build": === Node.js - Appengine (google.nodejs.appengine@0.9.0) ===
+Step #2 - "build": Using GOOGLE_RUNTIME: nodejs20
+Step #2 - "build": Using config appstart.Config{Runtime:"nodejs20", Entrypoint:appstart.Entrypoint{Type:"Default", Command:"/serve", WorkDir:""}, MainExecutable:""}
+Step #2 - "build": === Utils - Label Image (google.utils.label-image@0.0.2) ===
+Step #2 - "build": Adding image label google.builder-image: europe-west6-docker.pkg.dev/serverless-runtimes/google-22-full/builder/nodejs:nodejs_20260125_RC00
+Step #2 - "build": Adding image label google.source: gs://staging.ia-sport.appspot.com/ae/0eeed0e9-8512-4441-8f11-fc005c66dce2/manifest.json
+Step #2 - "build": Adding image label google.builder-version: nodejs_20260125_RC00
+Step #2 - "build": Adding image label google.run-image: europe-west6-docker.pkg.dev/serverless-runtimes/google-22-full/runtimes/nodejs20:nodejs20_20260120a_20_20_0_RC00
+Step #2 - "build": ===> EXPORTING
+Step #2 - "build": Reusing layers from image 'europe-west6-docker.pkg.dev/ia-sport/gae-standard/app/default@sha256:39096cd87574a836e3984f4a8618984f02b8cafb9ddf980d797d89be7c3c2fe9'
+Step #2 - "build": Reusing layer 'google.nodejs.runtime:heapsize'
+Step #2 - "build": Reusing layer 'google.nodejs.npm:env'
+Step #2 - "build": Reusing layer 'google.nodejs.appengine:config'
+Step #2 - "build": Reusing layer 'buildpacksio/lifecycle:launch.sbom'
+Step #2 - "build": Reused 1/1 app layer(s)
+Step #2 - "build": Reusing layer 'buildpacksio/lifecycle:launcher'
+Step #2 - "build": Adding layer 'buildpacksio/lifecycle:config'
+Step #2 - "build": Reusing layer 'buildpacksio/lifecycle:process-types'
+Step #2 - "build": Adding label 'io.buildpacks.lifecycle.metadata'
+Step #2 - "build": Adding label 'io.buildpacks.build.metadata'
+Step #2 - "build": Adding label 'io.buildpacks.project.metadata'
+Step #2 - "build": Adding label 'google.builder-image'
+Step #2 - "build": Adding label 'google.source'
+Step #2 - "build": Adding label 'google.builder-version'
+Step #2 - "build": Adding label 'google.run-image'
+Step #2 - "build": Setting default process type 'web'
+Step #2 - "build": Saving europe-west6-docker.pkg.dev/ia-sport/gae-standard/app/default:0eeed0e9-8512-4441-8f11-fc005c66dce2...
+Step #2 - "build": *** Images (sha256:35847653de49f5a318d344c674cb84510007a5df23f4698286c198e14605984a):
+Step #2 - "build":       europe-west6-docker.pkg.dev/ia-sport/gae-standard/app/default:0eeed0e9-8512-4441-8f11-fc005c66dce2
+Step #2 - "build":       europe-west6-docker.pkg.dev/ia-sport/gae-standard/app/default:latest
+Step #2 - "build": Reusing cache layer 'google.nodejs.runtime:node'
+Step #2 - "build": Adding cache layer 'google.nodejs.runtime:node'
+Step #2 - "build": Reusing cache layer 'google.nodejs.npm:npm_modules'
+Step #2 - "build": Adding cache layer 'google.nodejs.npm:npm_modules'
+Finished Step #2 - "build"
+PUSH
+DONE

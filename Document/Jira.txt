@@ -32,7 +32,8 @@ Backlog :
 		ticket 4 Onglet Explore :
 		
 		ticket 5 Onglet Connexion :
-		
+			-Creer un facebook
+			-Creer une carte de visite
 			-Gestion des droit des utilisateurs
 			
 		Autre :
@@ -45,9 +46,7 @@ Backlog :
 SPRINT 5 :			
 		Creer un site internet OK
 		Creer un insta OK
-		Creer un facebook
-		Creer des slide de presentation
-		Creer une carte de visite
+		Creer des slide de presentation OK
 		
 			
 SPRINT 4 :			

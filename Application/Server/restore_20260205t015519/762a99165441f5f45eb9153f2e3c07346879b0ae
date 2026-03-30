@@ -1,0 +1,143 @@
+// Auto-load environment variables from .env if dotenv is installed
+try {
+  require('dotenv').config();
+} catch {}
+
+const express = require('express');
+
+const router = express.Router();
+
+const HIK_BASE_URL = process.env.HIK_BASE_URL || 'https://ieu.hikcentralconnect.com';
+// Hardcoded for test only (env vars still override if set)
+const HIK_APP_KEY = process.env.HIK_APP_KEY || 'r2dHJrezsz1YUAV6PfRNkAUGSfisdzm8';
+const HIK_SECRET_KEY = process.env.HIK_SECRET_KEY || 'wHdmXyBmBeTbMNh7Gy14OlBh9AZQyCas';
+
+// Simple in-memory token cache
+let tokenCache = {
+  accessToken: null,
+  expireAt: 0
+};
+
+function assertEnv() {
+  if (!HIK_APP_KEY || !HIK_SECRET_KEY) {
+    const err = new Error('Missing env vars: HIK_APP_KEY and HIK_SECRET_KEY');
+    err.status = 500;
+    throw err;
+  }
+}
+
+async function getToken(forceRefresh = false) {
+  assertEnv();
+
+  const now = Date.now();
+  if (!forceRefresh && tokenCache.accessToken && tokenCache.expireAt > now) {
+    return { accessToken: tokenCache.accessToken, expireTime: tokenCache.expireAt };
+  }
+
+  const url = `${HIK_BASE_URL}/api/hccgw/platform/v1/token/get`;
+  const resp = await fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+    body: JSON.stringify({ appKey: HIK_APP_KEY, secretKey: HIK_SECRET_KEY })
+  });
+
+  const data = await resp.json().catch(() => ({}));
+  if (!resp.ok || data?.errorCode !== '0') {
+    const err = new Error(`Token request failed: HTTP ${resp.status} / errorCode=${data?.errorCode}`);
+    err.status = resp.status;
+    err.details = data;
+    throw err;
+  }
+
+  const accessToken = data?.data?.accessToken;
+  const expireTime = data?.data?.expireTime || 0;
+
+  if (!accessToken) {
+    const err = new Error('Token response missing accessToken');
+    err.status = 502;
+    err.details = data;
+    throw err;
+  }
+
+  // expireTime may be seconds or milliseconds; normalize to ms from now if small
+  const expireAt = expireTime > 1e12
+    ? expireTime
+    : (expireTime > 0 ? Date.now() + expireTime * 1000 : Date.now() + 6.5 * 24 * 60 * 60 * 1000);
+
+  tokenCache = { accessToken, expireAt };
+
+  return { accessToken, expireTime: expireAt };
+}
+
+async function apiRequest(path, options = {}) {
+  const { accessToken } = await getToken();
+  const url = `${HIK_BASE_URL}${path.startsWith('/api/') ? '' : '/api'}${path}`;
+
+  const resp = await fetch(url, {
+    method: options.method || 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Accept': 'application/json',
+      'Token': accessToken,
+      ...(options.headers || {})
+    },
+    body: options.body ? JSON.stringify(options.body) : undefined
+  });
+
+  const data = await resp.json().catch(() => ({}));
+  if (!resp.ok || (data?.errorCode && data.errorCode !== '0')) {
+    const err = new Error(`OpenAPI request failed: HTTP ${resp.status} / errorCode=${data?.errorCode}`);
+    err.status = resp.status;
+    err.details = data;
+    throw err;
+  }
+
+  return data;
+}
+
+// Example OpenAPI calls (paths are typical; adjust to your exact OpenAPI spec)
+async function listDevices(params = { pageIndex: 1, pageSize: 50 }) {
+  return apiRequest('/api/hccgw/resource/v1/devices/get', { body: params });
+}
+
+async function getSystemProperties(params = {}) {
+  return apiRequest('/api/hccgw/platform/v1/systemproperties', { method: 'GET', body: params });
+}
+
+// Express example routes
+router.get('/hikconnect/token', async (req, res) => {
+  try {
+    const token = await getToken(false);
+    res.status(200).json(token);
+  } catch (err) {
+    res.status(err.status || 500).json({ message: err.message, details: err.details });
+  }
+});
+
+router.get('/hikconnect/devices', async (req, res) => {
+  try {
+    const pageIndex = Number(req.query.pageIndex || 1);
+    const pageSize = Number(req.query.pageSize || 50);
+    const data = await listDevices({ pageIndex, pageSize });
+    res.status(200).json(data);
+  } catch (err) {
+    res.status(err.status || 500).json({ message: err.message, details: err.details });
+  }
+});
+
+router.get('/hikconnect/system-properties', async (req, res) => {
+  try {
+    const data = await getSystemProperties({});
+    res.status(200).json(data);
+  } catch (err) {
+    res.status(err.status || 500).json({ message: err.message, details: err.details });
+  }
+});
+
+module.exports = {
+  router,
+  getToken,
+  apiRequest,
+  listDevices,
+  getSystemProperties
+};

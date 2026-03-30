@@ -1,28 +1,185 @@
-// api.js
-// Fonction pour envoyer l'idToken au backend pour vérification
-export const sendIdTokenToBackend = async (idToken) => {
-  try {
-    const response = await fetch('https://ia-sport.oa.r.appspot.com/api/google', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ idToken }), // Envoie le idToken au backend
-    });
+// --- API HikConnect ---
 
-    if (!response.ok) {
-      throw new Error('Échec de la vérification du token');
-    }
+const API_BASE = 'https://ia-sport.oa.r.appspot.com/api';
 
-    const data = await response.json();
-    return data; // Réponse avec les informations de l'utilisateur
-  } catch (error) {
-    console.error('Error verifying Google token:', error);
-    throw error;
+/**
+ * Source unique de vérité :
+ * retourne toutes les caméras avec leurs infos device, area, channel, etc.
+ */
+export const fetchAllCameras = async () => {
+  const resp = await fetch(`${API_BASE}/hikconnect/cameras`);
+
+  if (!resp.ok) {
+    throw new Error(`HTTP ${resp.status}`);
   }
+
+  return resp.json();
 };
 
-// api.js
+export async function saveLastRecording({
+  deviceId,
+  cameraId,
+  beginTime,
+  endTime,
+  voiceSwitch = 0,
+  offset,
+}) {
+  const body = {
+    deviceId,
+    cameraId,
+    voiceSwitch,
+    ...(typeof offset === 'string' && offset ? { offset } : {}),
+    ...(beginTime ? { beginTime } : {}),
+    ...(endTime ? { endTime } : {}),
+  };
+
+  const resp = await fetch(`${API_BASE}/hikconnect/video/save-last-from-device`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  });
+
+  const data = await resp.json().catch(() => ({}));
+
+  // HTTP error
+  if (!resp.ok) {
+    const err = new Error(data?.message || `HTTP ${resp.status}`);
+    err.status = resp.status;
+    err.details = data?.details ?? data;
+    throw err;
+  }
+
+  // Business error (même si HTTP 200)
+  if (data?.errorCode && data.errorCode !== '0') {
+    const err = new Error(data?.message || `Hik errorCode=${data.errorCode}`);
+    err.status = 502;
+    err.details = data;
+    throw err;
+  }
+
+  // Certains retours d’erreur sont "emballés" en {message, details:{errorCode,...}}
+  if (data?.message && data?.details?.errorCode) {
+    const err = new Error(data.message);
+    err.status = 502;
+    err.details = data.details;
+    throw err;
+  }
+
+  return data;
+}
+
+/**
+ * Upload vidéo depuis une URL HTTP(S) (ex: URL S3 signée HikConnect) vers GCS.
+ *
+ * Backend: POST /api/upload-from-url
+ * Body:
+ * {
+ *   sourceUrl: "https://....mp4?X-Amz-....",
+ *   directory: "F.C. VIDAUBAN",
+ *   filename: "F.C. VIDAUBAN 0 - 0 U.S. LUCOISE.mp4",
+ *   contentType: "video/mp4" // optionnel
+ * }
+ */
+export async function uploadFromUrl({
+  sourceUrl,
+  directory,
+  filename,
+  contentType = 'video/mp4',
+}) {
+  const body = {
+    sourceUrl,
+    directory,
+    filename,
+    ...(contentType ? { contentType } : {}),
+  };
+
+  const resp = await fetch(`${API_BASE}/upload-from-url`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  });
+
+  const data = await resp.json().catch(() => ({}));
+
+  if (!resp.ok) {
+    const err = new Error(data?.message || `HTTP ${resp.status}`);
+    err.status = resp.status;
+    err.details = data?.details ?? data;
+    throw err;
+  }
+
+  // Contrat route: {status:'success', ...} sinon {status:'error', ...}
+  if (data?.status && data.status !== 'success') {
+    const err = new Error(data?.message || 'Upload-from-url failed');
+    err.status = 502;
+    err.details = data;
+    throw err;
+  }
+
+  return data;
+}
+
+
+
+
+// Démarrer l'enregistrement côté device HikConnect
+export async function hikStartRecording({ deviceId }) {
+  if (!deviceId) throw new Error('Missing deviceId');
+
+  const resp = await fetch(`${API_BASE}/hikconnect/start-recording`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ deviceId }),
+  });
+
+  const data = await resp.json().catch(() => ({}));
+
+  if (!resp.ok) {
+    const err = new Error(data?.message || `HTTP ${resp.status}`);
+    err.status = resp.status;
+    err.details = data?.details ?? data;
+    throw err;
+  }
+
+  // au cas où Hik répondrait errorCode != '0' dans un 200
+  if (data?.errorCode && data.errorCode !== '0') {
+    const err = new Error(data?.message || `Hik errorCode=${data.errorCode}`);
+    err.status = 502;
+    err.details = data;
+    throw err;
+  }
+
+  return data;
+}
+
+// Arrêter l'enregistrement côté device HikConnect
+export async function hikStopRecording({ deviceId }) {
+  if (!deviceId) throw new Error('Missing deviceId');
+
+  const resp = await fetch(`${API_BASE}/hikconnect/stop-recording`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ deviceId }),
+  });
+
+  const data = await resp.json().catch(() => ({}));
+
+  if (!resp.ok) {
+    const err = new Error(data?.message || `HTTP ${resp.status}`);
+    err.status = resp.status;
+    err.details = data?.details ?? data;
+    throw err;
+  }
+
+  if (data?.errorCode && data.errorCode !== '0') {
+    const err = new Error(data?.message || `Hik errorCode=${data.errorCode}`);
+    err.status = 502;
+    err.details = data;
+    throw err;
+  }
+
+  return data;
+}
 export const uploadZoomMapToApi = async (zoomMapExport, filename) => {
   if (!filename) {
     console.error('❌ filename est requis pour uploadZoomMapToApi');
@@ -30,7 +187,7 @@ export const uploadZoomMapToApi = async (zoomMapExport, filename) => {
   }
 
   try {
-    const response = await fetch('https://ia-sport.oa.r.appspot.com/api/uploadZoomMap', {
+    const response = await fetch(`${API_BASE}/uploadZoomMap`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -53,11 +210,8 @@ export const uploadZoomMapToApi = async (zoomMapExport, filename) => {
   }
 };
 
-
-
-
 export const fetchVideosByClub = async (clubName) => {
-  const url = `https://ia-sport.oa.r.appspot.com/api/videos?folder=${encodeURIComponent(clubName)}`;
+  const url = `${API_BASE}/videos?folder=${encodeURIComponent(clubName)}`;
 
   const response = await fetch(url);
   if (!response.ok) {
@@ -78,6 +232,62 @@ export const fetchVideosByClub = async (clubName) => {
   return sortedVideos;
 };
 
+export const deleteVideoByClub = async (clubName, videoName) => {
+  if (!clubName) throw new Error('Missing clubName');
+  if (!videoName) throw new Error('Missing videoName');
+
+  const url = `${API_BASE}/videos?folder=${encodeURIComponent(clubName)}&name=${encodeURIComponent(videoName)}`;
+
+  const resp = await fetch(url, { method: 'DELETE' });
+  const data = await resp.json().catch(() => ({}));
+
+  if (!resp.ok) {
+    const err = new Error(data?.message || `HTTP ${resp.status}`);
+    err.status = resp.status;
+    err.details = data?.details ?? data;
+    throw err;
+  }
+
+  if (data?.status && data.status !== 'success') {
+    const err = new Error(data?.message || 'Delete failed');
+    err.status = 502;
+    err.details = data;
+    throw err;
+  }
+
+  return data;
+};
+
+export const renameVideoByClub = async (clubName, oldName, newName) => {
+  if (!clubName) throw new Error('Missing clubName');
+  if (!oldName) throw new Error('Missing oldName');
+  if (!newName) throw new Error('Missing newName');
+
+  const resp = await fetch(`${API_BASE}/videos/rename`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ folder: clubName, oldName, newName }),
+  });
+
+  const data = await resp.json().catch(() => ({}));
+
+  if (!resp.ok) {
+    const err = new Error(data?.message || `HTTP ${resp.status}`);
+    err.status = resp.status;
+    err.details = data?.details ?? data;
+    throw err;
+  }
+
+  if (data?.status && data.status !== 'success') {
+    const err = new Error(data?.message || 'Rename failed');
+    err.status = 502;
+    err.details = data;
+    throw err;
+  }
+
+  return data;
+};
+
 // Fonction pour appeler l'API de fusion d'images
 export const mergeImages = async ({ logo1Url, logo2Url, finalFolder, finalName }) => {
   try {
@@ -88,7 +298,7 @@ export const mergeImages = async ({ logo1Url, logo2Url, finalFolder, finalName }
       ...(finalName && { finalName }), // Ajoute finalName seulement s'il est défini
     });
 
-    const url = `https://ia-sport.oa.r.appspot.com//api/mergeImages?${queryParams.toString()}`;
+    const url = `${API_BASE}/mergeImages?${queryParams.toString()}`;
     console.log('Fetching URL:', url); // Log de l'URL complète de la requête
 
     const response = await fetch(url, {
@@ -114,105 +324,6 @@ export const mergeImages = async ({ logo1Url, logo2Url, finalFolder, finalName }
 };
 
 
-// Fonction pour rechercher l'device
-export const fetchDevice = async (nom) => {
-  try {
-    const queryParams = new URLSearchParams({
-      ...(nom && { nom }), // Ajoute nom seulement s'il est défini
-    });
-
-    const url = `https://ia-sport.oa.r.appspot.com/api/device?${queryParams.toString()}`;
-    console.log('Fetching URL:', url); // Log de l'URL complète de la requête
-
-    const response = await fetch(url, {
-      method: 'GET',
-    });
-
-    console.log('Response status:', response.status); // Log du statut de la réponse
-    console.log('Response headers:', response.headers); // Log des en-têtes de la réponse
-
-    if (!response.ok) {
-      const errorText = await response.text(); // Lire le texte d'erreur renvoyé par le serveur
-      console.error('Server error response:', errorText);
-      throw new Error('Échec de la récupération de l\'device');
-    }
-
-    const data = await response.json();
-    console.log('Response data:', data); // Log des données reçues
-    return data; // Retourne les données de l'effectif
-  } catch (error) {
-    console.error('Error fetching device:', error.message, error.stack);
-    throw error;
-  }
-};
-// Fonction pour rechercher l'effectif
-export const fetchEffectif = async (nom) => {
-  try {
-    const queryParams = new URLSearchParams({
-      ...(nom && { nom }), // Ajoute nom seulement s'il est défini
-    });
-
-    const url = `https://ia-sport.oa.r.appspot.com/api/effectif?${queryParams.toString()}`;
-    console.log('Fetching URL:', url); // Log de l'URL complète de la requête
-
-    const response = await fetch(url, {
-      method: 'GET',
-    });
-
-    console.log('Response status:', response.status); // Log du statut de la réponse
-    console.log('Response headers:', response.headers); // Log des en-têtes de la réponse
-
-    if (!response.ok) {
-      const errorText = await response.text(); // Lire le texte d'erreur renvoyé par le serveur
-      console.error('Server error response:', errorText);
-      throw new Error('Échec de la récupération de l\'effectif');
-    }
-
-    const data = await response.json();
-    console.log('Response data:', data); // Log des données reçues
-    return data; // Retourne les données de l'effectif
-  } catch (error) {
-    console.error('Error fetching effectif:', error.message, error.stack);
-    throw error;
-  }
-};
-// Fonction pour ajouter un joueur à l'effectif
-export const inputEffectif = async ({ nom, equipe, joueur }) => {
-  try {
-    const url = 'https://ia-sport.oa.r.appspot.com/api/inputEffectif'; // Remplacez par l'URL de votre API
-
-    // Log des données envoyées
-    console.log('Sending data to URL:', url);
-    console.log('Data to send:', { nom, equipe, joueur });
-
-    const response = await fetch(url, {
-      method: 'POST', // Méthode POST pour ajouter un joueur
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ nom, equipe, joueur }), // Conversion des données en JSON
-    });
-
-    // Logs pour débogage
-    console.log('Response status:', response.status);
-    console.log('Response headers:', response.headers);
-
-    if (!response.ok) {
-      const errorText = await response.text(); // Lire le texte d'erreur renvoyé par le serveur
-      console.error('Server error response:', errorText);
-      throw new Error('Échec de l\'ajout du joueur');
-    }
-
-    const data = await response.json();
-    console.log('Response data:', data); // Log des données reçues
-    return data; // Retourne les données du joueur ajouté
-  } catch (error) {
-    console.error('Error adding player:', error.message, error.stack);
-    throw error;
-  }
-};
-
-
 // Fonction pour rechercher des clubs
 export const searchClubs = async (searchTerm) => {
   try {
@@ -226,135 +337,6 @@ export const searchClubs = async (searchTerm) => {
   } catch (error) {
     console.error('Error fetching clubs:', error);
     return [];
-  }
-};
-
-
-// Fonction pour démarrer l'enregistrement
-export const startRecording = async ({ username, password, ipAddress, port }) => {
-  const url = 'https://ia-sport.oa.r.appspot.com/api/start-recording';
-  const payload = { username, password, ipAddress, port };
-
-  console.log("📡 [startRecording] Sending request:", {
-    url,
-    method: 'PUT',
-    payload,
-  });
-
-  try {
-    const response = await fetch(url, {
-      method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(payload),
-    });
-
-    console.log("📡 [startRecording] Response status:", response.status, response.statusText);
-
-    // Essaye de lire le body brut pour comprendre un éventuel échec
-    const rawText = await response.text();
-    console.log("📡 [startRecording] Raw response body:", rawText);
-
-    if (!response.ok) {
-      throw new Error(`Échec du démarrage de l'enregistrement (status ${response.status})`);
-    }
-
-    // Si c’est bien du JSON, on le parse après coup
-    try {
-      return JSON.parse(rawText);
-    } catch (parseErr) {
-      console.warn("⚠️ [startRecording] Impossible de parser la réponse en JSON, retour brut.");
-      return rawText;
-    }
-  } catch (error) {
-    console.error("❌ [startRecording] Network or unexpected error:", {
-      name: error?.name,
-      message: error?.message,
-      stack: error?.stack,
-    });
-    throw error;
-  }
-};
-
-
-// Fonction pour arrêter l'enregistrement
-export const stopRecording = async ({ username, password, ipAddress, port }) => {
-  try {
-    const response = await fetch('https://ia-sport.oa.r.appspot.com/api/stop-recording', {
-      method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ username, password, ipAddress, port }),
-    });
-
-    if (!response.ok) {
-      throw new Error('Échec de l\'arrêt de l\'enregistrement');
-    }
-    return response.json(); // Parse la réponse si nécessaire
-  } catch (error) {
-    console.error('Error stopping recording:', error);
-    throw error;
-  }
-};
-
-
-// Fonction pour récupérer l'URI de lecture et la durée de la vidéo
-export const getPlaybackURI = async ({ username, password, ipAddress, port }) => {
-  try {
-    // Effectuer la requête POST avec les paramètres dans le corps
-    const response = await fetch('https://ia-sport.oa.r.appspot.com/api/search', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ username, password, ipAddress, port }),
-    });
-
-    if (!response.ok) {
-      throw new Error('Échec de la récupération de l\'URI de lecture');
-    }
-
-    return await response.json(); // Parse la réponse en JSON
-  } catch (error) {
-    console.error('Error fetching playback URI:', error);
-    throw error;
-  }
-};
-
-
-
-// Fonction pour télécharger la vidéo
-export const uploadVideo = async (filename, playbackURI, directory, duration) => {
-  // Ajout d'un log pour afficher les paramètres
-  console.log('Paramètres reçus :', {
-    filename: directory + ` ${filename}.mp4`,
-    cameraRtspUrl: playbackURI,
-    directory: directory,
-    duration: duration,
-  });
-
-  try {
-    const response = await fetch('https://ia-sport.oa.r.appspot.com/api/upload', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        filename: directory + ` ${filename}.mp4`,
-        cameraRtspUrl: playbackURI,
-        directory: directory,
-        duration: duration,
-      }),
-    });
-    if (!response.ok) {
-      throw new Error('Échec du téléchargement de la vidéo');
-    }
-    return response;
-  } catch (error) {
-    console.error('Error uploading video:', error);
-    throw error;
   }
 };
 
@@ -437,44 +419,6 @@ export const fetchMatchesForClub = async ( cp_no, phaseId, pouleId, cl_no) => {
     });
   } catch (error) {
     console.error('Error fetching matches:', error);
-    return [];
-  }
-};
-
-
-
-// Fonction pour récupérer le classement des journées pour une poule spécifique
-export const fetchMatcheForClub = async (cl_no, competitionId, phaseId, pouleId) => {
-  try {
-    const response = await fetch(`https://api-dofa.fff.fr/api/compets/${competitionId}/phases/${phaseId}/poules/${pouleId}/matchs?clNo=${cl_no}`);
-    if (!response.ok) {
-      throw new Error('Échec de la récupération du classement des journées');
-    }
-    const data = await response.json();
-
-    return data['hydra:member'].map(journee => ({
-      journeeNumber: journee.cj_no,
-      season: journee.season,
-      date: journee.date,
-      rank: journee.rank,
-      points: journee.point_count,
-      penaltyPoints: journee.penalty_point_count,
-      wonGames: journee.won_games_count,
-      drawGames: journee.draw_games_count,
-      lostGames: journee.lost_games_count,
-      forfeits: journee.forfeits_games_count,
-      goalsFor: journee.goals_for_count,
-      goalsAgainst: journee.goals_against_count,
-      goalDifference: journee.goals_diff,
-      totalGames: journee.total_games_count,
-      teamName: journee.equipe.short_name,
-      teamCategory: journee.equipe.category_label,
-      teamGender: journee.equipe.category_gender,
-      pouleName: journee.poule.name,
-      stageNumber: journee.poule.stage_number,
-    }));
-  } catch (error) {
-    console.error('Error fetching classement journées:', error);
     return [];
   }
 };

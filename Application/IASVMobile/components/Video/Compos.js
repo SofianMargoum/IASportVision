@@ -1,96 +1,100 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, Dimensions, PanResponder, ImageBackground } from 'react-native';
+import React from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  ImageBackground,
+  Dimensions,
+  ScrollView,
+} from 'react-native';
+
+const { width: SCREEN_WIDTH } = Dimensions.get('window');
+const FIELD_HEIGHT = 600;
 
 const Compos = ({ players }) => {
-  const [positions, setPositions] = useState([
-    // Gardien
-    { top: 420, left: 180 },//1
+  const positions = [
+    { top: 460, left: 180 }, // 1
 
-    // Défenseurs (ligne de 4)
-    { top: 320, left: 280 },//2
-    { top: 320, left: 80 },//3
-    { top: 350, left: 220 },//4
-    { top: 350, left: 140 },//5
+    { top: 360, left: 280 }, // 2
+    { top: 360, left: 80 },  // 3
+    { top: 390, left: 220 }, // 4
+    { top: 390, left: 140 }, // 5
 
-    // Milieux (ligne de 3)
-    { top: 280, left: 180 },//6
-    { top: 150, left: 90 },//7
-    { top: 220, left: 250 },//8
+    { top: 300, left: 180 }, // 6
+    { top: 180, left: 90 },  // 7
+    { top: 250, left: 250 }, // 8
 
-    // Attaquants (ligne de 3)
-    { top: 120, left: 180 },//9
-    { top: 220, left: 110 },//10
-    { top: 150, left: 270 },//11
-
-    // Remplaçants (en haut à gauche)
-    { top: 510, left: 0 },
-    { top: 510, left: 60 },
-    { top: 510, left: 120 },
-  ]);
-
-  const panResponders = positions.map((position, index) =>
-    PanResponder.create({
-      onStartShouldSetPanResponder: () => true,
-      onPanResponderMove: (e, gestureState) => {
-        const newPositions = [...positions];
-        newPositions[index] = {
-          top: position.top + gestureState.dy,
-          left: position.left + gestureState.dx,
-        };
-        setPositions(newPositions);
-      },
-    })
-  );
+    { top: 140, left: 180 }, // 9
+    { top: 250, left: 110 }, // 10
+    { top: 180, left: 270 }, // 11
+  ];
 
   return (
-    <ImageBackground
-      source={require('../../assets/terrain.jpg')}
-      style={styles.container}
-      imageStyle={styles.imageBackground}
+    <ScrollView
+      style={styles.scroll}
+      contentContainerStyle={styles.scrollContent}
+      showsVerticalScrollIndicator={false}
     >
-      {players.map((player, index) => (
-        <View
-          key={player.id || `compos-${index}`}
-          {...panResponders[index].panHandlers}
-          style={[
-            styles.playerItem,
-            {
-              top: positions[index]?.top || 0, // Utiliser la position si elle existe
-              left: positions[index]?.left || 0, // Utiliser la position si elle existe
-            },
-          ]}
+      <View style={styles.wrapper}>
+        <ImageBackground
+          source={require('../../assets/terrain.jpg')}
+          style={styles.field}
+          imageStyle={styles.image}
         >
-          <Text style={styles.playerText}>{player.name}</Text>
-        </View>
-      ))}
-    </ImageBackground>
+          {players.slice(0, 11).map((player, index) => (
+            <View
+              key={player.id || `player-${index}`}
+              style={[
+                styles.playerItem,
+                {
+                  top: positions[index]?.top ?? 0,
+                  left: positions[index]?.left ?? 0,
+                },
+              ]}
+            >
+              <Text style={styles.playerText}>{player.name}</Text>
+            </View>
+          ))}
+        </ImageBackground>
+      </View>
+    </ScrollView>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
+  scroll: {
     flex: 1,
-    position: 'relative',
-    marginBottom: 100,
   },
-  imageBackground: {
+  scrollContent: {
+    paddingBottom: 40,
+  },
+  wrapper: {
+    alignItems: 'center',
+  },
+  field: {
+    width: SCREEN_WIDTH,
+    height: FIELD_HEIGHT,
+    position: 'relative',
+    backgroundColor: '#0A7F3F',
+  },
+  image: {
     resizeMode: 'contain',
-    opacity: 0.8,
+    opacity: 0.85,
   },
   playerItem: {
     position: 'absolute',
     width: 50,
     height: 50,
+    borderRadius: 25,
     justifyContent: 'center',
     alignItems: 'center',
-    borderRadius: 25,
     backgroundColor: '#010E1E',
   },
   playerText: {
     fontSize: 10,
     color: '#FFFFFF',
-    textAlign: 'center',
     fontWeight: 'bold',
+    textAlign: 'center',
   },
 });
 

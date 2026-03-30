@@ -1,0 +1,88 @@
+const express = require('express');
+const { OAuth2Client } = require('google-auth-library');
+
+const app = express();
+const port = process.env.PORT || 8080;
+
+// ===== Google OAuth (inchangé) =====
+const CLIENT_ID = '417232013163-v2genb8j1f3odhrjt40hm9fsghgodgrl.apps.googleusercontent.com';
+const client = new OAuth2Client(CLIENT_ID);
+
+// ===== Middlewares =====
+app.use(express.json());
+
+app.use((req, res, next) => {
+  res.header('Access-Control-Allow-Origin', '*');
+  res.header('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS');
+  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  if (req.method === 'OPTIONS') return res.status(200).end();
+  next();
+});
+
+// ===== Safe require =====
+const safeRequire = (routePath) => {
+  try {
+    return require(routePath);
+  } catch (error) {
+    console.error(`❌ Erreur chargement ${routePath}:`, error.message);
+    return null;
+  }
+};
+
+// ===== Import des routes =====
+const routes = {
+  helloRoute: safeRequire('./api/hello'),
+  testRoute: safeRequire('./api/test'),
+  searchRoute: safeRequire('./api/search'),
+  videosRoute: safeRequire('./api/videos'),
+  uploadRoute: safeRequire('./api/upload'),
+  uploadandmergeRoute: safeRequire('./api/upload-and-merge'),
+  startRecordingRoute: safeRequire('./api/startRecording'),
+  startRecordingCloudRoute: safeRequire('./api/startRecordingCloud'),
+  stopRecordingRoute: safeRequire('./api/stopRecording'),
+  startLiveViewRoute: safeRequire('./api/startLiveView'),
+  googleAuthRoute: safeRequire('./api/google'),
+  mergeImagesRoute: safeRequire('./api/mergeImages'),
+  effectifRoute: safeRequire('./api/effectif'),
+  deviceRoute: safeRequire('./api/device'),
+  inputEffectifRoute: safeRequire('./api/inputEffectif'),
+  uploadZoomMapRoute: safeRequire('./api/uploadZoomMap'),
+  diagRoute: safeRequire('./api/diag'),
+
+  // ✅ ROUTE HIKCONNECT (la clé)
+  hikconnectRoute: safeRequire('./api/hikconnect'),
+};
+
+// ===== Montage des routes =====
+Object.entries(routes).forEach(([name, route]) => {
+  if (!route) {
+    console.warn(`⚠️  Route ${name} non chargée`);
+    return;
+  }
+
+  // Supporte :
+  // module.exports = router
+  // module.exports = { router, ... }
+  const router = route.router ? route.router : route;
+
+  if (typeof router === 'function') {
+    app.use('/api', router);
+    console.log(`✅ Route montée : ${name}`);
+  } else {
+    console.warn(`⚠️  ${name} n'exporte pas un router Express valide`);
+  }
+});
+
+// ===== Middleware global d’erreurs =====
+app.use((err, req, res, next) => {
+  console.error('🚨 Erreur globale:', err);
+  res.status(500).json({
+    status: 'error',
+    message: err.message || 'Erreur interne',
+  });
+});
+
+// ===== Démarrage =====
+app.listen(port, () => {
+  console.log(`🚀 Serveur lancé sur http://localhost:${port}`);
+});

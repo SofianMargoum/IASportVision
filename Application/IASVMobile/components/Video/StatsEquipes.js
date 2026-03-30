@@ -113,60 +113,67 @@ const StatsEquipes = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingHorizontal: 16,
+    paddingHorizontal: 12,
+    alignItems: 'stretch', // ✅ au lieu de center
   },
+
   scrollView: {
     width: '100%',
   },
+
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     borderBottomColor: '#001A31',
     borderBottomWidth: 1,
-    marginBottom:20,
+    marginBottom: 10,
+    paddingBottom: 6,
   },
+
   headerTeam: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#00A0E9', // Couleur dorée pour les équipes
-    flex: 1,
-    textAlign: 'center',
-  },
-  headerTitle: {
-    fontSize: 16,
-    fontWeight: 'bold',
+    fontSize: 13,
+    fontWeight: '600',
     color: '#00A0E9',
     flex: 1,
     textAlign: 'center',
   },
-  grid: {
-    borderRadius: 8,
-    overflow: 'hidden',
-    maxWidth: 400,
+
+  headerTitle: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#00A0E9',
+    flex: 0.3, // ✅ le "-" prend moins de place
+    textAlign: 'center',
   },
+
+  grid: {
+    width: '100%',          // ✅ prend toute la largeur
+    borderRadius: 6,
+    overflow: 'hidden',
+  },
+
   row: {
     flexDirection: 'row',
-    paddingVertical: 10,
+    paddingVertical: 6,
     alignItems: 'center',
-    justifyContent: 'space-between',
     borderBottomColor: '#001A31',
-    borderBottomWidth: 1,
+    borderBottomWidth: 0.5,
   },
-  statTitle: {
-    fontSize: 14,
-    fontWeight: 'bold',
+
+  teamStat: {
+    fontSize: 12,
+    fontWeight: '600',
     color: '#ffffff',
     flex: 1,
     textAlign: 'center',
   },
-  teamStat: {
-    fontSize: 14,
-    fontWeight: 'bold',
+
+  statTitle: {
+    fontSize: 12,
+    fontWeight: '600',
     color: '#ffffff',
-    flex: 1,
+    flex: 1.2,
     textAlign: 'center',
   },
 });

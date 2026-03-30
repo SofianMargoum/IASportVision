@@ -104,78 +104,89 @@ const StatsJoueurs = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    paddingHorizontal: 12,
+    alignItems: 'stretch', // ✅ pleine largeur
   },
+
   hrContainer: {
-    alignItems: 'center',
+    alignItems: 'stretch',
   },
   hr: {
-    height: 2,
+    height: 1,
     width: '100%',
   },
+
   playerListContainer: {
-    position: 'relative',
     width: '100%',
-    height: 60 * scale,
+    height: 56 * scale,
     justifyContent: 'center',
-    marginBottom: 10,
+    marginBottom: 8,
   },
+
   statsImage: {
-    height: 60 * scale,
-    width: 60 * scale,
+    height: 52 * scale,
+    width: 52 * scale,
     resizeMode: 'contain',
     borderRadius: 10 * scale,
   },
+
   joueurItem: {
-    width: 80 * scale,
+    width: 70 * scale,      // ✅ un peu plus compact
     justifyContent: 'center',
     alignItems: 'center',
-    opacity: 0.5,
+    opacity: 0.45,
   },
   selectedJoueurItem: {
     opacity: 1,
   },
-  joueurNom: {
-    fontSize: 12 * scale,
-    color: '#FFFFFF',
-    fontWeight: 'bold',
-    opacity: 1,
-  },
-  selectedJoueurNom: {
-    color: '#FFFFFF',
-    fontSize: 13 * scale,
-  },
+
   statCardContainer: {
-    borderRadius: 8,
+    width: '100%',          // ✅ pleine largeur
+    flex: 1,
   },
+
   statCard: {
-    padding: 16,
-    borderRadius: 8,
+    paddingVertical: 8,
+    paddingHorizontal: 0,   // ✅ on enlève le padding latéral (déjà dans container)
   },
+
+  table: {
+    width: '100%',
+  },
+
   tableRow: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    padding: 10,
+    alignItems: 'center',
+    paddingVertical: 6,     // ✅ plus compact
+    paddingHorizontal: 4,
     borderBottomColor: '#001A31',
-    borderBottomWidth: 1,
+    borderBottomWidth: 0.5,
   },
+
+  // ✅ Header compact et bien aligné
   tableHeader: {
-    fontWeight: 'bold',
-    fontSize: 16,
+    fontWeight: '700',
+    fontSize: 13,
     color: '#00A0E9',
-    width: '33%',
+    flex: 1,               // ✅ au lieu de width:'33%'
     textAlign: 'center',
-    marginBottom : 10,
+    marginBottom: 6,
   },
+
+  // ✅ Cellules pleine largeur avec flex (plus fiable que %)
   tableCell: {
-    fontSize: 14,
+    fontSize: 12,
     color: '#fff',
-    width: '33%',
+    flex: 1,               // ✅ au lieu de width:'33%'
     textAlign: 'center',
   },
+
   statText: {
-    fontSize: 16,
+    fontSize: 13,
     color: '#fff',
+    paddingTop: 10,
   },
 });
+
 
 export default StatsJoueurs;

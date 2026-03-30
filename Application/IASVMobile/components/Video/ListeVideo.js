@@ -1,7 +1,7 @@
 // components/Video/ListeVideo.js
 // Conteneur pour afficher les détails d'une vidéo sélectionnée.
 // Utilise TabView avec 4 onglets : Match Complet, Composition/Effectif, Stats Équipes, Stats Joueurs.
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { TabView } from 'react-native-tab-view';
 import MatchComplet from './MatchComplet';
@@ -9,18 +9,28 @@ import Effectif from './Effectif';
 import Compos from './Compos';
 import StatsEquipes from './StatsEquipes';
 import StatsJoueurs from './StatsJoueurs';
+import { useEffectifContext } from './../../tools/EffectifContext';
 
 const scale = 0.85;
 
 const ListeVideo = ({ selectedVideo }) => {
   const [index, setIndex] = useState(0);
-  const [players, setPlayers] = useState(
-    Array.from({ length: 14 }, (_, i) => ({
+  const { effectif } = useEffectifContext();
+  const players = useMemo(() => {
+    if (effectif.length > 0) {
+      return effectif.map((player, index) => ({
+        id: player.numero || index + 1,
+        number: player.numero || index + 1,
+        name: player.joueur || `Joueur ${index + 1}`,
+      }));
+    }
+
+    return Array.from({ length: 14 }, (_, i) => ({
       id: i + 1,
       number: i + 1,
       name: `Joueur ${i + 1}`,
-    }))
-  );
+    }));
+  }, [effectif]);
   const [routes] = useState([
     { key: 'effectif', title: 'EFFECTIF' },
     { key: 'composition', title: 'COMPOSITION' },
@@ -31,7 +41,7 @@ const ListeVideo = ({ selectedVideo }) => {
   const renderScene = useCallback(({ route }) => {
     switch (route.key) {
       case 'effectif':
-        return <Effectif players={players} setPlayers={setPlayers} />;
+        return <Effectif />;
       case 'composition':
         return <Compos players={players} />;
       case 'statsEquipes':

@@ -1,19 +1,24 @@
-import React, { useState, useEffect } from 'react'; 
-import { 
-  View, 
-  Text, 
-  FlatList, 
-  TouchableOpacity, 
-  ActivityIndicator, 
-  StyleSheet, 
-  Image, 
-  RefreshControl, 
-  Dimensions
+import React, { useState, useEffect, useRef } from 'react';
+import {
+  View,
+  Text,
+  FlatList,
+  TouchableOpacity,
+  ActivityIndicator,
+  StyleSheet,
+  Image,
+  Alert,
+  Modal,
+  TextInput,
+  RefreshControl,
+  Dimensions,
 } from 'react-native';
+import PagerView from 'react-native-pager-view';
 import Icon from 'react-native-vector-icons/FontAwesome';
 import { useClubContext } from '../../tools/ClubContext';
-import { fetchVideosByClub } from '../../tools/api'; 
+import { fetchVideosByClub, deleteVideoByClub, renameVideoByClub } from '../../tools/api';
 import DiscoverTab from './DiscoverTab';
+import Boutique from './Boutique'; // ✅ AJOUT
 
 const { width, height } = Dimensions.get('window');
 const scale = 0.85;
@@ -39,8 +44,15 @@ const formatDate = (dateString) => {
   }
 };
 
-const VideoItem = ({ item, handleVideoSelect, isGridView }) => {
+const VideoItem = ({
+  item,
+  handleVideoSelect,
+  handleVideoDelete,
+  handleVideoEdit,
+  isGridView,
+}) => {
   const [isPressed, setIsPressed] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
 
   return (
     <TouchableOpacity
@@ -49,7 +61,13 @@ const VideoItem = ({ item, handleVideoSelect, isGridView }) => {
         isGridView && styles.gridItem,
         { opacity: isPressed ? 1 : 0.99 },
       ]}
-      onPress={() => handleVideoSelect(item)}
+      onPress={() => {
+        if (menuOpen) {
+          setMenuOpen(false);
+          return;
+        }
+        handleVideoSelect(item);
+      }}
       onPressIn={() => setIsPressed(true)}
       onPressOut={() => setIsPressed(false)}
     >
@@ -59,12 +77,60 @@ const VideoItem = ({ item, handleVideoSelect, isGridView }) => {
         defaultSource={require('../../assets/cover.png')}
       />
       <View style={styles.videoDetails}>
-        <Text style={styles.videoName}>{item.name || 'Nom non disponible'}</Text>
-        <Text style={styles.creationDate}>
-          {item.creationDate ? formatDate(item.creationDate) : 'Date non disponible'}
-        </Text>
+        <View style={styles.videoTextContainer}>
+          <Text style={styles.videoName}>{item.name || 'Nom non disponible'}</Text>
+          <Text style={styles.creationDate}>
+            {item.creationDate ? formatDate(item.creationDate) : 'Date non disponible'}
+          </Text>
+        </View>
+
+        <TouchableOpacity
+          style={styles.menuButtonAbs}
+          onPress={() => setMenuOpen((prev) => !prev)}
+          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+        >
+          <Icon name="ellipsis-v" size={18} color="#ffffff" />
+        </TouchableOpacity>
+
+        {menuOpen && (
+          <View style={styles.menuPopoverAbs}>
+            <TouchableOpacity
+              style={styles.menuItem}
+              onPress={() => {
+                setMenuOpen(false);
+                handleVideoDelete?.(item);
+              }}
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            >
+              <Icon name="trash" size={18} color="#ffffff" />
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.menuItem, styles.menuItemSecond]}
+              onPress={() => {
+                setMenuOpen(false);
+                handleVideoEdit?.(item);
+              }}
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            >
+              <Icon name="pencil" size={18} color="#ffffff" />
+            </TouchableOpacity>
+          </View>
+        )}
       </View>
     </TouchableOpacity>
+  );
+};
+
+// ✅ Onglets ajoutés (style identique : réutilise tes styles "emptyState*")
+const ActualiteTab = () => {
+  return (
+    <View style={styles.emptyStateContainer}>
+      <View style={styles.emptyIconWrapper}>
+        <Icon name="newspaper-o" size={32} color="#ffffff" />
+      </View>
+      <Text style={styles.emptyTitle}>Actualité</Text>
+      <Text style={styles.emptySubtitle}>Bientôt disponible.</Text>
+    </View>
   );
 };
 
@@ -74,9 +140,21 @@ const ListeVideoSidebar = ({ onVideoSelect, isActive }) => {
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState(null);
   const [isGridView, setIsGridView] = useState(false);
+
+  const [renameVisible, setRenameVisible] = useState(false);
+  const [renameTarget, setRenameTarget] = useState(null);
+  const [renameValue, setRenameValue] = useState('');
+
+  // ✅ 4 pages : Actualité / Boutique / Découvrir / Vidéos
+  const tabs = ['actualite', 'boutique', 'discover', 'videos'];
   const [activeTab, setActiveTab] = useState('videos');
 
+  const pagerRef = useRef(null);
+
   const { selectedClub } = useClubContext();
+
+  const getIndexFromTab = (tab) => Math.max(0, tabs.indexOf(tab));
+  const getTabFromIndex = (index) => tabs[Math.max(0, Math.min(index, tabs.length - 1))];
 
   const handleSearch = async () => {
     setLoading(true);
@@ -108,107 +186,272 @@ const ListeVideoSidebar = ({ onVideoSelect, isActive }) => {
     handleSearch();
   }, [selectedClub]);
 
-  useEffect(() => {
-    if (videos && videos.length > 0) {
-      setActiveTab('videos');
-    } else {
-      setActiveTab('discover');
+  const confirmAndDeleteVideo = (video) => {
+    if (!selectedClub) {
+      Alert.alert('Suppression impossible', 'Sélectionnez un club avant de supprimer une vidéo.');
+      return;
     }
-  }, [videos]);
+
+    if (!video?.name) {
+      Alert.alert('Suppression impossible', "Nom de vidéo introuvable.");
+      return;
+    }
+
+    Alert.alert('Supprimer la vidéo ?', `"${video.name}"`, [
+      { text: 'Annuler', style: 'cancel' },
+      {
+        text: 'Supprimer',
+        style: 'destructive',
+        onPress: async () => {
+          try {
+            await deleteVideoByClub(selectedClub.name, video.name);
+            setVideos((prev) => (prev || []).filter((v) => v.name !== video.name));
+          } catch (e) {
+            console.error('Erreur suppression vidéo:', e);
+            Alert.alert('Erreur', e?.message || 'Impossible de supprimer la vidéo.');
+          }
+        },
+      },
+    ]);
+  };
+
+  const openRename = (video) => {
+    if (!selectedClub) {
+      Alert.alert('Renommage impossible', 'Sélectionnez un club avant de renommer une vidéo.');
+      return;
+    }
+    if (!video?.name) {
+      Alert.alert('Renommage impossible', 'Nom de vidéo introuvable.');
+      return;
+    }
+    setRenameTarget(video);
+    setRenameValue(video.name);
+    setRenameVisible(true);
+  };
+
+  const submitRename = async () => {
+    const oldName = renameTarget?.name;
+    const newName = String(renameValue || '').trim();
+
+    if (!selectedClub || !oldName) {
+      setRenameVisible(false);
+      return;
+    }
+
+    if (!newName) {
+      Alert.alert('Erreur', 'Le nouveau nom est vide.');
+      return;
+    }
+
+    if (newName === oldName) {
+      setRenameVisible(false);
+      return;
+    }
+
+    try {
+      await renameVideoByClub(selectedClub.name, oldName, newName);
+      setRenameVisible(false);
+      setRenameTarget(null);
+      setRenameValue('');
+      await handleSearch();
+    } catch (e) {
+      console.error('Erreur renommage vidéo:', e);
+      Alert.alert('Erreur', e?.message || 'Impossible de renommer la vidéo.');
+    }
+  };
+
+  // ✅ Quand on clique sur les tabs, on défile vers la page correspondante
+  const goToTab = (tab) => {
+    const index = getIndexFromTab(tab);
+    setActiveTab(tab);
+    pagerRef.current?.setPage(index);
+  };
 
   const hasVideos = videos && videos.length > 0;
 
   return (
     <View style={styles.container}>
+      <Modal
+        visible={renameVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setRenameVisible(false)}
+      >
+        <TouchableOpacity
+          style={styles.modalBackdrop}
+          activeOpacity={1}
+          onPress={() => setRenameVisible(false)}
+        >
+          <View style={styles.modalCard}>
+            <Text style={styles.modalTitle}>Renommer la vidéo</Text>
+
+            <TextInput
+              value={renameValue}
+              onChangeText={setRenameValue}
+              placeholder="Nouveau nom"
+              placeholderTextColor="#808080"
+              style={styles.modalInput}
+              autoFocus
+              autoCorrect={false}
+              autoCapitalize="none"
+              onSubmitEditing={submitRename}
+              returnKeyType="done"
+            />
+
+            <View style={styles.modalActions}>
+              <TouchableOpacity
+                style={[styles.modalActionBtn, styles.modalCancelBtn]}
+                onPress={() => setRenameVisible(false)}
+              >
+                <Text style={styles.modalActionText}>Annuler</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.modalActionBtn, styles.modalConfirmBtn]}
+                onPress={submitRename}
+              >
+                <Text style={styles.modalActionText}>OK</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </TouchableOpacity>
+      </Modal>
+
+      {/* Header inchangé visuellement : juste 4 boutons */}
       <View style={styles.tabHeader}>
         <TouchableOpacity
-          style={[styles.tabButton, activeTab === 'videos' && styles.tabButtonActive]}
-          onPress={() => setActiveTab('videos')}
+          style={[styles.tabButton, activeTab === 'actualite' && styles.tabButtonActive]}
+          onPress={() => goToTab('actualite')}
         >
-          <Text style={[styles.tabText, activeTab === 'videos' && styles.tabTextActive]}>Vidéos</Text>
+          <Text style={[styles.tabText, activeTab === 'actualite' && styles.tabTextActive]}>
+            Actualité
+          </Text>
         </TouchableOpacity>
+
+        <TouchableOpacity
+          style={[styles.tabButton, activeTab === 'boutique' && styles.tabButtonActive]}
+          onPress={() => goToTab('boutique')}
+        >
+          <Text style={[styles.tabText, activeTab === 'boutique' && styles.tabTextActive]}>
+            Boutique
+          </Text>
+        </TouchableOpacity>
+
         <TouchableOpacity
           style={[styles.tabButton, activeTab === 'discover' && styles.tabButtonActive]}
-          onPress={() => setActiveTab('discover')}
+          onPress={() => goToTab('discover')}
         >
-          <Text style={[styles.tabText, activeTab === 'discover' && styles.tabTextActive]}>Découvrir</Text>
+          <Text style={[styles.tabText, activeTab === 'discover' && styles.tabTextActive]}>
+            Découvrir
+          </Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={[styles.tabButton, activeTab === 'videos' && styles.tabButtonActive]}
+          onPress={() => goToTab('videos')}
+        >
+          <Text style={[styles.tabText, activeTab === 'videos' && styles.tabTextActive]}>
+            Vidéos
+          </Text>
         </TouchableOpacity>
       </View>
 
-      {activeTab === 'discover' ? (
-        <DiscoverTab />
-      ) : (
-        <View style={styles.videosTabContainer}>
-          {hasVideos && (
-            <View style={styles.switchContainer}>
-              <TouchableOpacity
-                style={[
-                  styles.switchButton,
-                  isGridView ? styles.inactiveButton : styles.activeButton,
-                ]}
-                onPress={() => setIsGridView(false)}
-              >
-                <Icon name="list" size={20} color={isGridView ? '#808080' : '#fff'} />
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[
-                  styles.switchButton,
-                  isGridView ? styles.activeButton : styles.inactiveButton,
-                ]}
-                onPress={() => setIsGridView(true)}
-              >
-                <Icon name="th-large" size={20} color={isGridView ? '#fff' : '#808080'} />
-              </TouchableOpacity>
-            </View>
-          )}
+      {/* ✅ Swipe gauche/droite */}
+      <PagerView
+        ref={pagerRef}
+        style={{ flex: 1 }}
+        initialPage={getIndexFromTab(activeTab)}
+        onPageSelected={(e) => {
+          const index = e.nativeEvent.position;
+          setActiveTab(getTabFromIndex(index));
+        }}
+        overScrollMode="never"
+      >
+        <View key="actualite" style={{ flex: 1 }}>
+          <ActualiteTab />
+        </View>
 
-          {loading && <ActivityIndicator size="large" color="#00A0E9" />}
-          {error && <Text style={styles.errorMessage}>{error}</Text>}
+        <View key="boutique" style={{ flex: 1 }}>
+          <Boutique /> 
+        </View>
 
-          {!loading && !error && (
-            hasVideos ? (
-              <FlatList
-                key={isGridView ? 'grid' : 'list'}
-                data={videos}
-                renderItem={({ item }) => (
-                  <VideoItem
-                    item={item}
-                    handleVideoSelect={onVideoSelect}
-                    isGridView={isGridView}
-                  />
-                )}
-                keyExtractor={(item, index) => index.toString()}
-                numColumns={isGridView ? 3 : 1}
-                contentContainerStyle={[
-                  styles.listContent,
-                  isGridView && styles.gridContent,
-                ]}
-                refreshControl={
-                  <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-                }
-              />
-            ) : (
-              // 🎬 Message si aucune vidéo trouvée
-              <View style={styles.emptyStateContainer}>
-                <View style={styles.emptyIconWrapper}>
-                  <Icon name="video-camera" size={32} color="#ffffff" />
-                </View>
-                <Text style={styles.emptyTitle}>Aucune vidéo trouvée</Text>
-                <Text style={styles.emptySubtitle}>
-                  {selectedClub
-                    ? `Aucune vidéo n'est disponible pour ${selectedClub.name}.`
-                    : "Sélectionnez un club pour afficher les vidéos."}
-                </Text>
+        <View key="discover" style={{ flex: 1 }}>
+          <DiscoverTab />
+        </View>
 
-                <TouchableOpacity style={styles.emptyAction} onPress={onRefresh}>
-                  <Icon name="refresh" size={16} color="#ffffff" />
-                  <Text style={styles.emptyActionText}>Rafraîchir</Text>
+        <View key="videos" style={{ flex: 1 }}>
+          <View style={styles.videosTabContainer}>
+            {hasVideos && (
+              <View style={styles.switchContainer}>
+                <TouchableOpacity
+                  style={[
+                    styles.switchButton,
+                    isGridView ? styles.inactiveButton : styles.activeButton,
+                  ]}
+                  onPress={() => setIsGridView(false)}
+                >
+                  <Icon name="list" size={20} color={isGridView ? '#808080' : '#fff'} />
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[
+                    styles.switchButton,
+                    isGridView ? styles.activeButton : styles.inactiveButton,
+                  ]}
+                  onPress={() => setIsGridView(true)}
+                >
+                  <Icon name="th-large" size={20} color={isGridView ? '#fff' : '#808080'} />
                 </TouchableOpacity>
               </View>
-            )
-          )}
+            )}
+
+            {loading && <ActivityIndicator size="large" color="#00A0E9" />}
+            {error && <Text style={styles.errorMessage}>{error}</Text>}
+
+            {!loading && !error && (
+              hasVideos ? (
+                <FlatList
+                  key={isGridView ? 'grid' : 'list'}
+                  data={videos}
+                  renderItem={({ item }) => (
+                    <VideoItem
+                      item={item}
+                      handleVideoSelect={onVideoSelect}
+                      handleVideoDelete={confirmAndDeleteVideo}
+                      handleVideoEdit={openRename}
+                      isGridView={isGridView}
+                    />
+                  )}
+                  keyExtractor={(item, index) => index.toString()}
+                  numColumns={isGridView ? 3 : 1}
+                  contentContainerStyle={[
+                    styles.listContent,
+                    isGridView && styles.gridContent,
+                  ]}
+                  refreshControl={
+                    <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+                  }
+                />
+              ) : (
+                <View style={styles.emptyStateContainer}>
+                  <View style={styles.emptyIconWrapper}>
+                    <Icon name="video-camera" size={32} color="#ffffff" />
+                  </View>
+                  <Text style={styles.emptyTitle}>Aucune vidéo trouvée</Text>
+                  <Text style={styles.emptySubtitle}>
+                    {selectedClub
+                      ? `Aucune vidéo n'est disponible pour ${selectedClub.name}.`
+                      : "Sélectionnez un club pour afficher les vidéos."}
+                  </Text>
+
+                  <TouchableOpacity style={styles.emptyAction} onPress={onRefresh}>
+                    <Icon name="refresh" size={16} color="#ffffff" />
+                    <Text style={styles.emptyActionText}>Rafraîchir</Text>
+                  </TouchableOpacity>
+                </View>
+              )
+            )}
+          </View>
         </View>
-      )}
+      </PagerView>
     </View>
   );
 };
@@ -234,10 +477,9 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     paddingHorizontal: 16,
     borderRadius: 999,
-    backgroundColor: '#010E1E',
   },
   tabButtonActive: {
-    backgroundColor: '#010914',
+    // inchangé
   },
   tabText: {
     color: '#808080',
@@ -278,6 +520,52 @@ const styles = StyleSheet.create({
   },
   videoDetails: {
     flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    width: '100%',
+    paddingHorizontal: 8,
+    paddingTop: 6,
+    paddingBottom: 2,
+    position: 'relative',
+    paddingRight: 44,
+  },
+  videoTextContainer: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  menuButtonAbs: {
+    position: 'absolute',
+    right: 8,
+    top: 0,
+    bottom: 0,
+    width: 36,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  menuPopoverAbs: {
+    position: 'absolute',
+    right: 44,
+    top: 4,
+    backgroundColor: '#010E1E',
+    borderWidth: 1,
+    borderColor: '#ffffff',
+    borderRadius: 10,
+    paddingVertical: 6,
+    paddingHorizontal: 10,
+    flexDirection: 'row',
+    alignItems: 'center',
+    zIndex: 50,
+    elevation: 8,
+  },
+  menuItem: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 4,
+  },
+  menuItemSecond: {
+    marginLeft: 14,
   },
   creationDate: {
     fontSize: 14 * scale,
@@ -369,6 +657,62 @@ const styles = StyleSheet.create({
   fullScreenVideo: {
     width: width,
     height: height,
+  },
+  modalBackdrop: {
+    flex: 1,
+    backgroundColor: 'rgba(1, 9, 20, 0.75)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+  },
+  modalCard: {
+    width: '100%',
+    maxWidth: 420,
+    backgroundColor: '#010E1E',
+    borderWidth: 1,
+    borderColor: '#ffffff',
+    borderRadius: 12,
+    padding: 16,
+  },
+  modalTitle: {
+    color: '#ffffff',
+    fontWeight: '700',
+    fontSize: 16,
+    textAlign: 'center',
+    marginBottom: 12,
+  },
+  modalInput: {
+    borderWidth: 1,
+    borderColor: '#ffffff',
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    color: '#ffffff',
+    marginBottom: 12,
+  },
+  modalActions: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    gap: 12,
+  },
+  modalActionBtn: {
+    flex: 1,
+    borderRadius: 999,
+    paddingVertical: 10,
+    borderWidth: 1,
+    borderColor: '#ffffff',
+    backgroundColor: '#010914',
+    alignItems: 'center',
+  },
+  modalCancelBtn: {
+    opacity: 0.85,
+  },
+  modalConfirmBtn: {
+    backgroundColor: '#010914',
+  },
+  modalActionText: {
+    color: '#ffffff',
+    fontWeight: '700',
   },
   noVideoText: {
     color: '#ffffff',
