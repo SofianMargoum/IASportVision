@@ -12,8 +12,6 @@ import {
 import Icon from 'react-native-vector-icons/FontAwesome';
 import { useVideoContent } from './Record/VideoContent';
 import styles, { SUCCESS_GREEN } from './Record/VideoStyles';
-
-// ✅ adapte ce chemin selon ton projet (là j’assume que Record.js est à côté de tools/)
 import { fetchAllCameras } from '../tools/api';
 
 const Record = () => {
@@ -43,7 +41,7 @@ const Record = () => {
     selectedDevice,
   } = useVideoContent();
 
-  // Animation pour rendre la progression visible (même si ça "saute")
+  // --- Progress bar animation ---
   const [progressBarWidth, setProgressBarWidth] = useState(0);
   const progressAnimPx = useRef(new Animated.Value(0)).current;
   useEffect(() => {
@@ -51,7 +49,6 @@ const Record = () => {
       progressAnimPx.setValue(0);
       return;
     }
-
     const w = Number(progressBarWidth) || 0;
     const target = w * Math.max(0, Math.min(1, progressValue ?? 0));
     Animated.timing(progressAnimPx, {
@@ -61,51 +58,64 @@ const Record = () => {
     }).start();
   }, [progressVisible, progressValue, progressBarWidth, progressAnimPx]);
 
-  // ---- États locaux ----
+  // --- Pulsing red dot animation for recording timer ---
+  const pulseAnim = useRef(new Animated.Value(1)).current;
+  useEffect(() => {
+    if (isRecording) {
+      const loop = Animated.loop(
+        Animated.sequence([
+          Animated.timing(pulseAnim, {
+            toValue: 0.2,
+            duration: 800,
+            useNativeDriver: true,
+          }),
+          Animated.timing(pulseAnim, {
+            toValue: 1,
+            duration: 800,
+            useNativeDriver: true,
+          }),
+        ]),
+      );
+      loop.start();
+      return () => loop.stop();
+    } else {
+      pulseAnim.setValue(1);
+    }
+  }, [isRecording, pulseAnim]);
+
+  // --- Device status ---
   const [deviceStatus, setDeviceStatus] = useState('');
   const [isChecking, setIsChecking] = useState(false);
 
-  // ---- Vérification: Hik-Connect (online) ----
   const checkDeviceStatus = async (device) => {
     if (!device?.cameraId) {
       setDeviceStatus('Non connecté ❌');
       return;
     }
-
     setIsChecking(true);
     setDeviceStatus('Vérification...');
-
     try {
       const res = await fetchAllCameras();
-
-      // axios => res.data, sinon on accepte payload direct
       const payload = res?.data ?? res;
-
-      // Ton exemple: { data: { camera: [...] }, errorCode: "0" }
       const cams =
         payload?.data?.camera ??
         payload?.data?.cameras ??
         payload?.camera ??
         payload?.cameras ??
         [];
-
       const cam = Array.isArray(cams) ? cams.find((c) => c?.id === device.cameraId) : null;
-
       if (!cam) {
-        setDeviceStatus('Inconnu ❔');
+        setDeviceStatus('Inconnu');
         return;
       }
-
-      const isOnline = cam?.online === '1';
-      setDeviceStatus(isOnline ? 'Connecté' : 'Non connecté ❌');
-    } catch (e) {
-      setDeviceStatus('Erreur réseau ⚠️');
+      setDeviceStatus(cam?.online === '1' ? 'Connecté' : 'Non connecté');
+    } catch {
+      setDeviceStatus('Erreur réseau');
     } finally {
       setIsChecking(false);
     }
   };
 
-  // Vérifie à chaque changement de device
   useEffect(() => {
     if (selectedDevice) {
       checkDeviceStatus(selectedDevice);
@@ -114,24 +124,33 @@ const Record = () => {
       setIsChecking(false);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedDevice?.cameraId]); // on suit surtout la caméra
+  }, [selectedDevice?.cameraId]);
 
+  // --- Not connected ---
   if (!user) {
     return (
       <View style={styles.notConnectedContainer}>
         <Image
           source={require('../assets/connexionR.png')}
-          style={{
-            width: '100%',
-            resizeMode: 'contain',
-          }}
+          style={{ width: '100%', resizeMode: 'contain' }}
         />
       </View>
     );
   }
 
-  // Optionnel: empêcher de démarrer un enregistrement si caméra offline/inconnue
-  const canRecord = !!filename && deviceStatus.startsWith('Connecté');
+  const isConnected = deviceStatus.startsWith('Connecté');
+  const isDisconnected = deviceStatus.startsWith('Non connecté');
+  const canStartRecording = !!filename && isConnected;
+  const buttonDisabled = isRecording ? false : !canStartRecording;
+
+  // Pick the right color style for device name
+  const deviceNameColorStyle = isChecking
+    ? styles.deviceNameChecking
+    : isConnected
+    ? styles.deviceNameConnected
+    : isDisconnected
+    ? styles.deviceNameDisconnected
+    : styles.deviceNameDefault;
 
   return (
     <ScrollView contentContainerStyle={styles.container} showsVerticalScrollIndicator={false}>
@@ -140,53 +159,30 @@ const Record = () => {
           {isRecording ? 'Enregistrement en cours' : 'Commencer un enregistrement'}
         </Text>
 
-        {/* Ligne: [🔄]  Appareil sélectionné : <nom>  [wifi/spinner] */}
-        <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 6, flexWrap: 'wrap' }}>
-          {/* Bouton Rafraîchir à gauche */}
+        {/* === Device status bar === */}
+        <View style={styles.deviceStatusRow}>
           {selectedDevice && (
             <TouchableOpacity
-              onPress={() => selectedDevice && checkDeviceStatus(selectedDevice)}
-              disabled={!selectedDevice || isChecking}
-              style={{
-                marginRight: 8,
-                flexDirection: 'row',
-                alignItems: 'center',
-                padding: 2,
-                borderRadius: 6,
-                opacity: !selectedDevice || isChecking ? 0.7 : 1,
-              }}
+              onPress={() => checkDeviceStatus(selectedDevice)}
+              disabled={isChecking}
+              style={[
+                styles.deviceRefreshButton,
+                isChecking && styles.deviceRefreshDisabled,
+              ]}
             >
               <Icon name="refresh" size={12} color="#fff" />
             </TouchableOpacity>
           )}
-
-          {/* Texte Appareil sélectionné (couleur selon état) */}
-          <Text
-            style={{
-              fontSize: 12,
-              fontWeight: 'bold',
-              marginVertical: 10,
-              marginRight: 8,
-              color: isChecking
-                ? '#f1c40f'
-                : deviceStatus.startsWith('Connecté')
-                ? SUCCESS_GREEN
-                : deviceStatus.startsWith('Non connecté')
-                ? '#ff6b6b'
-                : 'white',
-            }}
-          >
-            {selectedDevice?.nom || 'aucun'}
+          <Text style={[styles.deviceNameText, deviceNameColorStyle]}>
+            {selectedDevice?.nom || 'Aucun appareil'}
           </Text>
-
-          {/* Icône état WiFi à droite */}
           {selectedDevice && (
-            <View style={{ marginLeft: 4 }}>
+            <View style={styles.deviceStatusIcon}>
               {isChecking ? (
                 <ActivityIndicator size="small" color="#f1c40f" />
-              ) : deviceStatus.startsWith('Connecté') ? (
+              ) : isConnected ? (
                 <Icon name="wifi" size={12} color={SUCCESS_GREEN} />
-              ) : deviceStatus.startsWith('Non connecté') ? (
+              ) : isDisconnected ? (
                 <Icon name="wifi" size={12} color="#ff6b6b" />
               ) : (
                 <Icon name="question-circle" size={12} color="#bbb" />
@@ -195,87 +191,108 @@ const Record = () => {
           )}
         </View>
 
-        <View style={styles.topSection}>
-          {selectedClub ? (
-            <View style={styles.selectedClubInfo}>
-              <Image source={{ uri: selectedClub.logo }} style={styles.selectedClubLogo} />
-              <Text style={styles.selectedClubName}>{selectedClub.name}</Text>
-            </View>
-          ) : (
-            <Text style={styles.placeholderText}>No Club Selected</Text>
-          )}
-          <View style={styles.counterContainer}>
-            <TouchableOpacity onPress={incrementCounter} style={styles.counterButton}>
-              <Icon name="plus" size={20} color="#fff" />
-            </TouchableOpacity>
-            <Text style={styles.counterLabel}>{counter}</Text>
-            <TouchableOpacity
-              onPress={decrementCounter}
-              disabled={counter === 0}
-              style={styles.counterButton}
-            >
-              <Icon name="minus" size={20} color="#fff" />
-            </TouchableOpacity>
+        {/* === Score section: Club [score] - [score] Adversaire === */}
+        <View style={styles.scoreContainer}>
+          {/* Home team */}
+          <View style={styles.scoreTeamBlock}>
+            {selectedClub ? (
+              <>
+                <Image source={{ uri: selectedClub.logo }} style={styles.scoreTeamLogo} />
+                <Text style={styles.scoreTeamName} numberOfLines={2}>
+                  {selectedClub.name}
+                </Text>
+              </>
+            ) : (
+              <Text style={styles.placeholderText}>Aucun club</Text>
+            )}
           </View>
-        </View>
 
-        <View style={styles.topSection}>
-          <View style={styles.inputContainer}>
+          {/* Score center */}
+          <View style={styles.scoreCenterBlock}>
+            <View style={styles.scoreRow}>
+              {/* Home counter */}
+              <View style={{ alignItems: 'center' }}>
+                <TouchableOpacity onPress={incrementCounter} style={styles.scoreCounterButton}>
+                  <Icon name="caret-up" size={22} color="#fff" />
+                </TouchableOpacity>
+                <Text style={styles.scoreText}>{counter}</Text>
+                <TouchableOpacity
+                  onPress={decrementCounter}
+                  disabled={counter === 0}
+                  style={styles.scoreCounterButton}
+                >
+                  <Icon name="caret-down" size={22} color={counter === 0 ? '#333' : '#fff'} />
+                </TouchableOpacity>
+              </View>
+
+              <Text style={styles.scoreDash}>-</Text>
+
+              {/* Away counter */}
+              <View style={{ alignItems: 'center' }}>
+                <TouchableOpacity onPress={incrementSecondCounter} style={styles.scoreCounterButton}>
+                  <Icon name="caret-up" size={22} color="#fff" />
+                </TouchableOpacity>
+                <Text style={styles.scoreText}>{secondCounter}</Text>
+                <TouchableOpacity
+                  onPress={decrementSecondCounter}
+                  disabled={secondCounter === 0}
+                  style={styles.scoreCounterButton}
+                >
+                  <Icon name="caret-down" size={22} color={secondCounter === 0 ? '#333' : '#fff'} />
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+
+          {/* Away team */}
+          <View style={styles.scoreTeamBlock}>
             {selectedClubInfo ? (
-              <View style={styles.selectedClubInfo}>
-                <Image source={{ uri: selectedClubInfo.logo }} style={styles.selectedClubLogo} />
-                <Text style={styles.selectedClubName}>{selectedClubInfo.name}</Text>
+              <>
+                <Image source={{ uri: selectedClubInfo.logo }} style={styles.scoreTeamLogo} />
+                <Text style={styles.scoreTeamName} numberOfLines={2}>
+                  {selectedClubInfo.name}
+                </Text>
                 <TouchableOpacity onPress={clearSelectedClub} style={styles.clearButton}>
                   <Text style={styles.clearButtonText}>✕</Text>
                 </TouchableOpacity>
-              </View>
+              </>
             ) : (
               <TextInput
                 style={styles.input}
                 value={filename}
                 onChangeText={handleInputChange}
-                placeholder="Rechercher un club adverse"
-                placeholderTextColor="#ccc"
+                placeholder="Club adverse"
+                placeholderTextColor="#666"
               />
             )}
-            {searchResults.length > 0 && (
-              <View style={styles.searchResults}>
-                {searchResults.slice(0, 3).map((result, index) => (
-                  <TouchableOpacity
-                    key={index}
-                    onPress={() => handleResultClick(result)}
-                    style={styles.result}
-                  >
-                    <Image source={{ uri: result.logo }} style={styles.resultLogo} />
-                    <Text style={styles.resultName}>{result.name}</Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
-            )}
-          </View>
-          <View style={styles.counterContainer}>
-            <TouchableOpacity onPress={incrementSecondCounter} style={styles.counterButton}>
-              <Icon name="plus" size={20} color="#fff" />
-            </TouchableOpacity>
-            <Text style={styles.counterLabel}>{secondCounter}</Text>
-            <TouchableOpacity
-              onPress={decrementSecondCounter}
-              disabled={secondCounter === 0}
-              style={styles.counterButton}
-            >
-              <Icon name="minus" size={20} color="#fff" />
-            </TouchableOpacity>
           </View>
         </View>
 
-        {isRecording && (
-          <View style={styles.timer}>
-            <Text style={styles.timerText}>
-              {formatTime(timeElapsed)}
-            </Text>
+        {/* Search results dropdown */}
+        {searchResults.length > 0 && (
+          <View style={styles.searchResults}>
+            {searchResults.slice(0, 3).map((result, index) => (
+              <TouchableOpacity
+                key={index}
+                onPress={() => handleResultClick(result)}
+                style={styles.result}
+              >
+                <Image source={{ uri: result.logo }} style={styles.resultLogo} />
+                <Text style={styles.resultName}>{result.name}</Text>
+              </TouchableOpacity>
+            ))}
           </View>
         )}
 
+        {/* === Timer (recording) === */}
+        {isRecording && (
+          <View style={styles.timer}>
+            <Text style={styles.timerText}>{formatTime(timeElapsed)}</Text>
+            <Animated.View style={[styles.timerRecordingDot, { opacity: pulseAnim }]} />
+          </View>
+        )}
+
+        {/* === Message === */}
         {message && !progressVisible ? (
           <View style={styles.message}>
             <Text
@@ -290,6 +307,7 @@ const Record = () => {
           </View>
         ) : null}
 
+        {/* === Progress bar === */}
         {progressVisible && (
           <View style={styles.progressWrapper}>
             <View style={styles.progressHeader}>
@@ -305,12 +323,7 @@ const Record = () => {
               }}
             >
               <Animated.View
-                style={[
-                  styles.progressBarFill,
-                  {
-                    width: progressAnimPx,
-                  },
-                ]}
+                style={[styles.progressBarFill, { width: progressAnimPx }]}
               />
             </View>
             <View style={styles.progressMessages}>
@@ -321,15 +334,16 @@ const Record = () => {
           </View>
         )}
 
+        {/* === Record button === */}
         <View style={styles.buttonContainer}>
           <TouchableOpacity
             onPress={handleButtonClick}
-            disabled={!canRecord}
+            disabled={buttonDisabled}
             style={[
               styles.outerCircle,
               isRecording
                 ? styles.recordingOuter
-                : !canRecord
+                : !canStartRecording
                 ? styles.disabledButton
                 : styles.defaultOuter,
             ]}
@@ -342,10 +356,9 @@ const Record = () => {
             />
           </TouchableOpacity>
 
-          {/* petit hint si disabled */}
-          {!isRecording && !deviceStatus.startsWith('Connecté') && selectedDevice ? (
-            <Text style={{ color: '#bbb', marginTop: 10, textAlign: 'center' }}>
-              Caméra hors ligne ou inconnue — enregistrement désactivé
+          {!isRecording && !isConnected && selectedDevice ? (
+            <Text style={styles.hintText}>
+              Caméra hors ligne — enregistrement désactivé
             </Text>
           ) : null}
         </View>

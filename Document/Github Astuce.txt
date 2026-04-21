@@ -9,7 +9,7 @@
 
 --Astuce version simple Push
 	git add .
-	git commit -m "Video plein ecran zoom darg ok"
+	git commit -m "update onglet enregistrement"
 	git push -u origin main
 
 --Astuce pull

@@ -2,12 +2,17 @@
 // Affiche la composition et l'effectif pour un match.
 // Utilise des onglets internes : EFFECTIF (liste éditable) et COMPOS (terrain avec positions).
 
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useCallback } from 'react';
 import { View, TouchableOpacity, Text, StyleSheet } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import Effectif from './Effectif';
 import Compos from './Compos';
 import { useEffectifContext } from './../../tools/EffectifContext';
+
+const TABS = [
+  { key: 'EFFECTIF', label: 'EFFECTIF' },
+  { key: 'COMPOS', label: 'COMPOSITION' },
+];
 
 const MatchTabs = () => {
   const [activeTab, setActiveTab] = useState('EFFECTIF');
@@ -29,7 +34,7 @@ const MatchTabs = () => {
     }));
   }, [effectif]);
 
-  const renderContent = () => {
+  const renderContent = useCallback(() => {
     switch (activeTab) {
       case 'EFFECTIF':
         return <Effectif />;
@@ -38,38 +43,32 @@ const MatchTabs = () => {
       default:
         return null;
     }
-  };
+  }, [activeTab, players]);
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <View style={styles.container}>
         <View style={styles.tabBar}>
-          <TouchableOpacity
-            style={[styles.tabButton, activeTab === 'EFFECTIF' && styles.activeTab]}
-            onPress={() => setActiveTab('EFFECTIF')}
-          >
-            <Text
-              style={[
-                styles.tabText,
-                activeTab === 'EFFECTIF' ? styles.activeTabText : styles.inactiveTabText,
-              ]}
-            >
-              EFFECTIF
-            </Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[styles.tabButton, activeTab === 'COMPOS' && styles.activeTab]}
-            onPress={() => setActiveTab('COMPOS')}
-          >
-            <Text
-              style={[
-                styles.tabText,
-                activeTab === 'COMPOS' ? styles.activeTabText : styles.inactiveTabText,
-              ]}
-            >
-              COMPOSITION
-            </Text>
-          </TouchableOpacity>
+          {TABS.map((tab) => {
+            const isActive = activeTab === tab.key;
+            return (
+              <TouchableOpacity
+                key={tab.key}
+                style={[styles.tabButton, isActive && styles.activeTab]}
+                onPress={() => setActiveTab(tab.key)}
+              >
+                <Text
+                  style={[
+                    styles.tabText,
+                    isActive ? styles.activeTabText : styles.inactiveTabText,
+                  ]}
+                >
+                  {tab.label}
+                </Text>
+                {isActive && <View style={styles.activeIndicator} />}
+              </TouchableOpacity>
+            );
+          })}
         </View>
         <View style={styles.content}>{renderContent()}</View>
       </View>
@@ -92,6 +91,7 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     paddingHorizontal: 20,
     borderRadius: 5,
+    alignItems: 'center',
   },
   activeTab: {
     backgroundColor: 'transparent',
@@ -104,6 +104,13 @@ const styles = StyleSheet.create({
   },
   inactiveTabText: {
     color: '#808080',
+  },
+  activeIndicator: {
+    marginTop: 4,
+    width: '100%',
+    height: 2,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 1,
   },
   content: {
     flex: 1,

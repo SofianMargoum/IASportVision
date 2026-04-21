@@ -1,0 +1,38 @@
+Sptich generale :
+
+
+Pouvez vous vous presenter et presenter IA Sport Vision ?
+
+Bonjour, moi c'est Sofian Margoum. Je suis developpeur en informatique. et je suis fondateur de IA Sport Vision.
+C'est une plateforme dedié pour tout les acteur du football amateur. 
+
+et a travers cette plateform :
+"pouce" Donc c'est un outil de travaille pour les Coach :
+-Un coach peut l'utiliser pour filmer les match. et ce servir des video pour travailler tactiquement son projet de jeu.
+
+"index" les joueur :
+-Un joueur peux suivre ses perfomance tout au long de la saison, a travers les video et le statistique. 
+	et aussi et surtout creer une fiche profile. 
+	-Compilation de toute ses meilleurs action. 
+	-Et mettre tout les sattistique 
+	-leur poste
+	-leur point fort 
+	-ça va permetre de mettre en avant ses permance et lui donné de la visibilité.
+	
+"majeur" et enfin et pour les suporter.
+-Ils pourront  beneficer pleinement des live et des reduffusion.
+
+Je ne rentre pas trop dans les détails, mais l’idée, c’est vraiment de proposer un écosystème complet autour du football amateur.
+
+
+
+Pouver vous nous en dire plus sur la camera, Je suppose que c'est avec ça qu'on filme les match ?
+-Oui cette camera est proposer au club. Si un club est interreser par la solution. La camera sera installer. et le coach pour l'utiliser pour filmer les match
+donc c'est une camera 4K avec double objectif qui va permetre de couvrir l'integralité du terrain
+
+
+Quel est le prix de cette Solution? 
+
+Pour les coach joueur et suporter l'application est gratuite.
+Pour les club. la camera et l'instalation coute 490 euro. + un abonnement 89 euro.
+On va faire une offre de lancement pour les 10 premier club la camera et l'instalation seron 100% gratuite

@@ -68,6 +68,120 @@ export async function saveLastRecording({
   return data;
 }
 
+// ===== Rolling chunked export during recording =====
+export async function startRollingExport({
+  deviceId,
+  cameraId,
+  beginTime,
+  offset,
+  voiceSwitch = 0,
+  chunkSec = 60,
+  lagSec = 120,
+}) {
+  const body = {
+    deviceId,
+    cameraId,
+    beginTime,
+    voiceSwitch,
+    chunkSec,
+    lagSec,
+    ...(typeof offset === 'string' && offset ? { offset } : {}),
+  };
+
+  const resp = await fetch(`${API_BASE}/hikconnect/video/rolling/start`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  });
+
+  const data = await resp.json().catch(() => ({}));
+
+  if (!resp.ok) {
+    const err = new Error(data?.message || `HTTP ${resp.status}`);
+    err.status = resp.status;
+    err.details = data?.details ?? data;
+    throw err;
+  }
+
+  if (data?.errorCode && data.errorCode !== '0') {
+    const err = new Error(data?.message || `Hik errorCode=${data.errorCode}`);
+    err.status = 502;
+    err.details = data;
+    throw err;
+  }
+
+  return data;
+}
+
+export async function tickRollingExport({ rollingId, index } = {}) {
+  const resp = await fetch(`${API_BASE}/hikconnect/video/rolling/tick`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      rollingId,
+      ...(index === null || index === undefined ? {} : { index }),
+    }),
+  });
+
+  const data = await resp.json().catch(() => ({}));
+
+  if (!resp.ok) {
+    const err = new Error(data?.message || `HTTP ${resp.status}`);
+    err.status = resp.status;
+    err.details = data?.details ?? data;
+    throw err;
+  }
+
+  if (data?.errorCode && data.errorCode !== '0') {
+    const err = new Error(data?.message || `Hik errorCode=${data.errorCode}`);
+    err.status = 502;
+    err.details = data;
+    throw err;
+  }
+
+  return data;
+}
+
+export async function finalizeRollingExport({
+  rollingId,
+  directory,
+  filename,
+  stopTime,
+  tailTryCount = 3,
+  requireComplete,
+}) {
+  const resp = await fetch(`${API_BASE}/hikconnect/video/rolling/finalize`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      rollingId,
+      directory,
+      filename,
+      stopTime,
+      tailTryCount,
+      ...(requireComplete === null || requireComplete === undefined ? {} : { requireComplete }),
+    }),
+  });
+
+  const data = await resp.json().catch(() => ({}));
+
+  if (!resp.ok) {
+    const err = new Error(data?.message || `HTTP ${resp.status}`);
+    err.status = resp.status;
+    err.details = data?.details ?? data;
+    throw err;
+  }
+
+  if (data?.errorCode && data.errorCode !== '0') {
+    const err = new Error(data?.message || `Hik errorCode=${data.errorCode}`);
+    err.status = 502;
+    err.details = data;
+    throw err;
+  }
+
+  return data;
+}
+
 /**
  * Upload vidéo depuis une URL HTTP(S) (ex: URL S3 signée HikConnect) vers GCS.
  *
@@ -179,6 +293,35 @@ export async function hikStopRecording({ deviceId }) {
   }
 
   return data;
+}
+
+// Statut d'enregistrement côté device HikConnect
+export async function hikGetRecordingStatus({ deviceId, cameraId, recordingStateToken }) {
+  if (!deviceId) throw new Error('Missing deviceId');
+
+  const resp = await fetch(`${API_BASE}/hikconnect/recording-status`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      deviceId,
+      ...(cameraId ? { cameraId } : {}),
+      ...(recordingStateToken ? { recordingStateToken } : {}),
+    }),
+  });
+
+  const data = await resp.json().catch(() => ({}));
+
+  if (!resp.ok) {
+    const err = new Error(data?.message || `HTTP ${resp.status}`);
+    err.status = resp.status;
+    err.details = data?.details ?? data;
+    throw err;
+  }
+
+  return {
+    isRecording: !!data?.isRecording,
+    recordingTime: typeof data?.recordingTime === 'string' ? data.recordingTime : null,
+  };
 }
 export const uploadZoomMapToApi = async (zoomMapExport, filename) => {
   if (!filename) {

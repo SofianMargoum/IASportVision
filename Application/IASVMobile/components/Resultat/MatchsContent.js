@@ -82,16 +82,16 @@ const MatchsContent = () => {
             <View style={styles.matchContent}>
               <View style={styles.matchDetailsTeam}>
                 {match.homeLogo ? <Image source={{ uri: match.homeLogo }} style={styles.teamLogo} /> : null}
-                <Text style={styles.teamName}>{match.homeTeam}</Text>
+                <Text style={[styles.teamName, match.home_score > match.away_score && styles.winnerTeam]}>{match.homeTeam}</Text>
               </View>
-              <Text style={styles.matchScore}>{match.home_score}</Text>
+              <Text style={[styles.matchScore, match.home_score > match.away_score && styles.winnerScore]}>{match.home_score}</Text>
             </View>
             <View style={styles.matchContent}>
               <View style={styles.matchDetailsTeam}>
                 {match.awayLogo ? <Image source={{ uri: match.awayLogo }} style={styles.teamLogo} /> : null}
-                <Text style={styles.teamName}>{match.awayTeam}</Text>
+                <Text style={[styles.teamName, match.away_score > match.home_score && styles.winnerTeam]}>{match.awayTeam}</Text>
               </View>
-              <Text style={styles.matchScore}>{match.away_score}</Text>
+              <Text style={[styles.matchScore, match.away_score > match.home_score && styles.winnerScore]}>{match.away_score}</Text>
             </View>
           </View>
         ))}
@@ -116,7 +116,9 @@ const styles = StyleSheet.create({
   matchDetailsTeam: { flexDirection: 'row', alignItems: 'center' },
   teamLogo: { width: 20 * scale, height: 20 * scale, marginRight: 10, borderRadius: 10, overflow: 'hidden' },
   teamName: { fontSize: 16 * scale, color: '#ffffff' },
-  matchScore: { fontSize: 18 * scale, color: '#00A0E9', fontWeight: '700' },
+  winnerTeam: { fontWeight: '700' },
+  matchScore: { fontSize: 18 * scale, color: '#ffffff', fontWeight: '700' },
+  winnerScore: { fontWeight: '900' },
 });
 
 export default MatchsContent;

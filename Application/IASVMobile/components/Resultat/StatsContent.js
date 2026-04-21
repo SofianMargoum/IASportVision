@@ -1,426 +1,666 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { View, Text, StyleSheet, ActivityIndicator, Image, ScrollView } from 'react-native';
-import { fetchMatchesForClub, fetchClassementJournees } from './../../tools/api';
+import { fetchClassementJournees } from './../../tools/api';
 import { useClubContext } from './../../tools/ClubContext';
 import LinearGradient from 'react-native-linear-gradient';
 
 const scale = 0.85;
 
+// ─── Composants réutilisables ───
+
+const SectionTitle = ({ children }) => (
+  <Text style={styles.sectionTitle}>{children}</Text>
+);
+
+const Separator = () => (
+  <View style={styles.separatorContainer}>
+    <View style={styles.separator} />
+  </View>
+);
+
+const StatCompareRow = ({
+  label,
+  bestTitle,
+  bestTeam,
+  bestValue,
+  bestSuffix,
+  worstTitle,
+  worstTeam,
+  worstValue,
+  worstSuffix,
+  icon,
+}) => (
+  <View style={styles.statBlock}>
+    <SectionTitle>{label}</SectionTitle>
+    <View style={styles.compareRow}>
+      <LinearGradient
+        colors={['#016D14', '#010914']}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 0.12, y: 0 }}
+        style={styles.compareCard}
+      >
+        <Text style={styles.compareTitleGood}>{bestTitle}</Text>
+        <Text style={styles.compareTeam} numberOfLines={1}>{bestTeam}</Text>
+        <Text style={styles.compareValue}>{bestValue} <Text style={styles.compareSuffix}>{bestSuffix}</Text></Text>
+      </LinearGradient>
+
+      {icon && <Image source={icon} style={styles.compareIcon} />}
+
+      <LinearGradient
+        colors={['#010914', '#640914']}
+        start={{ x: 0.88, y: 0 }}
+        end={{ x: 1, y: 0 }}
+        style={styles.compareCard}
+      >
+        <Text style={styles.compareTitleBad}>{worstTitle}</Text>
+        <Text style={styles.compareTeam} numberOfLines={1}>{worstTeam}</Text>
+        <Text style={styles.compareValue}>{worstValue} <Text style={styles.compareSuffix}>{worstSuffix}</Text></Text>
+      </LinearGradient>
+    </View>
+  </View>
+);
+
+// ─── Barres horizontales proportionnelles ───
+
+const HBar = ({ value, maxValue, color, label, suffix }) => {
+  const pct = maxValue > 0 ? Math.round((value / maxValue) * 100) : 0;
+  return (
+    <View style={styles.hBarRow}>
+      <Text style={styles.hBarLabel} numberOfLines={1}>{label}</Text>
+      <View style={styles.hBarTrack}>
+        <LinearGradient
+          colors={[color, `${color}88`]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 0 }}
+          style={[styles.hBarFill, { width: `${pct}%` }]}
+        />
+      </View>
+      <Text style={styles.hBarValue}>{value}{suffix ? ` ${suffix}` : ''}</Text>
+    </View>
+  );
+};
+
+// ─── Composant principal ───
+
 function StatsContent() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [classements, setClassements] = useState([]);
 
   const { selectedClub, competition, phase, poule, cp_no } = useClubContext();
 
-  // Statistiques supplémentaires
-  const [bestAttack, setBestAttack] = useState(null);
-  const [worstAttack, setWorstAttack] = useState(null);
-  const [bestDefense, setBestDefense] = useState(null);
-  const [worstDefense, setWorstDefense] = useState(null);
-  const [mostBalanced, setMostBalanced] = useState(null);
-  const [leastBalanced, setLeastBalanced] = useState(null);
+  useEffect(() => {
+    let isMounted = true;
 
-  // Podium des 3 premières équipes
-  const [topThree, setTopThree] = useState([]);
-useEffect(() => {
-  let isMounted = true;
+    const load = async () => {
+      setLoading(true);
+      setError(null);
 
-  const loadClassements = async () => {
-    setLoading(true);
-    setError(null);
+      if (!selectedClub?.cl_no) {
+        if (isMounted) setLoading(false);
+        return;
+      }
 
-    // Attendre que le club soit prêt (pas une erreur)
-    if (!selectedClub?.cl_no) {
-      if (isMounted) setLoading(false);
-      return;
-    }
+      try {
+        const data = await fetchClassementJournees(cp_no, phase, poule);
+        if (isMounted) setClassements(Array.isArray(data) ? data : []);
+      } catch (e) {
+        if (isMounted) setError(e);
+      } finally {
+        if (isMounted) setLoading(false);
+      }
+    };
 
-    try {
-      const classementsData = await fetchClassementJournees(cp_no, phase, poule);
+    load();
+    return () => { isMounted = false; };
+  }, [selectedClub?.cl_no, competition, cp_no, phase, poule]);
 
-      if (!isMounted) return;
+  // ─── Stats calculées ───
 
-      // Calcul des statistiques supplémentaires (inchangé)
-      setBestAttack(findBestAttack(classementsData));
-      setWorstAttack(findWorstAttack(classementsData));
-      setBestDefense(findBestDefense(classementsData));
-      setWorstDefense(findWorstDefense(classementsData));
-      setMostBalanced(findMostBalanced(classementsData));
-      setLeastBalanced(findLeastBalanced(classementsData));
+  const stats = useMemo(() => {
+    if (!classements.length) return null;
 
-      // Podium (inchangé)
-      const sortedTeams = classementsData.sort((a, b) => b.points - a.points);
-      setTopThree(sortedTeams.slice(0, 3));
-    } catch (error) {
-      if (isMounted) setError(error);
-    } finally {
-      if (isMounted) setLoading(false);
-    }
-  };
+    const sorted = [...classements].sort((a, b) => b.points - a.points);
+    const topThree = sorted.slice(0, 3);
 
-  loadClassements();
-  return () => { isMounted = false; };
-}, [selectedClub?.cl_no, competition, cp_no, phase, poule]);
+    const best = (key, order = 'desc') =>
+      classements.reduce((prev, curr) => {
+        if (order === 'desc') return curr[key] > prev[key] ? curr : prev;
+        return curr[key] < prev[key] ? curr : prev;
+      }, classements[0]);
 
+    const bestAttack = best('goalsFor', 'desc');
+    const worstAttack = best('goalsFor', 'asc');
+    const bestDefense = best('goalsAgainst', 'asc');
+    const worstDefense = best('goalsAgainst', 'desc');
+    const mostWins = best('wonGames', 'desc');
+    const mostLosses = best('lostGames', 'desc');
+    const mostDraws = best('drawGames', 'desc');
 
-  // Fonctions de calcul pour les meilleures et pires statistiques
-  const findBestAttack = (data) => {
-    return data.reduce((prev, curr) => (curr.goalsFor > prev.goalsFor ? curr : prev), data[0]);
-  };
+    // Différence de buts
+    const withDiff = classements.map((t) => ({
+      ...t,
+      goalDiff: t.goalsFor - t.goalsAgainst,
+    }));
+    const mostBalanced = withDiff.reduce(
+      (p, c) => (c.goalDiff > p.goalDiff ? c : p),
+      withDiff[0]
+    );
+    const leastBalanced = withDiff.reduce(
+      (p, c) => (c.goalDiff < p.goalDiff ? c : p),
+      withDiff[0]
+    );
 
-  const findWorstAttack = (data) => {
-    return data.reduce((prev, curr) => (curr.goalsFor < prev.goalsFor ? curr : prev), data[0]);
-  };
+    // Totaux compétition
+    const totalGoals = classements.reduce((s, t) => s + t.goalsFor, 0);
+    const totalMatches = classements.reduce((s, t) => s + t.totalGames, 0) / 2; // chaque match compté 2×
+    const avgGoalsPerMatch = totalMatches > 0 ? (totalGoals / totalMatches).toFixed(1) : '0';
+    const totalTeams = classements.length;
 
-  const findBestDefense = (data) => {
-    return data.reduce((prev, curr) => (curr.goalsAgainst < prev.goalsAgainst ? curr : prev), data[0]);
-  };
+    // Top 5 attaque pour barres
+    const topAttack = [...classements].sort((a, b) => b.goalsFor - a.goalsFor).slice(0, 5);
+    const topDefense = [...classements].sort((a, b) => a.goalsAgainst - b.goalsAgainst).slice(0, 5);
 
-  const findWorstDefense = (data) => {
-    return data.reduce((prev, curr) => (curr.goalsAgainst > prev.goalsAgainst ? curr : prev), data[0]);
-  };
+    return {
+      topThree,
+      bestAttack,
+      worstAttack,
+      bestDefense,
+      worstDefense,
+      mostBalanced,
+      leastBalanced,
+      mostWins,
+      mostLosses,
+      mostDraws,
+      totalGoals,
+      totalMatches: Math.round(totalMatches),
+      avgGoalsPerMatch,
+      totalTeams,
+      topAttack,
+      topDefense,
+    };
+  }, [classements]);
 
-  const findMostBalanced = (data) => {
-    return data.reduce((prev, curr) => {
-      const prevDifference = prev.goalsFor - prev.goalsAgainst;
-      const currDifference = curr.goalsFor - curr.goalsAgainst;
-      return currDifference > prevDifference ? { ...curr, goalDifference: currDifference } : { ...prev, goalDifference: prevDifference };
-    }, { ...data[0], goalDifference: data[0].goalsFor - data[0].goalsAgainst });
-  };
-  
-  const findLeastBalanced = (data) => {
-    return data.reduce((prev, curr) => {
-      const prevDifference = prev.goalsFor - prev.goalsAgainst;
-      const currDifference = curr.goalsFor - curr.goalsAgainst;
-      return currDifference < prevDifference ? { ...curr, goalDifference: currDifference } : { ...prev, goalDifference: prevDifference };
-    }, { ...data[0], goalDifference: data[0].goalsFor - data[0].goalsAgainst });
-  };
-  
-  // Affichage en cas d'erreur
-// Attente d'un club sélectionné (pas une erreur)
-if (!selectedClub?.cl_no && !loading) {
+  // ─── Rendu ───
+
+  if (!selectedClub?.cl_no && !loading) {
+    return (
+      <View style={styles.centered}>
+        <Text style={styles.infoText}>Sélectionne un club pour voir les statistiques.</Text>
+      </View>
+    );
+  }
+
+  if (loading) {
+    return (
+      <View style={styles.centered}>
+        <ActivityIndicator size="large" color="#00A0E9" />
+        <Text style={styles.infoText}>Calcul des statistiques…</Text>
+      </View>
+    );
+  }
+
+  if (error) {
+    return (
+      <View style={styles.centered}>
+        <Text style={styles.errorText}>
+          Erreur lors du chargement des statistiques : {error.message}
+        </Text>
+      </View>
+    );
+  }
+
+  if (!stats) {
+    return (
+      <View style={styles.centered}>
+        <Text style={styles.infoText}>Aucune donnée disponible.</Text>
+      </View>
+    );
+  }
+
+  const { topThree } = stats;
+
   return (
-    <View style={styles.centered}>
-      <Text style={styles.loadingText}>Sélectionne un club pour voir les statistiques.</Text>
-    </View>
-  );
-}
+    <ScrollView style={styles.scroll} showsVerticalScrollIndicator={false}>
 
-// En cours de chargement
-if (loading) {
-  return (
-    <View style={styles.centered}>
-      <ActivityIndicator />
-      <Text style={styles.loadingText}>Calcul des statistiques…</Text>
-    </View>
-  );
-}
+      {/* ══════ VUE D'ENSEMBLE ══════ */}
+      <View style={styles.section}>
+        <SectionTitle>VUE D'ENSEMBLE</SectionTitle>
+        <View style={styles.overviewRow}>
+          <OverviewBox value={stats.totalTeams} label="Équipes" color="#00A0E9" />
+          <OverviewBox value={stats.totalMatches} label="Matchs joués" color="#00A0E9" />
+          <OverviewBox value={stats.totalGoals} label="Buts marqués" color="#016D14" />
+          <OverviewBox value={stats.avgGoalsPerMatch} label="Buts / match" color="#F5A623" />
+        </View>
+      </View>
 
-// Erreur
-if (error) {
-  return (
-    <View style={styles.centered}>
-      <Text style={styles.errorText}>Erreur lors du chargement des statistiques : {error.message}</Text>
-    </View>
-  );
-}
+      <Separator />
 
-
-  return (
-    <ScrollView style={{ flex: 1 }}
-    showsVerticalScrollIndicator={false} // Masquer la scrollbar verticale
-    >
-      <View style={styles.statsContainer}>
-                {/* Podium des 3 premières équipes */}
-        <View style={styles.statBlock}>
-        
-        
-          <View style={styles.podiumContainer}>
-            {/* Deuxième : À gauche */}
-            <View style={[styles.podiumItem, styles.secondPlace]}>
-              <Text style={styles.secondPlace}>{topThree[1]?.teamName}</Text>
+      {/* ══════ PODIUM ══════ */}
+      <View style={styles.section}>
+        <SectionTitle>PODIUM</SectionTitle>
+        <View style={styles.podiumRow}>
+          {/* 2e */}
+          <View style={styles.podiumSlot}>
+            <View style={[styles.podiumBadge, { backgroundColor: 'rgba(192,192,192,0.15)' }]}>
+              <Text style={[styles.podiumRank, { color: '#C0C0C0' }]}>2</Text>
             </View>
-
-            {/* Premier : Meilleur club au centre */}
-            <View style={[styles.podiumItem, styles.firstPlace]}>
-              <Text style={styles.firstPlace}>{topThree[0]?.teamName}</Text>
-            </View>
-
-            {/* Troisième : À droite */}
-            <View style={[styles.podiumItem, styles.thirdPlace]}>
-              <Text style={styles.thirdPlace}>{topThree[2]?.teamName}</Text>
-            </View>
+            <Text style={[styles.podiumName, { color: '#C0C0C0' }]} numberOfLines={2}>
+              {topThree[1]?.teamName ?? '—'}
+            </Text>
+            <Text style={styles.podiumPts}>{topThree[1]?.points ?? '—'} pts</Text>
+            <View style={[styles.podiumBar, { height: 50, backgroundColor: '#C0C0C0' }]} />
           </View>
 
-          
-          <Image source={require('../../assets/podium.png')} style={styles.statsImagepe} />
-        </View>
-        
-      <View style={styles.hrContainer}>
-        <View style={[styles.hr, { backgroundColor: '#fff', opacity: 0.1 }]} />
-      </View>
-        {/* Attaque */}
-        <View style={styles.statBlock}>
-          <Text style={styles.statCategory}>ATTAQUE</Text>
-          <View style={styles.statRow}>
-          <LinearGradient
-      colors={['#016D14', '#010914']} // Couleurs du dégradé
-      start={{ x: 0, y: 0 }} // Point de départ à gauche
-      end={{ x: 0.1, y: 0 }}   // Point de fin à droite
-      style={[styles.statColumn, styles.bestStatBlock]}>
-      <Text style={styles.statTitlev}>Meilleure attaque</Text>
-      <Text style={styles.statsText}>{bestAttack?.teamName}</Text>
-      <View style={styles.statsRow}>
-        <Text style={styles.statsText}>{bestAttack?.goalsFor} buts</Text>
-      </View>
-    </LinearGradient>
+          {/* 1er */}
+          <View style={styles.podiumSlot}>
+            <View style={[styles.podiumBadge, { backgroundColor: 'rgba(255,215,0,0.2)' }]}>
+              <Text style={[styles.podiumRank, { color: '#FFD700' }]}>1</Text>
+            </View>
+            <Text style={[styles.podiumName, { color: '#FFD700' }]} numberOfLines={2}>
+              {topThree[0]?.teamName ?? '—'}
+            </Text>
+            <Text style={styles.podiumPts}>{topThree[0]?.points ?? '—'} pts</Text>
+            <View style={[styles.podiumBar, { height: 70, backgroundColor: '#FFD700' }]} />
+          </View>
 
-            {/* Image entre les deux blocs */}
-            <Image source={require('../../assets/actionsblanc.png')} style={styles.statsImage} />
-            <LinearGradient
-      colors={['#010914', '#640914']} // Couleurs du dégradé
-      start={{ x: 0.9, y: 0 }} // Point de départ à gauche
-      end={{ x: 1, y: 0 }}   // Point de fin à droite
-      style={[styles.statColumn, styles.worstStatBlock]}>
-              <Text style={styles.statTitle}>Pire attaque</Text>
-              <Text style={styles.statsText}>{worstAttack?.teamName}</Text>
-              <View style={styles.statsRow}>
-                <Text style={styles.statsText}>{worstAttack?.goalsFor} buts</Text>
-              </View>
-              </LinearGradient>
+          {/* 3e */}
+          <View style={styles.podiumSlot}>
+            <View style={[styles.podiumBadge, { backgroundColor: 'rgba(205,127,50,0.15)' }]}>
+              <Text style={[styles.podiumRank, { color: '#CD7F32' }]}>3</Text>
+            </View>
+            <Text style={[styles.podiumName, { color: '#CD7F32' }]} numberOfLines={2}>
+              {topThree[2]?.teamName ?? '—'}
+            </Text>
+            <Text style={styles.podiumPts}>{topThree[2]?.points ?? '—'} pts</Text>
+            <View style={[styles.podiumBar, { height: 35, backgroundColor: '#CD7F32' }]} />
           </View>
         </View>
-
-        {/* Défense */}
-        <View style={styles.statBlock}>
-          <Text style={styles.statCategory}>DÉFENSE</Text>
-            <View style={styles.statRow}>
-          <LinearGradient
-      colors={['#016D14', '#010914']} // Couleurs du dégradé
-      start={{ x: 0, y: 0 }} // Point de départ à gauche
-      end={{ x: 0.1, y: 0 }}   // Point de fin à droite
-      style={[styles.statColumn, styles.bestStatBlock]}>
-              <Text style={styles.statTitlev}>Meilleure défense</Text>
-              <Text style={styles.statsText}>{bestDefense?.teamName}</Text>
-              <View style={styles.statsRow}>
-                <Text style={styles.statsText}>{bestDefense?.goalsAgainst} buts encaissés</Text>
-              </View>
-              </LinearGradient>
-
-            {/* Image entre les deux blocs */}
-            <Image source={require('../../assets/bouclier.png')} style={styles.statsImage} />
-
-            <LinearGradient
-      colors={['#010914', '#640914']} // Couleurs du dégradé
-      start={{ x: 0.9, y: 0 }} // Point de départ à gauche
-      end={{ x: 1, y: 0 }}   // Point de fin à droite
-      style={[styles.statColumn, styles.worstStatBlock]}>
-              <Text style={styles.statTitle}>Pire défense</Text>
-              <Text style={styles.statsText}>{worstDefense?.teamName}</Text>
-              <View style={styles.statsRow}>
-                <Text style={styles.statsText}>{worstDefense?.goalsAgainst} buts encaissés</Text>
-                </View>
-                </LinearGradient>
-       </View>
-       </View>
-
-        {/* Équilibre */}
-        <View style={styles.statBlock}>
-          <Text style={styles.statCategory}>ÉQUILIBRE</Text>
-          <View style={styles.statRow}>
-          <LinearGradient
-      colors={['#016D14', '#010914']} // Couleurs du dégradé
-      start={{ x: 0, y: 0 }} // Point de départ à gauche
-      end={{ x: 0.1, y: 0 }}   // Point de fin à droite
-      style={[styles.statColumn, styles.bestStatBlock]}>
-              <Text style={styles.statTitlev}>Plus équilibrée</Text>
-              <Text style={styles.statsText}>{mostBalanced?.teamName}</Text>
-              <View style={styles.statsRow}>
-                <Text style={styles.statsText}>Différence : {mostBalanced?.goalDifference}</Text>
-              </View>
-              </LinearGradient>
-
-            {/* Image entre les deux blocs */}
-            <Image source={require('../../assets/equilibre.png')} style={styles.statsImage} />
-
-            <LinearGradient
-      colors={['#010914', '#640914']} // Couleurs du dégradé
-      start={{ x: 0.9, y: 0 }} // Point de départ à gauche
-      end={{ x: 1, y: 0 }}   // Point de fin à droite
-      style={[styles.statColumn, styles.worstStatBlock]}>
-
-      <Text style={styles.statTitle}>Moins équilibrée</Text>
-      <Text style={styles.statsText}>{leastBalanced?.teamName}</Text>
-      <View style={styles.statsRow}>
-        <Text style={styles.statsText}>Différence : {leastBalanced?.goalDifference}</Text>
       </View>
 
-    </LinearGradient>
+      <Separator />
 
-          </View>
+      {/* ══════ ATTAQUE ══════ */}
+      <StatCompareRow
+        label="ATTAQUE"
+        bestTitle="Meilleure"
+        bestTeam={stats.bestAttack?.teamName}
+        bestValue={stats.bestAttack?.goalsFor}
+        bestSuffix="buts"
+        worstTitle="Pire"
+        worstTeam={stats.worstAttack?.teamName}
+        worstValue={stats.worstAttack?.goalsFor}
+        worstSuffix="buts"
+        icon={require('../../assets/actionsblanc.png')}
+      />
+
+      {/* Top 5 Attaque */}
+      <View style={styles.barSection}>
+        <Text style={styles.barSectionTitle}>Top 5 — Buts marqués</Text>
+        {stats.topAttack.map((t, i) => (
+          <HBar
+            key={t.teamName + i}
+            label={t.teamName}
+            value={t.goalsFor}
+            maxValue={stats.topAttack[0]?.goalsFor || 1}
+            color="#016D14"
+          />
+        ))}
+      </View>
+
+      <Separator />
+
+      {/* ══════ DÉFENSE ══════ */}
+      <StatCompareRow
+        label="DÉFENSE"
+        bestTitle="Meilleure"
+        bestTeam={stats.bestDefense?.teamName}
+        bestValue={stats.bestDefense?.goalsAgainst}
+        bestSuffix="enc."
+        worstTitle="Pire"
+        worstTeam={stats.worstDefense?.teamName}
+        worstValue={stats.worstDefense?.goalsAgainst}
+        worstSuffix="enc."
+        icon={require('../../assets/bouclier.png')}
+      />
+
+      {/* Top 5 Défense */}
+      <View style={styles.barSection}>
+        <Text style={styles.barSectionTitle}>Top 5 — Moins de buts encaissés</Text>
+        {stats.topDefense.map((t, i) => (
+          <HBar
+            key={t.teamName + i}
+            label={t.teamName}
+            value={t.goalsAgainst}
+            maxValue={stats.worstDefense?.goalsAgainst || 1}
+            color="#00A0E9"
+          />
+        ))}
+      </View>
+
+      <Separator />
+
+      {/* ══════ ÉQUILIBRE ══════ */}
+      <StatCompareRow
+        label="ÉQUILIBRE"
+        bestTitle="Meilleure diff."
+        bestTeam={stats.mostBalanced?.teamName}
+        bestValue={stats.mostBalanced?.goalDiff >= 0 ? `+${stats.mostBalanced.goalDiff}` : stats.mostBalanced?.goalDiff}
+        bestSuffix=""
+        worstTitle="Pire diff."
+        worstTeam={stats.leastBalanced?.teamName}
+        worstValue={stats.leastBalanced?.goalDiff >= 0 ? `+${stats.leastBalanced.goalDiff}` : stats.leastBalanced?.goalDiff}
+        worstSuffix=""
+        icon={require('../../assets/equilibre.png')}
+      />
+
+      <Separator />
+
+      {/* ══════ RECORDS ══════ */}
+      <View style={styles.section}>
+        <SectionTitle>RECORDS</SectionTitle>
+        <View style={styles.recordsGrid}>
+          <RecordCard
+            title="Plus de victoires"
+            team={stats.mostWins?.teamName}
+            value={stats.mostWins?.wonGames}
+            suffix="V"
+            color="#016D14"
+          />
+          <RecordCard
+            title="Plus de défaites"
+            team={stats.mostLosses?.teamName}
+            value={stats.mostLosses?.lostGames}
+            suffix="D"
+            color="#D0021B"
+          />
+          <RecordCard
+            title="Plus de nuls"
+            team={stats.mostDraws?.teamName}
+            value={stats.mostDraws?.drawGames}
+            suffix="N"
+            color="#F5A623"
+          />
+          <RecordCard
+            title="Meilleur buteur (éq.)"
+            team={stats.bestAttack?.teamName}
+            value={(stats.bestAttack?.goalsFor / (stats.bestAttack?.totalGames || 1)).toFixed(1)}
+            suffix="buts/m"
+            color="#00A0E9"
+          />
         </View>
-
-
       </View>
+
+      <View style={{ height: 30 }} />
     </ScrollView>
   );
 }
 
+// ─── Petits composants ───
+
+const OverviewBox = ({ value, label, color }) => (
+  <View style={styles.overviewBox}>
+    <Text style={[styles.overviewValue, { color }]}>{value}</Text>
+    <Text style={styles.overviewLabel}>{label}</Text>
+  </View>
+);
+
+const RecordCard = ({ title, team, value, suffix, color }) => (
+  <View style={styles.recordCard}>
+    <Text style={styles.recordTitle}>{title}</Text>
+    <Text style={[styles.recordValue, { color }]}>
+      {value} <Text style={styles.recordSuffix}>{suffix}</Text>
+    </Text>
+    <Text style={styles.recordTeam} numberOfLines={1}>{team}</Text>
+  </View>
+);
+
+// ─── Styles ───
+
 const styles = StyleSheet.create({
+  scroll: {
+    flex: 1,
+    backgroundColor: '#010914',
+  },
   centered: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  infoText: {
     color: '#aaaaaa',
+    fontSize: 14 * scale,
+    margin: 10,
   },
   errorText: {
     color: 'red',
-    fontSize: 14,
-  },
-  loadingText: {
-    color: '#aaaaaa',
-    fontSize: 14,
-    margin: 10,
-  },
-  statsContainer: {
-    marginTop: 10,
-  },
-  hrContainer: {
-    alignItems: 'center',
-    marginBottom:10,
-  },
-  hr: {
-    height: 2,
-    width: '100%',
-    marginVertical: 10,
-  },
-  statCategory: {
-    fontSize: 16 * scale,
-    fontWeight: 'bold',
-    color: '#fff',
+    fontSize: 14 * scale,
     textAlign: 'center',
+    margin: 20,
   },
-  statRow: {
+
+  /* Sections */
+  section: {
+    paddingHorizontal: 16,
+    paddingTop: 16,
+    paddingBottom: 8,
+  },
+  sectionTitle: {
+    fontSize: 14 * scale,
+    fontWeight: 'bold',
+    color: '#00A0E9',
+    letterSpacing: 1,
+    marginBottom: 12,
+  },
+
+  /* Separator */
+  separatorContainer: {
+    paddingHorizontal: 16,
+  },
+  separator: {
+    height: 1,
+    backgroundColor: 'rgba(255,255,255,0.08)',
+    marginVertical: 6,
+  },
+
+  /* Vue d'ensemble */
+  overviewRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center',
   },
-  statColumn: {
+  overviewBox: {
     flex: 1,
+    alignItems: 'center',
+    backgroundColor: 'rgba(255,255,255,0.04)',
+    borderRadius: 10,
+    paddingVertical: 12,
+    marginHorizontal: 3,
+  },
+  overviewValue: {
+    fontSize: 22 * scale,
+    fontWeight: 'bold',
+  },
+  overviewLabel: {
+    color: '#aaaaaa',
+    fontSize: 10 * scale,
+    marginTop: 4,
+    textAlign: 'center',
+  },
+
+  /* Podium */
+  podiumRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    alignItems: 'flex-end',
+    paddingTop: 8,
+    paddingBottom: 4,
+  },
+  podiumSlot: {
+    flex: 1,
+    alignItems: 'center',
+    marginHorizontal: 4,
+  },
+  podiumBadge: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
     justifyContent: 'center',
     alignItems: 'center',
+    marginBottom: 6,
   },
-  statTitle: {
-    fontSize: 14 ,
+  podiumRank: {
+    fontSize: 18,
     fontWeight: 'bold',
-    color: '#640914',
+  },
+  podiumName: {
+    fontSize: 12 * scale,
+    fontWeight: 'bold',
     textAlign: 'center',
-    marginBottom: 10,
-  },  
-  statTitlev: {
-    fontSize: 14,
+    marginBottom: 4,
+  },
+  podiumPts: {
+    color: '#aaaaaa',
+    fontSize: 11 * scale,
+    marginBottom: 6,
+  },
+  podiumBar: {
+    width: '60%',
+    borderTopLeftRadius: 4,
+    borderTopRightRadius: 4,
+    opacity: 0.6,
+  },
+
+  /* Stat compare (attaque/défense/équilibre) */
+  statBlock: {
+    paddingHorizontal: 16,
+    paddingTop: 16,
+    paddingBottom: 8,
+  },
+  compareRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  compareCard: {
+    flex: 1,
+    alignItems: 'center',
+    paddingVertical: 14,
+    paddingHorizontal: 6,
+    borderRadius: 10,
+  },
+  compareTitleGood: {
+    fontSize: 12 * scale,
     fontWeight: 'bold',
     color: '#016D14',
-    textAlign: 'center',
-    marginBottom: 10,
+    marginBottom: 8,
   },
-  statsText: {
-    fontSize: 14 * scale,
+  compareTitleBad: {
+    fontSize: 12 * scale,
+    fontWeight: 'bold',
+    color: '#640914',
+    marginBottom: 8,
+  },
+  compareTeam: {
+    fontSize: 13 * scale,
     color: '#ffffff',
+    fontWeight: 'bold',
     textAlign: 'center',
+    marginBottom: 4,
+  },
+  compareValue: {
+    fontSize: 18 * scale,
+    color: '#ffffff',
     fontWeight: 'bold',
   },
-  statsRow: {
-    marginTop: 5,
+  compareSuffix: {
+    fontSize: 12 * scale,
+    color: '#aaaaaa',
+    fontWeight: 'normal',
   },
-  statsImage: {
-    width: 70 * scale,
-    height: 70 * scale,
-    borderRadius: 35 * scale,
-    marginVertical: 15 * scale,
-    borderWidth: 3 * scale,
-    margin: 10,
-    opacity:0.8,
+  compareIcon: {
+    width: 50 * scale,
+    height: 50 * scale,
+    borderRadius: 25 * scale,
+    marginHorizontal: 8,
+    opacity: 0.8,
   },
-  statsImagepe: {
-    
-  opacity:0.8,
-  width: '100%',  // Prendre toute la largeur disponible
-  height: 100,  // Fixer une hauteur maximale pour l'image
-  resizeMode: 'contain',  // Garder l'image dans les limites de son conteneur sans la déformer
+
+  /* Horizontal bars */
+  barSection: {
+    paddingHorizontal: 16,
+    paddingTop: 10,
+    paddingBottom: 8,
   },
-  
-  statsImagep1: {
-    width: 130 * scale,
-    height: 200 * scale,
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderWidth: 3 * scale,
+  barSectionTitle: {
+    color: '#aaaaaa',
+    fontSize: 11 * scale,
+    marginBottom: 8,
+    letterSpacing: 0.5,
   },
-  statsImagep2: {
-    width: 150 * scale,
-    height: 200 * scale,
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderWidth: 3 * scale,
-  },
-  statBlock: {
-    marginVertical: 10,
-  },
-  bestStatBlock: {
-    padding: 10,
-  },
-  worstStatBlock: {
-    padding: 10,
-  },  
-  podiumContainer: {
+  hBarRow: {
     flexDirection: 'row',
-    justifyContent: 'space-around', // Répartition équitable des podiums
-    alignItems: 'flex-end', // Aligner les podiums en bas pour un effet visuel harmonieux
-    marginTop: 10,
+    alignItems: 'center',
+    marginBottom: 6,
   },
-  podiumItem: {
-    flex: 1, // Chaque podium prend un tiers de la largeur
-    alignItems: 'center', // Centrer le contenu horizontalement
-    marginHorizontal: 5, // Espacement entre les podiums
-    borderRadius: 8,
-    shadowColor: '#000',
-    shadowOpacity: 0.8,
-    shadowRadius: 6,
-    shadowOffset: { width: 0, height: 2 },
-    padding: 5, // Ajout de padding pour contenir le texte
+  hBarLabel: {
+    color: '#ffffff',
+    fontSize: 11 * scale,
+    width: 90,
   },
-  firstPlace: {
-    color: '#FFD700',
-    fontSize: 14,
+  hBarTrack: {
+    flex: 1,
+    height: 8,
+    backgroundColor: 'rgba(255,255,255,0.08)',
+    borderRadius: 4,
+    overflow: 'hidden',
+    marginHorizontal: 8,
+  },
+  hBarFill: {
+    height: '100%',
+    borderRadius: 4,
+  },
+  hBarValue: {
+    color: '#ffffff',
+    fontSize: 12 * scale,
     fontWeight: 'bold',
-    textAlign: 'center',
-    height: 60, // Hauteur maximale pour le podium de première place
-    justifyContent: 'flex-start',
+    width: 30,
+    textAlign: 'right',
   },
-  secondPlace: {
-    color: '#C0C0C0',
-    fontSize: 14,
-    fontWeight: 'bold',
-    textAlign: 'center',
-    height: 50, // Hauteur légèrement inférieure pour la deuxième place
-    justifyContent: 'center',
+
+  /* Records grid */
+  recordsGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
   },
-  thirdPlace: {
-    color: '#CD7F32',
-    fontSize: 14,
-    textAlign: 'center',
-    fontWeight: 'bold',
-    height: 40, // Hauteur la plus basse pour la troisième place
-    justifyContent: 'flex-end',
+  recordCard: {
+    width: '48%',
+    backgroundColor: 'rgba(255,255,255,0.04)',
+    borderRadius: 10,
+    padding: 12,
+    marginBottom: 8,
+    alignItems: 'center',
   },
-  podiumText: {
-    fontSize: 14, // Taille de texte unifiée
-    fontWeight: 'bold',
+  recordTitle: {
+    color: '#aaaaaa',
+    fontSize: 11 * scale,
+    marginBottom: 6,
     textAlign: 'center',
-    paddingHorizontal: 2, // Espacement interne pour éviter les débordements
-    numberOfLines: 1, // Limite le texte à une ligne
-    ellipsizeMode: 'tail', // Ajout des points de suspension pour les textes trop longs
+  },
+  recordValue: {
+    fontSize: 22 * scale,
+    fontWeight: 'bold',
+  },
+  recordSuffix: {
+    fontSize: 12 * scale,
+    fontWeight: 'normal',
+    color: '#aaaaaa',
+  },
+  recordTeam: {
+    color: '#ffffff',
+    fontSize: 12 * scale,
+    fontWeight: 'bold',
+    marginTop: 4,
+    textAlign: 'center',
   },
 });
 

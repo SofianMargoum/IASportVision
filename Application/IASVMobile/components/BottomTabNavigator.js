@@ -8,7 +8,7 @@ const BottomTabNavigator = ({ index, setIndex }) => {
   const tabs = [
     { name: 'Record', icon: 'video-camera' },
     { name: 'Resultat', icon: 'trophy' },
-    { name: 'Video', icon: 'home' },
+    { name: 'Officiel', icon: 'home' },
     { name: 'Explore', icon: 'search' },
     { name: 'Profile', icon: 'user' },
   ];

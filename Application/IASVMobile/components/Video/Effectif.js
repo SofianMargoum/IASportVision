@@ -2,85 +2,126 @@ import React from 'react';
 import { View, Text, StyleSheet, ScrollView, Image } from 'react-native';
 import { useEffectifContext } from './../../tools/EffectifContext';
 
-const Effectif = () => {
+const TITULAIRES_COUNT = 11;
+
+const Effectif = React.memo(() => {
   const { effectif } = useEffectifContext();
+
+  const titulaires = effectif.slice(0, TITULAIRES_COUNT);
+  const remplacants = effectif.slice(TITULAIRES_COUNT);
+
+  const renderPlayer = (player, index, isEven) => (
+    <View
+      key={`${player.numero || 'x'}-${index}`}
+      style={[styles.playerRow, isEven && styles.playerRowEven]}
+    >
+      <Image
+        source={require('./../../assets/player.png')}
+        style={styles.icon}
+      />
+      <View style={styles.numberBadge}>
+        <Text style={styles.number}>{player.numero}</Text>
+      </View>
+      <Text style={styles.name}>{player.joueur}</Text>
+    </View>
+  );
+
+  const renderSection = (title, players, count) => (
+    <>
+      <View style={styles.sectionHeader}>
+        <View style={styles.sectionLine} />
+        <Text style={styles.sectionTitle}>
+          {title} ({count})
+        </Text>
+        <View style={styles.sectionLine} />
+      </View>
+      {players.map((player, index) => renderPlayer(player, index, index % 2 === 0))}
+    </>
+  );
 
   return (
     <ScrollView
       style={styles.listContainer}
-      showsVerticalScrollIndicator={false} // Cache la barre de défilement (optionnel)
+      showsVerticalScrollIndicator={false}
     >
       {effectif.length === 0 ? (
         <View style={styles.emptyRow}>
           <Text style={styles.emptyText}>Aucun joueur dans l'effectif.</Text>
         </View>
       ) : (
-        effectif.map((player, index) => {
-          const showTitulaireHeader = index === 0;
-          const showRemplacantHeader = index === 11 && effectif.length > 11;
-
-          return (
-            <React.Fragment key={`${player.numero || 'x'}-${index}`}>
-              {showTitulaireHeader && (
-                <Text style={styles.sectionTitle}>Titulaire</Text>
-              )}
-              {showRemplacantHeader && (
-                <Text style={styles.sectionTitle}>Remplacant</Text>
-              )}
-              <View style={styles.playerRow}>
-                <Image
-                  source={require('./../../assets/player.png')}
-                  style={styles.icon}
-                />
-                <Text style={styles.number}>{player.numero}</Text>
-                <Text style={styles.name}>{player.joueur}</Text>
-              </View>
-            </React.Fragment>
-          );
-        })
+        <>
+          {titulaires.length > 0 && renderSection('Titulaires', titulaires, titulaires.length)}
+          {remplacants.length > 0 && renderSection('Remplaçants', remplacants, remplacants.length)}
+        </>
       )}
     </ScrollView>
   );
-};
+});
 
 const styles = StyleSheet.create({
   listContainer: {
     flex: 1,
     paddingHorizontal: 10,
   },
+  sectionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 12,
+    marginBottom: 6,
+    paddingHorizontal: 10,
+  },
+  sectionLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: '#FFFFFF',
+    opacity: 0.15,
+  },
+  sectionTitle: {
+    color: '#A8B4C0',
+    fontSize: 13,
+    fontWeight: '700',
+    textAlign: 'center',
+    paddingHorizontal: 12,
+  },
   playerRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 6,
+    paddingVertical: 8,
     paddingHorizontal: 10,
-    marginVertical: 4, // Espace entre les items
-    width: '100%', // Les items occupent toute la largeur
+    marginVertical: 2,
+    width: '100%',
     backgroundColor: 'transparent',
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(255, 255, 255, 0.06)',
+  },
+  playerRowEven: {
+    backgroundColor: 'rgba(255, 255, 255, 0.03)',
+  },
+  numberBadge: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 10,
   },
   number: {
-    width: 32,
     textAlign: 'center',
-    fontSize: 14,
+    fontSize: 13,
+    fontWeight: '700',
     color: '#FFFFFF',
-    marginRight: 6,
   },
   name: {
     flex: 1,
     textAlign: 'left',
-    paddingVertical: 6,
     color: '#FFFFFF',
     fontSize: 14,
-  },
-  sectionTitle: {
-    color: '#A8B4C0',
-    fontSize: 14,
-    fontWeight: '600',
-    textAlign: 'center',
   },
   icon: {
     width: 18,
     height: 18,
-    marginRight: 6,
+    marginRight: 8,
   },
   emptyRow: {
     paddingVertical: 20,

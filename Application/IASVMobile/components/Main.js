@@ -26,7 +26,7 @@ const Main = ({ windowWidth }) => {
   const [routes] = useState([
     { key: 'record', title: 'Record' },
     { key: 'resultat', title: 'Resultat' },
-    { key: 'video', title: 'Video' },
+    { key: 'video', title: 'Officiel' },
     { key: 'explore', title: 'Explore' },
     { key: 'profile', title: 'Profile' },
   ]);

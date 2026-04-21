@@ -1,9 +1,40 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, FlatList, ActivityIndicator, ScrollView } from 'react-native';
+﻿import React, { useState, useEffect, useMemo } from 'react';
+import { View, Text, StyleSheet, ActivityIndicator, ScrollView } from 'react-native';
 import { fetchClassementJournees } from './../../tools/api';
 import { useClubContext } from './../../tools/ClubContext';
+import LinearGradient from 'react-native-linear-gradient';
 
 const scale = 0.85;
+
+// â”€â”€â”€ Couleurs podium â”€â”€â”€
+const rankColors = {
+  1: '#FFD700',
+  2: '#C0C0C0',
+  3: '#CD7F32',
+};
+
+// â”€â”€â”€ Mini barre de progression sous le nom â”€â”€â”€
+const ProgressMini = ({ value, max, color }) => {
+  const pct = max > 0 ? Math.min((value / max) * 100, 100) : 0;
+  return (
+    <View style={miniStyles.track}>
+      <View style={[miniStyles.fill, { width: `${pct}%`, backgroundColor: color }]} />
+    </View>
+  );
+};
+
+const miniStyles = StyleSheet.create({
+  track: {
+    height: 3,
+    backgroundColor: 'rgba(255,255,255,0.08)',
+    borderRadius: 2,
+    marginTop: 3,
+  },
+  fill: {
+    height: '100%',
+    borderRadius: 2,
+  },
+});
 
 function ClassementsContent() {
   const [classements, setClassements] = useState([]);
@@ -19,7 +50,6 @@ function ClassementsContent() {
       setLoading(true);
       setError(null);
 
-      // Contexte pas prêt → on n'appelle pas l’API
       if (!selectedClub?.cl_no) {
         if (isMounted) {
           setClassements([]);
@@ -32,7 +62,7 @@ function ClassementsContent() {
         const data = await fetchClassementJournees(cp_no, phase, poule);
         if (isMounted) setClassements(Array.isArray(data) ? data : []);
       } catch (e) {
-        if (isMounted) setError("Erreur lors du chargement des classements.");
+        if (isMounted) setError('Erreur lors du chargement des classements.');
       } finally {
         if (isMounted) setLoading(false);
       }
@@ -42,28 +72,38 @@ function ClassementsContent() {
     return () => { isMounted = false; };
   }, [selectedClub?.cl_no, competition, cp_no, phase, poule]);
 
-  // --- Rendu ---
+  const maxPoints = useMemo(() => {
+    if (!classements.length) return 0;
+    return Math.max(...classements.map((c) => c.points));
+  }, [classements]);
 
-  // Contexte pas prêt (pas de club)
+  const isSelectedClub = (teamName) => {
+    if (!selectedClub?.name || !teamName) return false;
+    return (
+      teamName.toLowerCase().includes(selectedClub.name.toLowerCase()) ||
+      selectedClub.name.toLowerCase().includes(teamName.toLowerCase())
+    );
+  };
+
+  // â”€â”€â”€ Ã‰tats de rendu â”€â”€â”€
+
   if (!selectedClub?.cl_no && !loading && !error) {
     return (
       <View style={styles.centered}>
-        <Text style={styles.infoText}>Sélectionne un club pour voir le classement.</Text>
+        <Text style={styles.infoText}>SÃ©lectionne un club pour voir le classement.</Text>
       </View>
     );
   }
 
-  // En cours de chargement
   if (loading) {
     return (
       <View style={styles.centered}>
-        <ActivityIndicator />
-        <Text style={styles.loadingText}>Chargement du classement…</Text>
+        <ActivityIndicator size="large" color="#00A0E9" />
+        <Text style={styles.loadingText}>Chargement du classementâ€¦</Text>
       </View>
     );
   }
 
-  // Erreur
   if (error) {
     return (
       <View style={styles.centered}>
@@ -72,95 +112,148 @@ function ClassementsContent() {
     );
   }
 
-  // Aucun résultat après chargement
   if (classements.length === 0) {
     return (
       <View style={styles.centered}>
         <Text style={styles.infoText}>
-          Aucun classement trouvé {selectedClub?.name ? `pour ${selectedClub.name}` : ''}.
+          Aucun classement trouvÃ©{selectedClub?.name ? ` pour ${selectedClub.name}` : ''}.
         </Text>
       </View>
     );
   }
 
-  // Rendu du tableau des classements
-  const renderClassementItem = ({ item }) => (
-    <View style={styles.row}>
-      <Text style={styles.cell}>{item.points}</Text>
-      <Text style={styles.cell}>{item.totalGames}</Text>
-      <Text style={styles.cell}>{item.wonGames}</Text>
-      <Text style={styles.cell}>{item.drawGames}</Text>
-      <Text style={styles.cell}>{item.lostGames}</Text>
-      <Text style={styles.cell}>{item.goalsFor}</Text>
-      <Text style={styles.cell}>{item.goalsAgainst}</Text>
-      <Text style={styles.cell}>{(item.goalsFor ?? 0) - (item.goalsAgainst ?? 0)}</Text>
-    </View>
-  );
-
   return (
-    <ScrollView
-      contentContainerStyle={{ flexGrow: 1 }}
-      style={{ flex: 1 }}
-      showsVerticalScrollIndicator={false}
-    >
-      <View style={styles.container}>
-        {/* Colonne fixe : rang + club */}
-        <View style={styles.fixedColumn}>
-          <View style={styles.headerRow}>
-            <Text style={styles.headerCell}>Rang</Text>
-            <Text style={[styles.headerCell, styles.teamName, { color: '#00A0E9' }]}>Club</Text>
-          </View>
-          <FlatList
-            data={classements}
-            keyExtractor={(item, idx) => String(item.teamId ?? item.teamName ?? idx)}
-            renderItem={({ item }) => (
-              <View style={styles.row}>
-                <Text style={styles.cell}>{item.rank}</Text>
-                <Text
-                  style={[styles.cell, styles.teamName]}
-                  numberOfLines={1}
-                  ellipsizeMode="tail"
-                >
-                  {item.teamName}
-                </Text>
-              </View>
-            )}
-            scrollEnabled={false}
-          />
-        </View>
-
-        {/* Colonnes scrollables : stats */}
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.scrollableContent}>
-          <View>
-            <View style={styles.headerRow}>
-              <Text style={styles.headerCell}>Pts</Text>
-              <Text style={styles.headerCell}>MJ</Text>
-              <Text style={styles.headerCell}>G</Text>
-              <Text style={styles.headerCell}>N</Text>
-              <Text style={styles.headerCell}>P</Text>
-              <Text style={styles.headerCell}>BP</Text>
-              <Text style={styles.headerCell}>BC</Text>
-              <Text style={styles.headerCell}>DB</Text>
-            </View>
-            <FlatList
-              data={classements}
-              keyExtractor={(item, idx) => String(item.teamId ?? item.teamName ?? idx)}
-              renderItem={renderClassementItem}
-              contentContainerStyle={{ paddingBottom: 20 * scale }}
-              scrollEnabled={false}
-            />
-          </View>
-        </ScrollView>
+    <ScrollView style={styles.scroll} showsVerticalScrollIndicator={false}>
+      {/* â•â•â•â•â•â• EN-TÃŠTE TABLEAU â•â•â•â•â•â• */}
+      <View style={styles.tableHeader}>
+        <Text style={[styles.thRank, styles.thText]}>#</Text>
+        <Text style={[styles.thClub, styles.thText]}>Club</Text>
+        <Text style={[styles.thStat, styles.thText]}>Pts</Text>
+        <Text style={[styles.thStat, styles.thText]}>MJ</Text>
+        <Text style={[styles.thStat, styles.thText]}>G</Text>
+        <Text style={[styles.thStat, styles.thText]}>N</Text>
+        <Text style={[styles.thStat, styles.thText]}>P</Text>
+        <Text style={[styles.thStat, styles.thText]}>DB</Text>
       </View>
+
+      {/* â•â•â•â•â•â• LIGNES â•â•â•â•â•â• */}
+      {classements.map((item, idx) => {
+        const isMyClub = isSelectedClub(item.teamName);
+        const goalDiff = (item.goalsFor ?? 0) - (item.goalsAgainst ?? 0);
+        const podiumColor = rankColors[item.rank];
+
+        const content = (
+          <RowContent
+            item={item}
+            goalDiff={goalDiff}
+            podiumColor={podiumColor}
+            isMyClub={isMyClub}
+            maxPoints={maxPoints}
+          />
+        );
+
+        return isMyClub ? (
+          <LinearGradient
+            key={item.teamName ?? idx}
+            colors={['rgba(0,160,233,0.15)', 'rgba(0,160,233,0.03)']}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 0 }}
+            style={[styles.row, styles.myClubRow]}
+          >
+            {content}
+          </LinearGradient>
+        ) : (
+          <View key={item.teamName ?? idx} style={styles.row}>
+            {content}
+          </View>
+        );
+      })}
+
+      {/* â•â•â•â•â•â• LÃ‰GENDE â•â•â•â•â•â• */}
+      <View style={styles.legend}>
+        <View style={styles.legendItem}>
+          <View style={[styles.legendDot, { backgroundColor: '#016D14' }]} />
+          <Text style={styles.legendText}>G = GagnÃ©</Text>
+        </View>
+        <View style={styles.legendItem}>
+          <View style={[styles.legendDot, { backgroundColor: '#F5A623' }]} />
+          <Text style={styles.legendText}>N = Nul</Text>
+        </View>
+        <View style={styles.legendItem}>
+          <View style={[styles.legendDot, { backgroundColor: '#D0021B' }]} />
+          <Text style={styles.legendText}>P = Perdu</Text>
+        </View>
+        <View style={styles.legendItem}>
+          <Text style={[styles.legendText, { color: '#00A0E9' }]}>DB = Diff. buts</Text>
+        </View>
+      </View>
+
+      <View style={{ height: 20 }} />
     </ScrollView>
   );
 }
 
+// â”€â”€â”€ Contenu d'une ligne â”€â”€â”€
+const RowContent = ({ item, goalDiff, podiumColor, isMyClub, maxPoints }) => (
+  <>
+    {/* Rang */}
+    <View style={styles.rankCell}>
+      {podiumColor ? (
+        <View style={[styles.rankBadge, { backgroundColor: `${podiumColor}22` }]}>
+          <Text style={[styles.rankText, { color: podiumColor }]}>{item.rank}</Text>
+        </View>
+      ) : (
+        <Text style={styles.rankText}>{item.rank}</Text>
+      )}
+    </View>
+
+    {/* Club */}
+    <View style={styles.clubCell}>
+      <Text
+        style={[styles.clubName, isMyClub && styles.myClubName]}
+        numberOfLines={1}
+        ellipsizeMode="tail"
+      >
+        {item.teamName}
+      </Text>
+      <ProgressMini
+        value={item.points}
+        max={maxPoints}
+        color={isMyClub ? '#00A0E9' : 'rgba(255,255,255,0.3)'}
+      />
+    </View>
+
+    {/* Points */}
+    <Text style={[styles.statCell, styles.pointsText]}>{item.points}</Text>
+
+    {/* MJ */}
+    <Text style={styles.statCell}>{item.totalGames}</Text>
+
+    {/* G */}
+    <Text style={[styles.statCell, { color: '#016D14' }]}>{item.wonGames}</Text>
+
+    {/* N */}
+    <Text style={[styles.statCell, { color: '#F5A623' }]}>{item.drawGames}</Text>
+
+    {/* P */}
+    <Text style={[styles.statCell, { color: '#D0021B' }]}>{item.lostGames}</Text>
+
+    {/* DB */}
+    <Text
+      style={[
+        styles.statCell,
+        { color: goalDiff > 0 ? '#016D14' : goalDiff < 0 ? '#D0021B' : '#aaaaaa' },
+      ]}
+    >
+      {goalDiff > 0 ? `+${goalDiff}` : goalDiff}
+    </Text>
+  </>
+);
+
 const styles = StyleSheet.create({
-  container: {
-    flexDirection: 'row',
+  scroll: {
     flex: 1,
-    padding: 10 * scale,
+    backgroundColor: '#010914',
   },
   centered: {
     flex: 1,
@@ -169,10 +262,9 @@ const styles = StyleSheet.create({
     padding: 16,
   },
   loadingText: {
-    color: '#00A0E9',
-    fontSize: 16 * scale,
+    color: '#aaaaaa',
+    fontSize: 14 * scale,
     marginTop: 10,
-    textAlign: 'center',
   },
   infoText: {
     color: '#aaaaaa',
@@ -181,58 +273,124 @@ const styles = StyleSheet.create({
   },
   errorText: {
     color: '#FF4444',
-    fontSize: 16 * scale,
+    fontSize: 14 * scale,
     textAlign: 'center',
   },
-  fixedColumn: {
-    width: 200,
-    height: '100%',
-  },
-  scrollableContent: {
-    flex: 1,
-  },
-  headerRow: {
+
+  /* Table header */
+  tableHeader: {
     flexDirection: 'row',
-    paddingVertical: 5,
-    marginBottom: 10 * scale,
+    alignItems: 'center',
+    paddingVertical: 10,
+    paddingHorizontal: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(255,255,255,0.15)',
   },
+  thRank: {
+    width: 30,
+    textAlign: 'center',
+  },
+  thClub: {
+    flex: 1,
+    paddingLeft: 6,
+  },
+  thStat: {
+    width: 32,
+    textAlign: 'center',
+  },
+  thText: {
+    color: '#aaaaaa',
+    fontSize: 12 * scale,
+    fontWeight: 'bold',
+    letterSpacing: 0.5,
+  },
+
+  /* Rows */
   row: {
     flexDirection: 'row',
-    paddingVertical: 8 * scale,
-    padding: 5,
-    flex: 1,
-    borderRightWidth: 1,
-    borderRightColor: 'rgba(255, 255, 255, 0.3)',
-  },
-  cell: {
-    width: 50,
-    color: '#FFFFFF',
-    textAlignVertical: 'center',
-    textAlign: 'center',
-    borderBottomColor: '#001A31',
+    alignItems: 'center',
+    paddingVertical: 10,
+    paddingHorizontal: 8,
     borderBottomWidth: 1,
-    padding: 5,
-    fontSize: 14,
+    borderBottomColor: 'rgba(255,255,255,0.04)',
   },
-  teamName: {
-    flex: 1,
-    minWidth: 50,
-    padding: 5,
+  myClubRow: {
+    borderLeftWidth: 3,
+    borderLeftColor: '#00A0E9',
+    borderBottomColor: 'rgba(0,160,233,0.15)',
+  },
+
+  /* Rank cell */
+  rankCell: {
+    width: 30,
+    alignItems: 'center',
     justifyContent: 'center',
-    textAlign: 'center',
-    textAlignVertical: 'center',
-    color: '#FFFFFF',
-    fontSize: 14,
-    overflow: 'hidden',
   },
-  headerCell: {
-    width: 50,
+  rankBadge: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  rankText: {
+    color: '#ffffff',
+    fontSize: 13 * scale,
+    fontWeight: 'bold',
+  },
+
+  /* Club cell */
+  clubCell: {
+    flex: 1,
+    paddingHorizontal: 6,
+    justifyContent: 'center',
+  },
+  clubName: {
+    color: '#ffffff',
+    fontSize: 13 * scale,
+    fontWeight: '500',
+  },
+  myClubName: {
     color: '#00A0E9',
     fontWeight: 'bold',
-    textAlignVertical: 'center',
+  },
+
+  /* Stat cells */
+  statCell: {
+    width: 32,
+    color: '#ffffff',
+    fontSize: 13 * scale,
     textAlign: 'center',
-    fontSize: 14,
-    paddingVertical: 5,
+    fontWeight: '600',
+  },
+  pointsText: {
+    color: '#ffffff',
+    fontWeight: 'bold',
+    fontSize: 14 * scale,
+  },
+
+  /* Legend */
+  legend: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'center',
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    gap: 12,
+  },
+  legendItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  legendDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    marginRight: 4,
+  },
+  legendText: {
+    color: '#aaaaaa',
+    fontSize: 10 * scale,
   },
 });
 

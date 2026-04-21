@@ -1,56 +1,90 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { View, Image, Text, StyleSheet, FlatList, ScrollView, TouchableOpacity } from 'react-native';
 import { joueurStats } from './data/mockData';
 
 const scale = 0.85;
 
-// Fonction pour obtenir dynamiquement l'image du joueur
-const getImageSource = (id) => {
-  switch (id) {
-    case '1': return require('../../assets/joueur-1.png');
-    case '2': return require('../../assets/joueur-2.png');
-    case '3': return require('../../assets/joueur-3.png');
-    case '4': return require('../../assets/joueur-4.png');
-    case '5': return require('../../assets/joueur-5.png');
-    case '6': return require('../../assets/joueur-6.png');
-    case '7': return require('../../assets/joueur-7.png');
-    case '8': return require('../../assets/joueur-8.png');
-    case '9': return require('../../assets/joueur-9.png');
-    case '10': return require('../../assets/joueur-10.png');
-    case '11': return require('../../assets/joueur-11.png');
-    case '12': return require('../../assets/joueur-12.png');
-    case '13': return require('../../assets/joueur-13.png');
-    case '14': return require('../../assets/joueur-14.png');
-    default: return require('../../assets/joueur-7.png'); // Image par défaut si le joueur n'existe pas
-  }
+const PLAYER_IMAGES = {
+  '1': require('../../assets/joueur-1.png'),
+  '2': require('../../assets/joueur-2.png'),
+  '3': require('../../assets/joueur-3.png'),
+  '4': require('../../assets/joueur-4.png'),
+  '5': require('../../assets/joueur-5.png'),
+  '6': require('../../assets/joueur-6.png'),
+  '7': require('../../assets/joueur-7.png'),
+  '8': require('../../assets/joueur-8.png'),
+  '9': require('../../assets/joueur-9.png'),
+  '10': require('../../assets/joueur-10.png'),
+  '11': require('../../assets/joueur-11.png'),
+  '12': require('../../assets/joueur-12.png'),
+  '13': require('../../assets/joueur-13.png'),
+  '14': require('../../assets/joueur-14.png'),
+};
+const DEFAULT_IMAGE = require('../../assets/joueur-7.png');
+
+const STATS_CONFIG = [
+  { key: 'nom', label: 'Joueur' },
+  { key: 'buts', label: 'Buts' },
+  { key: 'passesDecisives', label: 'Passes décisives' },
+  { key: 'tirs', label: 'Tirs' },
+  { key: 'precisionTirs', label: 'Précision des tirs' },
+  { key: 'passes', label: 'Passes' },
+  { key: 'precisionPasses', label: 'Précision des passes' },
+  { key: 'dribles', label: 'Dribles' },
+  { key: 'precisionDribles', label: 'Précision des dribles' },
+  { key: 'tacles', label: 'Tacles' },
+  { key: 'taclesReussis', label: 'Tacles réussis' },
+  { key: 'horsJeu', label: 'Hors-jeu' },
+  { key: 'fautesComises', label: 'Fautes commises' },
+  { key: 'ballonRecuperes', label: 'Ballons récupérés' },
+  { key: 'ballonPerdus', label: 'Ballons perdus' },
+  { key: 'distanceParcourue', label: 'Distance parcourue' },
+  { key: 'tempsJeu', label: 'Temps de jeu' },
+];
+
+const isNumeric = (v) => typeof v === 'number' && !isNaN(v);
+
+const StatRow = ({ label, value1, value2, isEven }) => {
+  const highlight1 = isNumeric(value1) && isNumeric(value2) && value1 > value2;
+  const highlight2 = isNumeric(value1) && isNumeric(value2) && value2 > value1;
+
+  return (
+    <View style={[styles.tableRow, isEven && styles.tableRowEven]}>
+      <Text style={[styles.tableCell, highlight1 && styles.tableCellHighlight]}>{value1}</Text>
+      <Text style={styles.tableCellLabel}>{label}</Text>
+      <Text style={[styles.tableCell, highlight2 && styles.tableCellHighlight]}>{value2}</Text>
+    </View>
+  );
 };
 
-const StatsJoueurs = () => {
-  const [selectedJoueur, setSelectedJoueur] = useState(joueurStats[0]); // Joueur initialement sélectionné
+const StatsJoueurs = React.memo(() => {
+  const [selectedJoueur, setSelectedJoueur] = useState(joueurStats[0]);
 
-  const renderItem = ({ item }) => (
+  const renderItem = useCallback(({ item }) => (
     <TouchableOpacity onPress={() => setSelectedJoueur(item)}>
       <View style={[styles.joueurItem, selectedJoueur.id === item.id && styles.selectedJoueurItem]}>
-        
-        <Image source={getImageSource(item.id)} style={styles.statsImage} />
+        <Image
+          source={PLAYER_IMAGES[item.id] || DEFAULT_IMAGE}
+          style={styles.statsImage}
+        />
       </View>
     </TouchableOpacity>
-  );
+  ), [selectedJoueur.id]);
 
   return (
     <View style={styles.container}>
       <View style={styles.playerListContainer}>
         <FlatList
-          data={joueurStats} // Liste des joueurs
+          data={joueurStats}
           keyExtractor={(item) => item.id}
           renderItem={renderItem}
-          horizontal={true}
+          horizontal
           showsHorizontalScrollIndicator={false}
         />
       </View>
 
       <View style={styles.hrContainer}>
-        <View style={[styles.hr, { backgroundColor: '#fff', opacity: 0.1 }]} />
+        <View style={styles.hr} />
       </View>
 
       <ScrollView
@@ -60,36 +94,20 @@ const StatsJoueurs = () => {
         {selectedJoueur ? (
           <View style={styles.statCard}>
             <View style={styles.table}>
-              <View style={styles.tableRow}>
+              <View style={styles.headerRow}>
                 <Text style={styles.tableHeader}>F.C. VIDAUBAN</Text>
-                <Text style={styles.tableHeader}>-</Text>
+                <Text style={styles.tableHeaderSep}>-</Text>
                 <Text style={styles.tableHeader}>A.S. ARCOISE</Text>
               </View>
 
-              {[ // Liste des statistiques à afficher
-                ['Joueur', 'nom'],
-                ['Buts', 'buts'],
-                ['Passes décisives', 'passesDecisives'],
-                ['Tirs', 'tirs'],
-                ['Précision des tirs', 'precisionTirs'],
-                ['Passes', 'passes'],
-                ['Précision des passes', 'precisionPasses'],
-                ['Dribles', 'dribles'],
-                ['Précision des dribles', 'precisionDribles'],
-                ['Tacles', 'tacles'],
-                ['Tacles réussis', 'taclesReussis'],
-                ['Hors-jeu', 'horsJeu'],
-                ['Fautes commises', 'fautesComises'],
-                ['Ballon récupérés', 'ballonRecuperes'],
-                ['Ballon perdus', 'ballonPerdus'],
-                ['Distance parcourue', 'distanceParcourue'],
-                ['Temps de jeu', 'tempsJeu'],
-              ].map(([title, key], index) => (
-                <View style={styles.tableRow} key={index}>
-                  <Text style={styles.tableCell}>{selectedJoueur.statsVidauban[key]}</Text>
-                  <Text style={styles.tableCell}>{title}</Text>
-                  <Text style={styles.tableCell}>{selectedJoueur.statsArcoise[key]}</Text>
-                </View>
+              {STATS_CONFIG.map((stat, index) => (
+                <StatRow
+                  key={stat.key}
+                  label={stat.label}
+                  value1={selectedJoueur.statsVidauban[stat.key]}
+                  value2={selectedJoueur.statsArcoise[stat.key]}
+                  isEven={index % 2 === 0}
+                />
               ))}
             </View>
           </View>
@@ -99,39 +117,37 @@ const StatsJoueurs = () => {
       </ScrollView>
     </View>
   );
-};
+});
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
     paddingHorizontal: 12,
-    alignItems: 'stretch', // ✅ pleine largeur
+    alignItems: 'stretch',
   },
-
   hrContainer: {
     alignItems: 'stretch',
   },
   hr: {
     height: 1,
     width: '100%',
+    backgroundColor: '#fff',
+    opacity: 0.1,
   },
-
   playerListContainer: {
     width: '100%',
     height: 56 * scale,
     justifyContent: 'center',
     marginBottom: 8,
   },
-
   statsImage: {
     height: 52 * scale,
     width: 52 * scale,
     resizeMode: 'contain',
     borderRadius: 10 * scale,
   },
-
   joueurItem: {
-    width: 70 * scale,      // ✅ un peu plus compact
+    width: 70 * scale,
     justifyContent: 'center',
     alignItems: 'center',
     opacity: 0.45,
@@ -139,54 +155,73 @@ const styles = StyleSheet.create({
   selectedJoueurItem: {
     opacity: 1,
   },
-
   statCardContainer: {
-    width: '100%',          // ✅ pleine largeur
+    width: '100%',
     flex: 1,
   },
-
   statCard: {
     paddingVertical: 8,
-    paddingHorizontal: 0,   // ✅ on enlève le padding latéral (déjà dans container)
+    paddingHorizontal: 0,
   },
-
   table: {
     width: '100%',
   },
-
-  tableRow: {
+  headerRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 6,     // ✅ plus compact
+    paddingVertical: 8,
     paddingHorizontal: 4,
-    borderBottomColor: '#001A31',
-    borderBottomWidth: 0.5,
+    borderBottomColor: 'rgba(255, 255, 255, 0.1)',
+    borderBottomWidth: 1,
+    marginBottom: 2,
   },
-
-  // ✅ Header compact et bien aligné
   tableHeader: {
     fontWeight: '700',
     fontSize: 13,
-    color: '#00A0E9',
-    flex: 1,               // ✅ au lieu de width:'33%'
+    color: '#FFFFFF',
+    flex: 1,
     textAlign: 'center',
-    marginBottom: 6,
   },
-
-  // ✅ Cellules pleine largeur avec flex (plus fiable que %)
+  tableHeaderSep: {
+    fontWeight: '600',
+    fontSize: 13,
+    color: '#808080',
+    width: 20,
+    textAlign: 'center',
+  },
+  tableRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 7,
+    paddingHorizontal: 4,
+    borderBottomColor: 'rgba(255, 255, 255, 0.04)',
+    borderBottomWidth: 0.5,
+  },
+  tableRowEven: {
+    backgroundColor: 'rgba(255, 255, 255, 0.03)',
+  },
   tableCell: {
     fontSize: 12,
+    fontWeight: '600',
     color: '#fff',
-    flex: 1,               // ✅ au lieu de width:'33%'
+    flex: 1,
     textAlign: 'center',
   },
-
+  tableCellHighlight: {
+    fontWeight: '800',
+  },
+  tableCellLabel: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: '#A8B4C0',
+    flex: 1.2,
+    textAlign: 'center',
+  },
   statText: {
     fontSize: 13,
     color: '#fff',
     paddingTop: 10,
   },
 });
-
 
 export default StatsJoueurs;

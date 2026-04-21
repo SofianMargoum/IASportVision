@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo, Suspense, useEffect } from 'react';
+﻿import React, { useState, useCallback, useMemo, Suspense, useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -9,6 +9,7 @@ import {
   ScrollView,
   RefreshControl,
   Animated,
+  Image,
 } from 'react-native';
 import { TabView, SceneMap } from 'react-native-tab-view';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
@@ -24,6 +25,9 @@ const ClassementsContent = React.lazy(() =>
 const StatsContent = React.lazy(() =>
   import('./Resultat/StatsContent')
 );
+const ClubContent = React.lazy(() =>
+  import('./Resultat/ClubContent')
+);
 
 
 const scale = 0.85;
@@ -38,11 +42,14 @@ const Resultat = ({ isActive }) => {
 
   const { selectedClub } = useClubContext(); // 👈 on se base sur le club sélectionné
 
-  const [routes] = useState([
+  const routes = useMemo(() => [
     { key: 'matchs', title: 'MATCHS' },
     { key: 'classements', title: 'CLASSEMENTS' },
     { key: 'stats', title: 'STATS' },
-  ]);
+    ...(selectedClub?.name
+      ? [{ key: 'club', title: selectedClub.name.toUpperCase() }]
+      : []),
+  ], [selectedClub?.name]);
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
@@ -74,6 +81,7 @@ const Resultat = ({ isActive }) => {
           <Suspense fallback={null}>
             <ScrollView
               style={{ flex: 1 }}
+              showsVerticalScrollIndicator={false}
               refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
             >
               <MatchsContent />
@@ -84,6 +92,7 @@ const Resultat = ({ isActive }) => {
           <Suspense fallback={null}>
             <ScrollView
               style={{ flex: 1 }}
+              showsVerticalScrollIndicator={false}
               refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
             >
               <ClassementsContent />
@@ -94,9 +103,21 @@ const Resultat = ({ isActive }) => {
           <Suspense fallback={<ActivityIndicator size="large" color="#00A0E9" />}>
             <ScrollView
               style={{ flex: 1 }}
+              showsVerticalScrollIndicator={false}
               refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
             >
               <StatsContent />
+            </ScrollView>
+          </Suspense>
+        ),
+        club: () => (
+          <Suspense fallback={<ActivityIndicator size="large" color="#00A0E9" />}>
+            <ScrollView
+              style={{ flex: 1 }}
+              showsVerticalScrollIndicator={false}
+              refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+            >
+              <ClubContent />
             </ScrollView>
           </Suspense>
         ),
@@ -104,23 +125,46 @@ const Resultat = ({ isActive }) => {
     [refreshing]
   );
 
+  const tabScrollRef = useRef(null);
+  const tabLayouts = useRef({});
+
+  // Auto-scroll la tab bar vers l'onglet actif lors du swipe
+  useEffect(() => {
+    if (tabScrollRef.current && tabLayouts.current[index] !== undefined) {
+      const x = tabLayouts.current[index];
+      tabScrollRef.current.scrollTo({ x: Math.max(0, x - width / 3), animated: true });
+    }
+  }, [index]);
+
   const renderTabBar = useCallback(
     (props) =>
       hasContent && (
-        <View style={styles.nav}>
+        <ScrollView
+          ref={tabScrollRef}
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.nav}
+          style={styles.navScroll}
+        >
           {props.navigationState.routes.map((route, i) => (
             <TouchableOpacity
               key={i}
               style={[styles.button, index === i && styles.activeButton]}
               onPress={() => setIndex(i)}
+              onLayout={(e) => {
+                tabLayouts.current[i] = e.nativeEvent.layout.x;
+              }}
             >
-              <Text style={[styles.buttonText, index === i && styles.activeButtonText]}>
+              <Text
+                style={[styles.buttonText, index === i && styles.activeButtonText]}
+                numberOfLines={1}
+              >
                 {route.title}
               </Text>
               {index === i && <View style={styles.activeIndicator} />}
             </TouchableOpacity>
           ))}
-        </View>
+        </ScrollView>
       ),
     [index, hasContent]
   );
@@ -137,7 +181,15 @@ const Resultat = ({ isActive }) => {
         />
       ) : (
         <Animated.View style={[styles.videoContainer, { opacity: fadeAnim }]}>
-          <Text style={styles.noContentText}>Aucun résultat trouvé</Text>
+          <Image
+            source={require('../assets/ballon.png')}
+            style={styles.emptyIcon}
+            resizeMode="contain"
+          />
+          <Text style={styles.noContentText}>Aucun club sélectionné</Text>
+          <Text style={styles.noContentSub}>
+            Recherche un club dans l'onglet Explorer pour afficher ses résultats
+          </Text>
         </Animated.View>
       )}
     </GestureHandlerRootView>
@@ -149,35 +201,41 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#010914',
   },
+  navScroll: {
+    flexGrow: 0,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(255,255,255,0.1)',
+  },
   nav: {
     flexDirection: 'row',
     justifyContent: 'space-evenly',
-    borderBottomWidth: 2,
-    borderBottomColor: '#00A0E9',
+    flexGrow: 1,
+    paddingHorizontal: 4,
   },
   button: {
     paddingVertical: 12 * scale,
-    paddingHorizontal: 16 * scale,
+    paddingHorizontal: 14 * scale,
     alignItems: 'center',
     justifyContent: 'center',
+    position: 'relative',
   },
-  activeButton: {
-    color: '#00A0E9',
-  },
+  activeButton: {},
+  
   buttonText: {
-    color: '#ffffff',
+    color: '#666666',
     fontSize: 16 * scale,
   },
   activeButtonText: {
-    color: '#00A0E9',
+    color: '#ffffff',
     fontWeight: 'bold',
   },
   activeIndicator: {
     position: 'absolute',
-    bottom: -2,
-    width: '100%',
-    height: 3,
-    backgroundColor: '#00A0E9',
+    bottom: 0,
+    width: '80%',
+    height: 2.5,
+    borderRadius: 2,
+    backgroundColor: '#ffffff',
   },
   videoContainer: {
     flex: 1,
@@ -185,13 +243,25 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: '#010914',
   },
-  video: {
-    alignSelf: 'center',
+  emptyIcon: {
+    width: 60,
+    height: 60,
+    opacity: 0.3,
+    marginBottom: 16,
   },
   noContentText: {
     color: '#ffffff',
     fontSize: 18,
+    fontWeight: 'bold',
     textAlign: 'center',
+  },
+  noContentSub: {
+    color: '#aaaaaa',
+    fontSize: 13 * scale,
+    textAlign: 'center',
+    marginTop: 8,
+    paddingHorizontal: 40,
+    lineHeight: 18,
   },
 });
 

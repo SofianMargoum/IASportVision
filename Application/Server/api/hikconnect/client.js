@@ -89,9 +89,22 @@ async function apiRequest(path, options = {}) {
 
   const data = await resp.json().catch(() => ({}));
   if (!resp.ok || (data?.errorCode && data.errorCode !== '0')) {
-    const err = new Error(`OpenAPI request failed: HTTP ${resp.status} / errorCode=${data?.errorCode}`);
-    err.status = resp.status;
-    err.details = data;
+    const err = new Error(
+      `OpenAPI request failed: HTTP ${resp.status} / errorCode=${data?.errorCode}`
+    );
+
+    // When Hik returns business errors with HTTP 200, surface them as a gateway error.
+    err.status = resp.ok ? 502 : resp.status;
+
+    // Attach minimal request context to debug payload issues (never include the Token).
+    err.details = {
+      ...(data && typeof data === 'object' ? data : { raw: data }),
+      request: {
+        path,
+        method: String(options.method || 'POST').toUpperCase(),
+        body: options.body,
+      },
+    };
     throw err;
   }
 

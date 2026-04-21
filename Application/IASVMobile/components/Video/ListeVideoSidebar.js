@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
   View,
   Text,
@@ -17,8 +17,6 @@ import PagerView from 'react-native-pager-view';
 import Icon from 'react-native-vector-icons/FontAwesome';
 import { useClubContext } from '../../tools/ClubContext';
 import { fetchVideosByClub, deleteVideoByClub, renameVideoByClub } from '../../tools/api';
-import DiscoverTab from './DiscoverTab';
-import Boutique from './Boutique'; // ✅ AJOUT
 
 const { width, height } = Dimensions.get('window');
 const scale = 0.85;
@@ -41,6 +39,39 @@ const formatDate = (dateString) => {
     return 'Date non valide';
   } catch {
     return 'Date non valide';
+  }
+};
+
+const normalizeForSearch = (value) => {
+  return String(value || '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase();
+};
+
+const matchesCategory = (video, categoryKey) => {
+  if (categoryKey === 'tout') return true;
+
+  const name = normalizeForSearch(video?.name);
+
+  switch (categoryKey) {
+    case 'amicaux':
+      return name.includes('amical') || name.includes('amicaux');
+    case 'resume':
+      return (
+        name.includes('resume') ||
+        name.includes('resum') ||
+        name.includes('highlight') ||
+        name.includes('highlights')
+      );
+    case 'entrainement':
+      return (
+        name.includes('entrainement') ||
+        name.includes('entrain') ||
+        name.includes('training')
+      );
+    default:
+      return false;
   }
 };
 
@@ -121,15 +152,96 @@ const VideoItem = ({
   );
 };
 
-// ✅ Onglets ajoutés (style identique : réutilise tes styles "emptyState*")
-const ActualiteTab = () => {
+const tabLabels = {
+  tout: 'Tout',
+  officiel: 'Officiel',
+  amicaux: 'Amicaux',
+  resume: 'Résumé',
+  entrainement: 'Entrainement',
+};
+
+const VideoTabPage = ({
+  data,
+  loading,
+  error,
+  isGridView,
+  setIsGridView,
+  onVideoSelect,
+  onVideoDelete,
+  onVideoEdit,
+  onRefresh,
+  refreshing,
+  emptySubtitle,
+}) => {
+  const hasData = data.length > 0;
+
   return (
-    <View style={styles.emptyStateContainer}>
-      <View style={styles.emptyIconWrapper}>
-        <Icon name="newspaper-o" size={32} color="#ffffff" />
-      </View>
-      <Text style={styles.emptyTitle}>Actualité</Text>
-      <Text style={styles.emptySubtitle}>Bientôt disponible.</Text>
+    <View style={styles.videosTabContainer}>
+      {hasData && (
+        <View style={styles.switchContainer}>
+          <TouchableOpacity
+            style={[
+              styles.switchButton,
+              isGridView ? styles.inactiveButton : styles.activeButton,
+            ]}
+            onPress={() => setIsGridView(false)}
+          >
+            <Icon name="list" size={20} color={isGridView ? '#808080' : '#fff'} />
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[
+              styles.switchButton,
+              isGridView ? styles.activeButton : styles.inactiveButton,
+            ]}
+            onPress={() => setIsGridView(true)}
+          >
+            <Icon name="th-large" size={20} color={isGridView ? '#fff' : '#808080'} />
+          </TouchableOpacity>
+        </View>
+      )}
+
+      {loading && <ActivityIndicator size="large" color="#00A0E9" />}
+      {error && <Text style={styles.errorMessage}>{error}</Text>}
+
+      {!loading && !error && (
+        hasData ? (
+          <FlatList
+            key={isGridView ? 'grid' : 'list'}
+            data={data}
+            renderItem={({ item }) => (
+              <VideoItem
+                item={item}
+                handleVideoSelect={onVideoSelect}
+                handleVideoDelete={onVideoDelete}
+                handleVideoEdit={onVideoEdit}
+                isGridView={isGridView}
+              />
+            )}
+            keyExtractor={(item, index) => index.toString()}
+            numColumns={isGridView ? 3 : 1}
+            contentContainerStyle={[
+              styles.listContent,
+              isGridView && styles.gridContent,
+            ]}
+            refreshControl={
+              <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+            }
+          />
+        ) : (
+          <View style={styles.emptyStateContainer}>
+            <View style={styles.emptyIconWrapper}>
+              <Icon name="video-camera" size={32} color="#ffffff" />
+            </View>
+            <Text style={styles.emptyTitle}>Aucune vidéo trouvée</Text>
+            <Text style={styles.emptySubtitle}>{emptySubtitle}</Text>
+
+            <TouchableOpacity style={styles.emptyAction} onPress={onRefresh}>
+              <Icon name="refresh" size={16} color="#ffffff" />
+              <Text style={styles.emptyActionText}>Rafraîchir</Text>
+            </TouchableOpacity>
+          </View>
+        )
+      )}
     </View>
   );
 };
@@ -145,9 +257,9 @@ const ListeVideoSidebar = ({ onVideoSelect, isActive }) => {
   const [renameTarget, setRenameTarget] = useState(null);
   const [renameValue, setRenameValue] = useState('');
 
-  // ✅ 4 pages : Actualité / Boutique / Découvrir / Vidéos
-  const tabs = ['actualite', 'boutique', 'discover', 'videos'];
-  const [activeTab, setActiveTab] = useState('videos');
+  // ✅ 5 pages : Tout / Officiel / Amicaux / Résumé / Entrainement
+  const tabs = ['tout', 'officiel', 'amicaux', 'resume', 'entrainement'];
+  const [activeTab, setActiveTab] = useState('tout');
 
   const pagerRef = useRef(null);
 
@@ -156,7 +268,7 @@ const ListeVideoSidebar = ({ onVideoSelect, isActive }) => {
   const getIndexFromTab = (tab) => Math.max(0, tabs.indexOf(tab));
   const getTabFromIndex = (index) => tabs[Math.max(0, Math.min(index, tabs.length - 1))];
 
-  const handleSearch = async () => {
+  const handleSearch = useCallback(async () => {
     setLoading(true);
     setError(null);
 
@@ -174,19 +286,19 @@ const ListeVideoSidebar = ({ onVideoSelect, isActive }) => {
       setVideos([]);
       setLoading(false);
     }
-  };
+  }, [selectedClub]);
 
-  const onRefresh = async () => {
+  const onRefresh = useCallback(async () => {
     setRefreshing(true);
     await handleSearch();
     setRefreshing(false);
-  };
+  }, [handleSearch]);
 
   useEffect(() => {
     handleSearch();
-  }, [selectedClub]);
+  }, [handleSearch]);
 
-  const confirmAndDeleteVideo = (video) => {
+  const confirmAndDeleteVideo = useCallback((video) => {
     if (!selectedClub) {
       Alert.alert('Suppression impossible', 'Sélectionnez un club avant de supprimer une vidéo.');
       return;
@@ -213,9 +325,9 @@ const ListeVideoSidebar = ({ onVideoSelect, isActive }) => {
         },
       },
     ]);
-  };
+  }, [selectedClub]);
 
-  const openRename = (video) => {
+  const openRename = useCallback((video) => {
     if (!selectedClub) {
       Alert.alert('Renommage impossible', 'Sélectionnez un club avant de renommer une vidéo.');
       return;
@@ -227,9 +339,9 @@ const ListeVideoSidebar = ({ onVideoSelect, isActive }) => {
     setRenameTarget(video);
     setRenameValue(video.name);
     setRenameVisible(true);
-  };
+  }, [selectedClub]);
 
-  const submitRename = async () => {
+  const submitRename = useCallback(async () => {
     const oldName = renameTarget?.name;
     const newName = String(renameValue || '').trim();
 
@@ -258,16 +370,36 @@ const ListeVideoSidebar = ({ onVideoSelect, isActive }) => {
       console.error('Erreur renommage vidéo:', e);
       Alert.alert('Erreur', e?.message || 'Impossible de renommer la vidéo.');
     }
-  };
+  }, [renameTarget, renameValue, selectedClub, handleSearch]);
 
-  // ✅ Quand on clique sur les tabs, on défile vers la page correspondante
-  const goToTab = (tab) => {
+  const goToTab = useCallback((tab) => {
     const index = getIndexFromTab(tab);
     setActiveTab(tab);
     pagerRef.current?.setPage(index);
-  };
+  }, []);
 
-  const hasVideos = videos && videos.length > 0;
+  const videosByTab = React.useMemo(() => {
+    const list = Array.isArray(videos) ? videos : [];
+
+    const amicaux = list.filter((v) => matchesCategory(v, 'amicaux'));
+    const resume = list.filter((v) => matchesCategory(v, 'resume'));
+    const entrainement = list.filter((v) => matchesCategory(v, 'entrainement'));
+
+    const officiel = list.filter((v) => {
+      const isAmical = matchesCategory(v, 'amicaux');
+      const isResume = matchesCategory(v, 'resume');
+      const isEntrainement = matchesCategory(v, 'entrainement');
+      return !isAmical && !isResume && !isEntrainement;
+    });
+
+    return {
+      tout: list,
+      officiel,
+      amicaux,
+      resume,
+      entrainement,
+    };
+  }, [videos]);
 
   return (
     <View style={styles.container}>
@@ -316,46 +448,22 @@ const ListeVideoSidebar = ({ onVideoSelect, isActive }) => {
         </TouchableOpacity>
       </Modal>
 
-      {/* Header inchangé visuellement : juste 4 boutons */}
+      {/* Header : 5 onglets */}
       <View style={styles.tabHeader}>
-        <TouchableOpacity
-          style={[styles.tabButton, activeTab === 'actualite' && styles.tabButtonActive]}
-          onPress={() => goToTab('actualite')}
-        >
-          <Text style={[styles.tabText, activeTab === 'actualite' && styles.tabTextActive]}>
-            Actualité
-          </Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={[styles.tabButton, activeTab === 'boutique' && styles.tabButtonActive]}
-          onPress={() => goToTab('boutique')}
-        >
-          <Text style={[styles.tabText, activeTab === 'boutique' && styles.tabTextActive]}>
-            Boutique
-          </Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={[styles.tabButton, activeTab === 'discover' && styles.tabButtonActive]}
-          onPress={() => goToTab('discover')}
-        >
-          <Text style={[styles.tabText, activeTab === 'discover' && styles.tabTextActive]}>
-            Découvrir
-          </Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={[styles.tabButton, activeTab === 'videos' && styles.tabButtonActive]}
-          onPress={() => goToTab('videos')}
-        >
-          <Text style={[styles.tabText, activeTab === 'videos' && styles.tabTextActive]}>
-            Vidéos
-          </Text>
-        </TouchableOpacity>
+        {tabs.map((tab) => (
+          <TouchableOpacity
+            key={tab}
+            style={[styles.tabButton, activeTab === tab && styles.tabButtonActive]}
+            onPress={() => goToTab(tab)}
+          >
+            <Text style={[styles.tabText, activeTab === tab && styles.tabTextActive]}>
+              {tabLabels[tab]}
+            </Text>
+          </TouchableOpacity>
+        ))}
       </View>
 
-      {/* ✅ Swipe gauche/droite */}
+      {/* Swipe gauche/droite */}
       <PagerView
         ref={pagerRef}
         style={{ flex: 1 }}
@@ -366,91 +474,29 @@ const ListeVideoSidebar = ({ onVideoSelect, isActive }) => {
         }}
         overScrollMode="never"
       >
-        <View key="actualite" style={{ flex: 1 }}>
-          <ActualiteTab />
-        </View>
-
-        <View key="boutique" style={{ flex: 1 }}>
-          <Boutique /> 
-        </View>
-
-        <View key="discover" style={{ flex: 1 }}>
-          <DiscoverTab />
-        </View>
-
-        <View key="videos" style={{ flex: 1 }}>
-          <View style={styles.videosTabContainer}>
-            {hasVideos && (
-              <View style={styles.switchContainer}>
-                <TouchableOpacity
-                  style={[
-                    styles.switchButton,
-                    isGridView ? styles.inactiveButton : styles.activeButton,
-                  ]}
-                  onPress={() => setIsGridView(false)}
-                >
-                  <Icon name="list" size={20} color={isGridView ? '#808080' : '#fff'} />
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={[
-                    styles.switchButton,
-                    isGridView ? styles.activeButton : styles.inactiveButton,
-                  ]}
-                  onPress={() => setIsGridView(true)}
-                >
-                  <Icon name="th-large" size={20} color={isGridView ? '#fff' : '#808080'} />
-                </TouchableOpacity>
-              </View>
-            )}
-
-            {loading && <ActivityIndicator size="large" color="#00A0E9" />}
-            {error && <Text style={styles.errorMessage}>{error}</Text>}
-
-            {!loading && !error && (
-              hasVideos ? (
-                <FlatList
-                  key={isGridView ? 'grid' : 'list'}
-                  data={videos}
-                  renderItem={({ item }) => (
-                    <VideoItem
-                      item={item}
-                      handleVideoSelect={onVideoSelect}
-                      handleVideoDelete={confirmAndDeleteVideo}
-                      handleVideoEdit={openRename}
-                      isGridView={isGridView}
-                    />
-                  )}
-                  keyExtractor={(item, index) => index.toString()}
-                  numColumns={isGridView ? 3 : 1}
-                  contentContainerStyle={[
-                    styles.listContent,
-                    isGridView && styles.gridContent,
-                  ]}
-                  refreshControl={
-                    <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-                  }
-                />
-              ) : (
-                <View style={styles.emptyStateContainer}>
-                  <View style={styles.emptyIconWrapper}>
-                    <Icon name="video-camera" size={32} color="#ffffff" />
-                  </View>
-                  <Text style={styles.emptyTitle}>Aucune vidéo trouvée</Text>
-                  <Text style={styles.emptySubtitle}>
-                    {selectedClub
+        {tabs.map((tab) => (
+          <View key={tab} style={{ flex: 1 }}>
+            <VideoTabPage
+              data={videosByTab[tab] || []}
+              loading={loading}
+              error={error}
+              isGridView={isGridView}
+              setIsGridView={setIsGridView}
+              onVideoSelect={onVideoSelect}
+              onVideoDelete={confirmAndDeleteVideo}
+              onVideoEdit={openRename}
+              onRefresh={onRefresh}
+              refreshing={refreshing}
+              emptySubtitle={
+                tab === 'tout'
+                  ? (selectedClub
                       ? `Aucune vidéo n'est disponible pour ${selectedClub.name}.`
-                      : "Sélectionnez un club pour afficher les vidéos."}
-                  </Text>
-
-                  <TouchableOpacity style={styles.emptyAction} onPress={onRefresh}>
-                    <Icon name="refresh" size={16} color="#ffffff" />
-                    <Text style={styles.emptyActionText}>Rafraîchir</Text>
-                  </TouchableOpacity>
-                </View>
-              )
-            )}
+                      : "Sélectionnez un club pour afficher les vidéos.")
+                  : 'Aucune vidéo dans cette catégorie.'
+              }
+            />
           </View>
-        </View>
+        ))}
       </PagerView>
     </View>
   );
@@ -470,12 +516,13 @@ const styles = StyleSheet.create({
   tabHeader: {
     flexDirection: 'row',
     justifyContent: 'center',
-    gap: 12,
+    flexWrap: 'wrap',
+    gap: 8,
     backgroundColor: '#010E1E',
   },
   tabButton: {
     paddingVertical: 8,
-    paddingHorizontal: 16,
+    paddingHorizontal: 10,
     borderRadius: 999,
   },
   tabButtonActive: {
@@ -484,7 +531,7 @@ const styles = StyleSheet.create({
   tabText: {
     color: '#808080',
     fontWeight: '700',
-    fontSize: 14,
+    fontSize: 12,
   },
   tabTextActive: {
     color: '#ffffff',

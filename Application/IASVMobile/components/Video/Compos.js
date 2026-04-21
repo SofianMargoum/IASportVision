@@ -2,6 +2,7 @@ import React from 'react';
 import {
   View,
   Text,
+  Image,
   StyleSheet,
   ImageBackground,
   Dimensions,
@@ -9,26 +10,29 @@ import {
 } from 'react-native';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
-const FIELD_HEIGHT = 600;
+const FIELD_HEIGHT = SCREEN_WIDTH * 1.5;
 
-const Compos = ({ players }) => {
-  const positions = [
-    { top: 460, left: 180 }, // 1
+// Positions en pourcentage du terrain (top%, left%)
+const POSITIONS = [
+  { top: 77, left: 50 },  // 1 - Gardien
 
-    { top: 360, left: 280 }, // 2
-    { top: 360, left: 80 },  // 3
-    { top: 390, left: 220 }, // 4
-    { top: 390, left: 140 }, // 5
+  { top: 60, left: 78 },  // 2 - Latéral droit
+  { top: 60, left: 22 },  // 3 - Latéral gauche
+  { top: 65, left: 61 },  // 4 - Défenseur central droit
+  { top: 65, left: 39 },  // 5 - Défenseur central gauche
 
-    { top: 300, left: 180 }, // 6
-    { top: 180, left: 90 },  // 7
-    { top: 250, left: 250 }, // 8
+  { top: 50, left: 50 },  // 6 - Milieu défensif
+  { top: 30, left: 22 },  // 7 - Ailier gauche
+  { top: 42, left: 70 },  // 8 - Milieu droit
 
-    { top: 140, left: 180 }, // 9
-    { top: 250, left: 110 }, // 10
-    { top: 180, left: 270 }, // 11
-  ];
+  { top: 23, left: 50 },  // 9 - Attaquant
+  { top: 42, left: 30 },  // 10 - Milieu gauche
+  { top: 30, left: 78 },  // 11 - Ailier droit
+];
 
+const PLAYER_SIZE = 44;
+
+const Compos = React.memo(({ players }) => {
   return (
     <ScrollView
       style={styles.scroll}
@@ -41,32 +45,39 @@ const Compos = ({ players }) => {
           style={styles.field}
           imageStyle={styles.image}
         >
-          {players.slice(0, 11).map((player, index) => (
-            <View
-              key={player.id || `player-${index}`}
-              style={[
-                styles.playerItem,
-                {
-                  top: positions[index]?.top ?? 0,
-                  left: positions[index]?.left ?? 0,
-                },
-              ]}
-            >
-              <Text style={styles.playerText}>{player.name}</Text>
-            </View>
-          ))}
+          {players.slice(0, 11).map((player, index) => {
+            const pos = POSITIONS[index];
+            return (
+              <View
+                key={player.id || `player-${index}`}
+                style={[
+                  styles.playerContainer,
+                  {
+                    top: `${pos.top}%`,
+                    left: `${pos.left}%`,
+                  },
+                ]}
+              >
+                <Image source={require('../../assets/player.png')} style={styles.playerImage} />
+                <View style={styles.playerLabelRow}>
+                  <Text style={styles.playerNumber}>{player.number}</Text>
+                  <Text style={styles.playerName} numberOfLines={1}>{player.name}</Text>
+                </View>
+              </View>
+            );
+          })}
         </ImageBackground>
       </View>
     </ScrollView>
   );
-};
+});
 
 const styles = StyleSheet.create({
   scroll: {
     flex: 1,
   },
   scrollContent: {
-    paddingBottom: 40,
+    paddingBottom: 0,
   },
   wrapper: {
     alignItems: 'center',
@@ -75,26 +86,43 @@ const styles = StyleSheet.create({
     width: SCREEN_WIDTH,
     height: FIELD_HEIGHT,
     position: 'relative',
-    backgroundColor: '#0A7F3F',
   },
   image: {
-    resizeMode: 'contain',
-    opacity: 0.85,
+    resizeMode: 'cover',
+    borderRadius: 8,
   },
-  playerItem: {
+  playerContainer: {
     position: 'absolute',
-    width: 50,
-    height: 50,
-    borderRadius: 25,
-    justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#010E1E',
+    marginLeft: -(PLAYER_SIZE / 2),
+    marginTop: -(PLAYER_SIZE / 2),
   },
-  playerText: {
-    fontSize: 10,
+  playerImage: {
+    width: PLAYER_SIZE,
+    height: PLAYER_SIZE,
+    resizeMode: 'contain',
+  },
+  playerLabelRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 2,
+    gap: 8,
+  },
+  playerNumber: {
+    fontSize: 9,
+    color: '#FFFFFF',
+    fontWeight: 'bold',
+  },
+  playerName: {
+    fontSize: 9,
     color: '#FFFFFF',
     fontWeight: 'bold',
     textAlign: 'center',
+    maxWidth: 70,
+    textShadowColor: 'rgba(0, 0, 0, 0.8)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 3,
   },
 });
 

@@ -1,164 +1,283 @@
 import { StyleSheet, Dimensions } from 'react-native';
 
 const { width } = Dimensions.get('window');
-const scale = 0.85; // Ajustez cette valeur selon vos besoins
+const scale = 0.85;
 
 export const SUCCESS_GREEN = '#7BC47F';
+export const ACCENT_BLUE = '#1a73e8';
 
 export default StyleSheet.create({
     container: {
-        flexGrow: 1, // Allows ScrollView to grow if content is small
+        flexGrow: 1,
         padding: 10,
         backgroundColor: '#010914',
         alignItems: 'center',
-      },
-      notConnectedContainer: {
+    },
+    notConnectedContainer: {
         flex: 1,
+        width: '100%',
+        height: '100%',
+        backgroundColor: 'transparent',
         justifyContent: 'center',
         alignItems: 'center',
-      },
-      notConnectedText: {
+    },
+    notConnectedText: {
         fontSize: 18,
         color: 'red',
-      },
-      content: {
+    },
+    content: {
         flex: 1,
         width: '100%',
         backgroundColor: '#010914',
         alignItems: 'center',
-      },
-      title: {
-        fontSize: 24 * scale, // Taille ajustée ici
+    },
+    title: {
+        fontSize: 24 * scale,
         color: '#ffffff',
         marginBottom: 20,
         textAlign: 'center',
         fontWeight: 'bold',
-      },
-      clearButton: {
+    },
+    clearButton: {
         marginLeft: 10,
         padding: 5,
         justifyContent: 'center',
         alignItems: 'center',
-      },
-      clearButtonText: {
+    },
+    clearButtonText: {
         fontSize: 14,
         color: '#ccc',
-      },
-      topSection: {
+    },
+
+    // --- Device status bar ---
+    deviceStatusRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginTop: 6,
+        marginBottom: 12,
+        flexWrap: 'wrap',
+    },
+    deviceRefreshButton: {
+        marginRight: 8,
+        flexDirection: 'row',
+        alignItems: 'center',
+        padding: 4,
+        borderRadius: 6,
+    },
+    deviceRefreshDisabled: {
+        opacity: 0.5,
+    },
+    deviceNameText: {
+        fontSize: 12,
+        fontWeight: 'bold',
+        marginVertical: 10,
+        marginRight: 8,
+    },
+    deviceNameConnected: {
+        color: SUCCESS_GREEN,
+    },
+    deviceNameDisconnected: {
+        color: '#ff6b6b',
+    },
+    deviceNameChecking: {
+        color: '#f1c40f',
+    },
+    deviceNameDefault: {
+        color: 'white',
+    },
+    deviceStatusIcon: {
+        marginLeft: 4,
+    },
+
+    // --- Score / VS section ---
+    scoreContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        width: '100%',
+        marginBottom: 16,
+        backgroundColor: '#010E1E',
+        borderRadius: 15,
+        paddingVertical: 14,
+        paddingHorizontal: 8,
+    },
+    scoreTeamBlock: {
+        flex: 1,
+        alignItems: 'center',
+    },
+    scoreTeamLogo: {
+        width: 44,
+        height: 44,
+        borderRadius: 8,
+        marginBottom: 6,
+    },
+    scoreTeamName: {
+        fontSize: 11,
+        color: '#999',
+        textAlign: 'center',
+        maxWidth: 90,
+    },
+    scoreCenterBlock: {
+        alignItems: 'center',
+        paddingHorizontal: 10,
+        minWidth: 100,
+    },
+    scoreRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+    },
+    scoreText: {
+        fontSize: 34,
+        fontWeight: 'bold',
+        color: '#ffffff',
+        fontVariant: ['tabular-nums'],
+    },
+    scoreDash: {
+        fontSize: 28,
+        fontWeight: 'bold',
+        color: '#444',
+        marginHorizontal: 8,
+    },
+    scoreCounterButton: {
+        padding: 6,
+    },
+
+    topSection: {
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
         marginBottom: 20,
         paddingVertical: 10,
-        width: '100%', // Make width responsive
+        width: '100%',
         backgroundColor: '#010E1E',
         borderRadius: 15,
-      },
-      disabledButton: {
-        backgroundColor: '#ccc', // Couleur désactivée
-        opacity: 0.3, // Rendre visuellement désactivé
-      },
-      selectedClubInfo: {
+    },
+    disabledButton: {
+        backgroundColor: '#ccc',
+        opacity: 0.3,
+    },
+    selectedClubInfo: {
         flexDirection: 'row',
         alignItems: 'center',
         borderRadius: 8,
         padding: 10,
-      },
-      selectedClubLogo: {
-        width: 30 * scale, // Taille ajustée ici
-        height: 30 * scale, // Taille ajustée ici
+    },
+    selectedClubLogo: {
+        width: 30 * scale,
+        height: 30 * scale,
         marginRight: 10,
         borderRadius: 5,
-      },
-      selectedClubName: {
+    },
+    selectedClubName: {
         fontSize: 15,
         color: '#ffffff',
         fontWeight: '500',
-      },
-      placeholderText: {
-        color: '#ccc',
-        fontSize: 15 * scale, // Taille ajustée ici
-      },
-      counterContainer: {
+    },
+    placeholderText: {
+        color: '#666',
+        fontSize: 13,
+        paddingLeft: 12,
+        fontStyle: 'italic',
+    },
+    counterContainer: {
         flexDirection: 'column',
         alignItems: 'center',
         borderRadius: 8,
         padding: 10,
-      },
-      counterButton: {
+    },
+    counterButton: {
         padding: 5,
-      },
-      counterLabel: {
-        fontSize: 20 * scale, // Taille ajustée ici
+    },
+    counterLabel: {
+        fontSize: 20 * scale,
         fontWeight: 'bold',
         color: '#ffffff',
         marginHorizontal: 10,
-      },
-      inputContainer: {
+    },
+    inputContainer: {
         marginTop: 20,
-      },
-      input: {
+    },
+    input: {
         color: '#ccc',
         padding: 10,
-        fontSize: 16 * scale, // Taille ajustée ici
+        fontSize: 16 * scale,
         borderRadius: 5,
-      },
-      searchResults: {
+    },
+    searchResults: {
         maxHeight: 150,
         borderRadius: 8,
         padding: 10,
-      },
-      result: {
+    },
+    result: {
         flexDirection: 'row',
         alignItems: 'center',
         padding: 5,
-      },
-      resultLogo: {
-        width: 30 * scale, // Taille ajustée ici
-        height: 30 * scale, // Taille ajustée ici
+    },
+    resultLogo: {
+        width: 30 * scale,
+        height: 30 * scale,
         marginRight: 10,
         borderRadius: 5,
-      },
-      resultName: {
+    },
+    resultName: {
         color: '#ffffff',
-        fontSize: 16 * scale, // Taille ajustée ici
-      },
-      timer: {
-        marginTop: 20,
-        alignItems: 'center',
-      },
-      timerText: {
-        fontSize: 18 * scale, // Taille ajustée ici
-        color: '#ffffff',
-      },
-      message: {
-        marginTop: 20,
-        alignItems: 'center',
-      },
-      messageText: {
-        color: '#ff4d4d',
-      },
-      messageTextSuccess: {
-        color: SUCCESS_GREEN,
-      },
+        fontSize: 16 * scale,
+    },
 
-      progressWrapper: {
+    // --- Timer ---
+    timer: {
+        marginTop: 20,
+        alignItems: 'center',
+        backgroundColor: '#0d1b2a',
+        paddingVertical: 10,
+        paddingHorizontal: 28,
+        borderRadius: 12,
+        borderWidth: 1,
+        borderColor: '#1a2d45',
+    },
+    timerText: {
+        fontSize: 30,
+        color: '#ffffff',
+        fontWeight: '600',
+        fontVariant: ['tabular-nums'],
+        letterSpacing: 2,
+    },
+    timerRecordingDot: {
+        width: 10,
+        height: 10,
+        borderRadius: 5,
+        backgroundColor: '#ff4444',
+        marginTop: 6,
+    },
+
+    message: {
+        marginTop: 20,
+        alignItems: 'center',
+    },
+    messageText: {
+        color: '#ff4d4d',
+    },
+    messageTextSuccess: {
+        color: SUCCESS_GREEN,
+    },
+
+    progressWrapper: {
         marginTop: 16,
         width: '100%',
         alignSelf: 'stretch',
         paddingHorizontal: 0,
-      },
-      progressHeader: {
+    },
+    progressHeader: {
         width: '100%',
         flexDirection: 'row',
         justifyContent: 'flex-end',
         marginBottom: 6,
-      },
-      progressPercentText: {
+    },
+    progressPercentText: {
         fontSize: 11,
         color: '#9aa0a6',
-      },
-      progressBarBg: {
+    },
+    progressBarBg: {
         width: '100%',
         alignSelf: 'stretch',
         height: 8,
@@ -167,26 +286,27 @@ export default StyleSheet.create({
         overflow: 'hidden',
         borderWidth: 1,
         borderColor: '#0b1a33',
-      },
-      progressBarFill: {
+    },
+    progressBarFill: {
         height: '100%',
         backgroundColor: '#ffffff',
-      },
-      progressMessages: {
+    },
+    progressMessages: {
         marginTop: 8,
-      },
-      progressMessageText: {
+    },
+    progressMessageText: {
         fontSize: 11,
         color: '#9aa0a6',
-      },
-      buttonContainer: {
+    },
+    buttonContainer: {
         width: '100%',
         alignItems: 'center',
         justifyContent: 'flex-end',
-        flex: 1, // Permet de prendre tout l'espace vertical disponible
-      },
-    
-      outerCircle: {
+        flex: 1,
+        marginTop: 20,
+    },
+
+    outerCircle: {
         width: 100,
         height: 100,
         borderRadius: 50,
@@ -195,32 +315,30 @@ export default StyleSheet.create({
         borderWidth: 5,
         borderColor: 'black',
         backgroundColor: 'white',
-      },
-      defaultOuter: {
+    },
+    defaultOuter: {
         borderColor: 'black',
-      },
-      recordingOuter: {
+    },
+    recordingOuter: {
         borderColor: 'red',
-      },
-      innerCircle: {
+    },
+    innerCircle: {
         width: 40,
         height: 40,
         borderRadius: 25,
-      },
-      defaultInner: {
+    },
+    defaultInner: {
         backgroundColor: 'red',
-      },
-      recordingInner: {
+    },
+    recordingInner: {
         backgroundColor: 'black',
-      },
-      notConnectedContainer: {
-        flex: 1,
-        width: '100%',          // ✅ s’étend sur toute la largeur
-        height: '100%',         // ✅ prend toute la hauteur de l’écran
-        backgroundColor: 'transparent',// facultatif, mais propre
-        justifyContent: 'center',
-        alignItems: 'center',
-      },
+    },
 
-    });
-    
+    // --- Hint camera offline ---
+    hintText: {
+        color: '#bbb',
+        marginTop: 10,
+        textAlign: 'center',
+        fontSize: 12,
+    },
+});

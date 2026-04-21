@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { View, StyleSheet, BackHandler } from 'react-native';
 import ListeVideo from './Video/ListeVideo';
 import ListeVideoSidebar from './Video/ListeVideoSidebar';
@@ -12,14 +12,14 @@ const Video = () => {
   const isActive = activeKey === 'video';
 
 
-  const handleVideoSelect = (video) => {
+  const handleVideoSelect = useCallback((video) => {
     setSelectedVideo(video);
-  };
+  }, []);
 
-  const handleBackClick = () => {
+  const handleBackClick = useCallback(() => {
     setSelectedVideo(null);
     return true;
-  };
+  }, []);
 
   useEffect(() => {
     if (selectedVideo) {

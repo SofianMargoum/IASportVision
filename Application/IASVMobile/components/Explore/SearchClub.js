@@ -16,8 +16,14 @@ const SearchClub = ({ initialSearchTerm, locationCity, locationRequestId, onLoca
   const [detailedCompetitions, setDetailedCompetitions] = useState([]);
   const [competitionNames, setCompetitionNames] = useState([]);
   const [selectedCompetition, setSelectedCompetition] = useState('');
+  const [isSearching, setIsSearching] = useState(false);
 
   const previousSearchTerm = useRef('');
+  const searchTermRef = useRef(searchTerm);
+  const recentClubsRef = useRef(recentClubs);
+
+  useEffect(() => { searchTermRef.current = searchTerm; }, [searchTerm]);
+  useEffect(() => { recentClubsRef.current = recentClubs; }, [recentClubs]);
 
   const sortByName = useCallback((list) => {
     if (!Array.isArray(list)) return [];
@@ -33,7 +39,7 @@ const SearchClub = ({ initialSearchTerm, locationCity, locationRequestId, onLoca
       const savedSelectedCompetition = await AsyncStorage.getItem('selectedCompetition');
 
       if (savedRecentClubs) {
-        setRecentClubs(sortByName(JSON.parse(savedRecentClubs)));
+        setRecentClubs(JSON.parse(savedRecentClubs));
       }
 
       if (savedSelectedClub) {
@@ -142,30 +148,35 @@ const SearchClub = ({ initialSearchTerm, locationCity, locationRequestId, onLoca
     [detailedCompetitions, setCompetition, setSelectedCompetition, setPhase, setPoule, setCp_no]
   );
 
-  const handleSearch = useCallback(
-    debounce(async () => {
-      if (searchTerm.trim().length < 3) {
-        setClubs(recentClubs);
+  const handleSearch = useRef(
+    debounce(async (term, sortFn) => {
+      if (term.trim().length < 3) {
+        setClubs([]);
+        setIsSearching(false);
         return;
       }
 
-      if (searchTerm === previousSearchTerm.current) return;
+      if (term === previousSearchTerm.current) {
+        setIsSearching(false);
+        return;
+      }
 
-      previousSearchTerm.current = searchTerm;
-      const clubData = await searchClubs(searchTerm);
+      setIsSearching(true);
+      previousSearchTerm.current = term;
+      const clubData = await searchClubs(term);
 
-      if (clubData && searchTerm === previousSearchTerm.current) {
-        const sortedClubs = sortByName(clubData);
+      if (clubData && term === searchTermRef.current) {
+        const sortedClubs = sortFn(clubData);
         setClubs(sortedClubs.slice(0, 30));
       }
-    }, 300),
-    [searchTerm, recentClubs]
-  );
+      setIsSearching(false);
+    }, 300)
+  ).current;
 
   useEffect(() => {
-    handleSearch();
+    handleSearch(searchTerm, sortByName);
     return () => handleSearch.cancel();
-  }, [searchTerm, handleSearch]);
+  }, [searchTerm]);
 
   const handleClubClick = useCallback(
     async (club) => {
@@ -173,12 +184,11 @@ const SearchClub = ({ initialSearchTerm, locationCity, locationRequestId, onLoca
       setSelectedClub(club);
       setClNo(club.cl_no);
 
-      // Met à jour la liste des clubs récents
+      // Met à jour la liste des clubs récents (ordre chronologique, dernier sélectionné en premier)
       setRecentClubs((prevClubs) => {
-        const updatedClubs = [club, ...prevClubs.filter((c) => c.cl_no !== club.cl_no)];
-        const sortedUpdated = sortByName(updatedClubs).slice(0, 3);
-        AsyncStorage.setItem('recentClubs', JSON.stringify(sortedUpdated));
-        return sortedUpdated;
+        const updatedClubs = [club, ...prevClubs.filter((c) => c.cl_no !== club.cl_no)].slice(0, 3);
+        AsyncStorage.setItem('recentClubs', JSON.stringify(updatedClubs));
+        return updatedClubs;
       });
 
       // Récupère les compétitions du club
@@ -210,35 +220,70 @@ const SearchClub = ({ initialSearchTerm, locationCity, locationRequestId, onLoca
   );
 
   const memoizedClubList = useMemo(() => {
-    if (searchTerm.trim().length === 0) {
+    if (searchTerm.trim().length < 3) {
+      // Pas de recherche active : afficher les récents (ordre chronologique)
       const baseList = selectedClub && !recentClubs.some(club => club.cl_no === selectedClub.cl_no)
         ? [selectedClub, ...recentClubs]
         : recentClubs;
-      return sortByName(baseList);
+      return baseList;
     }
     return sortByName(clubs);
   }, [clubs, recentClubs, searchTerm, selectedClub, sortByName]);
 
-  const renderClubItem = ({ item }) => (
-    <TouchableOpacity onPress={() => handleClubClick(item)} style={styles.clubItem}>
-      {item.logo ? <Image source={{ uri: item.logo }} style={styles.logo} /> : null}
-      <Text style={[styles.clubName, item.cl_no === selectedClub?.cl_no && styles.selectedClub]}>
-        {item.name}
-      </Text>
-    </TouchableOpacity>
-  );
+  const isActiveSearch = searchTerm.trim().length >= 3;
 
-  const renderCompetitionItem = ({ item }) => (
-    <TouchableOpacity
-      onPress={() => selectedClub && handleCompetitionClick(item)}
-      disabled={!selectedClub}
-      style={[styles.competitionItem, !selectedClub && { opacity: 0.4 }]}
-    >
-      <Text style={item === selectedCompetition ? styles.selectedCompetition : styles.competitionName}>
-        {item}
-      </Text>
-    </TouchableOpacity>
-  );
+  const renderClubItem = ({ item }) => {
+    const isSelected = item.cl_no === selectedClub?.cl_no;
+    return (
+      <TouchableOpacity
+        onPress={() => handleClubClick(item)}
+        style={[styles.clubItem, isSelected && styles.clubItemSelected]}
+        activeOpacity={0.7}
+      >
+        <View style={styles.clubLogoContainer}>
+          {item.logo ? (
+            <Image source={{ uri: item.logo }} style={styles.logo} />
+          ) : (
+            <View style={[styles.logo, styles.logoPlaceholder]}>
+              <Icon name="shield-outline" size={22} color="#555" />
+            </View>
+          )}
+        </View>
+        <Text style={[styles.clubName, isSelected && styles.selectedClub]} numberOfLines={1}>
+          {item.name}
+        </Text>
+        {isSelected && (
+          <Icon name="checkmark-circle" size={18} color="#fff" style={styles.checkIcon} />
+        )}
+      </TouchableOpacity>
+    );
+  };
+
+  const renderCompetitionItem = ({ item }) => {
+    const isSelected = item === selectedCompetition;
+    return (
+      <TouchableOpacity
+        onPress={() => selectedClub && handleCompetitionClick(item)}
+        disabled={!selectedClub}
+        style={[
+          styles.competitionItem,
+          isSelected && styles.competitionItemSelected,
+          !selectedClub && { opacity: 0.4 },
+        ]}
+        activeOpacity={0.7}
+      >
+        <View style={[styles.radioOuter, isSelected && styles.radioOuterSelected]}>
+          {isSelected && <View style={styles.radioInner} />}
+        </View>
+        <Text
+          style={[styles.competitionName, isSelected && styles.selectedCompetition]}
+          numberOfLines={1}
+        >
+          {item}
+        </Text>
+      </TouchableOpacity>
+    );
+  };
 
   return (
     <FlatList
@@ -261,14 +306,24 @@ const SearchClub = ({ initialSearchTerm, locationCity, locationRequestId, onLoca
           <Text style={styles.title}>{item.title}</Text>
           {item.title === 'Sélectionner un club' && (
             <View style={styles.searchContainer}>
-              <Icon name="search" size={20} color="#888" style={styles.searchIcon} />
+              <Icon name="search" size={18} color="#555" style={styles.searchIcon} />
               <TextInput
                 style={styles.input}
                 value={searchTerm}
                 onChangeText={setSearchTerm}
-                placeholder="Rechercher un club"
-                placeholderTextColor="#888"
+                placeholder="Rechercher un club ou une ville..."
+                placeholderTextColor="#555"
               />
+              {searchTerm.length > 0 && (
+                <TouchableOpacity
+                  onPress={() => setSearchTerm('')}
+                  style={styles.clearButton}
+                  hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                >
+                  <Icon name="close-circle" size={18} color="#555" />
+                </TouchableOpacity>
+              )}
+              <View style={styles.searchDivider} />
               <TouchableOpacity
                 onPress={onLocatePress}
                 style={styles.locationButton}
@@ -276,32 +331,58 @@ const SearchClub = ({ initialSearchTerm, locationCity, locationRequestId, onLoca
                 accessibilityLabel="Utiliser la localisation"
               >
                 {isLocating ? (
-                  <ActivityIndicator size="small" color="#00A0E9" />
+                  <ActivityIndicator size="small" color="#888" />
                 ) : (
-                  <Icon name="location-outline" size={20} color="#00A0E9" />
+                  <Icon name="location-outline" size={20} color="#888" />
                 )}
               </TouchableOpacity>
             </View>
           )}
-          {item.showSuggestions && memoizedClubList.length > 0 && (
-            <Text style={styles.suggestions}>Suggestions</Text>
+          {item.title === 'Sélectionner un club' && (
+            <>
+              {isSearching ? (
+                <View style={styles.loadingContainer}>
+                  <ActivityIndicator size="small" color="#888" />
+                  <Text style={styles.loadingText}>Recherche en cours...</Text>
+                </View>
+              ) : (
+                <>
+                  {memoizedClubList.length > 0 && (
+                    <Text style={styles.suggestions}>
+                      {isActiveSearch ? `${memoizedClubList.length} résultat${memoizedClubList.length > 1 ? 's' : ''}` : 'Récents'}
+                    </Text>
+                  )}
+                  {memoizedClubList.length === 0 && isActiveSearch && (
+                    <View style={styles.emptyState}>
+                      <Icon name="search-outline" size={32} color="#333" />
+                      <Text style={styles.emptyStateText}>Aucun club trouvé</Text>
+                      <Text style={styles.emptyStateSubtext}>Essayez avec un autre nom ou une ville</Text>
+                    </View>
+                  )}
+                  <FlatList
+                    data={item.data}
+                    keyExtractor={(club) => club.cl_no.toString()}
+                    renderItem={renderClubItem}
+                    scrollEnabled={false}
+                  />
+                </>
+              )}
+            </>
           )}
-          {item.title === 'Sélectionner un club' ? (
-            <FlatList
-              data={item.data}
-              keyExtractor={(club) => club.cl_no.toString()}
-              renderItem={renderClubItem}
-            />
-          ) : (
+          {item.title === 'Sélectionner une équipe' && (
             <View style={styles.competitionList}>
               {competitionNames.length > 0 ? (
                 <FlatList
                   data={competitionNames}
                   keyExtractor={(name, index) => index.toString()}
                   renderItem={renderCompetitionItem}
+                  scrollEnabled={false}
                 />
               ) : (
-                <Text style={styles.noCompetitions}>Aucune compétition disponible.</Text>
+                <View style={styles.emptyState}>
+                  <Icon name="trophy-outline" size={32} color="#333" />
+                  <Text style={styles.noCompetitions}>Aucune compétition disponible</Text>
+                </View>
               )}
             </View>
           )}
@@ -314,100 +395,192 @@ const SearchClub = ({ initialSearchTerm, locationCity, locationRequestId, onLoca
 const styles = StyleSheet.create({
   container: {
     flexGrow: 1,
-    padding: 10 * scale,
+    padding: 16 * scale,
   },
   section: {
     marginBottom: 20 * scale,
     width: '100%',
   },
   hrContainer: {
-    marginVertical: 20,
+    marginVertical: 16,
     alignItems: 'center',
   },
   hr: {
-    height: 2,
+    height: 1,
     width: '100%',
-    marginVertical: 1,
   },
   title: {
     textAlign: 'center',
-    fontSize: 20 * scale,
-    fontWeight: 'bold',
+    fontSize: 17 * scale,
+    fontWeight: '600',
     color: '#fff',
-    paddingVertical: 15 * scale,
-    marginBottom: 20,
+    paddingVertical: 12 * scale,
+    marginBottom: 16,
   },
   searchContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#010E1E',
-    paddingHorizontal: 10 * scale,
-    borderRadius: 4,
-    marginBottom: 20 * scale,
+    paddingHorizontal: 12 * scale,
+    borderRadius: 12,
+    marginBottom: 16 * scale,
+    borderWidth: 1,
+    borderColor: '#1A2D45',
+    height: 48 * scale,
   },
   input: {
     flex: 1,
-    padding: 10 * scale,
-    fontSize: 16 * scale,
+    paddingVertical: 10 * scale,
+    paddingHorizontal: 8 * scale,
+    fontSize: 15 * scale,
     color: '#ffffff',
   },
   searchIcon: {
-    marginLeft: 10 * scale,
-    marginRight: 6 * scale,
+    marginRight: 4 * scale,
+  },
+  clearButton: {
+    padding: 4,
+    marginRight: 4,
+  },
+  searchDivider: {
+    width: 1,
+    height: 24,
+    backgroundColor: '#1A2D45',
+    marginHorizontal: 8,
   },
   locationButton: {
     paddingVertical: 8 * scale,
-    paddingHorizontal: 8 * scale,
-    marginLeft: 6 * scale,
+    paddingHorizontal: 6 * scale,
   },
   suggestions: {
-    fontStyle: 'italic',
     fontSize: 12 * scale,
-    marginBottom: 10,
-    color: '#aaa',
-    width: '60%',
+    marginBottom: 8,
+    color: '#607D8B',
+    textTransform: 'uppercase',
+    letterSpacing: 1,
+    fontWeight: '600',
+    paddingLeft: 4,
+  },
+  loadingContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 24,
+  },
+  loadingText: {
+    color: '#607D8B',
+    marginLeft: 10,
+    fontSize: 14 * scale,
+  },
+  emptyState: {
+    alignItems: 'center',
+    paddingVertical: 32,
+  },
+  emptyStateText: {
+    color: '#607D8B',
+    fontSize: 15 * scale,
+    marginTop: 10,
+    fontWeight: '500',
+  },
+  emptyStateSubtext: {
+    color: '#455A64',
+    fontSize: 13 * scale,
+    marginTop: 4,
   },
   clubItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 10 * scale,
+    padding: 12 * scale,
+    marginBottom: 6 * scale,
+    backgroundColor: '#010E1E',
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: '#1A2D45',
+  },
+  clubItemSelected: {
+    borderColor: '#334155',
+    backgroundColor: '#111D2E',
+  },
+  clubLogoContainer: {
+    marginRight: 12 * scale,
   },
   logo: {
-    width: 50 * scale,
-    height: 50 * scale,
-    marginRight: 15 * scale,
-    borderRadius: 50,
-    borderColor: '#ccc',
+    width: 42 * scale,
+    height: 42 * scale,
+    borderRadius: 21 * scale,
+    borderColor: '#1A2D45',
     borderWidth: 1,
   },
+  logoPlaceholder: {
+    backgroundColor: '#0D1B2A',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   clubName: {
-    fontSize: 18 * scale,
+    flex: 1,
+    fontSize: 15 * scale,
     fontWeight: '500',
-    color: '#ffffff',
+    color: '#C5D0DC',
   },
   selectedClub: {
-    fontWeight: 'bold',
-    color: '#00A0E9',
+    fontWeight: '700',
+    color: '#fff',
+  },
+  checkIcon: {
+    marginLeft: 8,
   },
   competitionList: {
     width: '100%',
   },
   competitionItem: {
-    padding: 10 * scale,
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 14 * scale,
+    marginBottom: 6 * scale,
+    backgroundColor: '#010E1E',
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: '#1A2D45',
+  },
+  competitionItemSelected: {
+    borderColor: '#334155',
+    backgroundColor: '#111D2E',
+  },
+  radioOuter: {
+    width: 20 * scale,
+    height: 20 * scale,
+    borderRadius: 10 * scale,
+    borderWidth: 2,
+    borderColor: '#455A64',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 12 * scale,
+  },
+  radioOuterSelected: {
+    borderColor: '#fff',
+  },
+  radioInner: {
+    width: 10 * scale,
+    height: 10 * scale,
+    borderRadius: 5 * scale,
+    backgroundColor: '#fff',
   },
   competitionName: {
-    fontSize: 16 * scale,
-    color: '#ffffff',
+    flex: 1,
+    fontSize: 15 * scale,
+    color: '#C5D0DC',
   },
   selectedCompetition: {
-    fontWeight: 'bold',
-    fontSize: 16 * scale,
-    color: '#00A0E9',
+    flex: 1,
+    fontWeight: '700',
+    fontSize: 15 * scale,
+    color: '#fff',
   },
   noCompetitions: {
-    color: '#888',
+    color: '#607D8B',
     textAlign: 'center',
-    marginVertical: 10,
+    marginTop: 10,
+    fontSize: 14 * scale,
   },
 });
 

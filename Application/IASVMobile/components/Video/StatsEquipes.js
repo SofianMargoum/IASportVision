@@ -1,7 +1,53 @@
 import React from 'react';
 import { View, Text, StyleSheet, ScrollView } from 'react-native';
 
-const StatsEquipes = () => {
+const STATS_CONFIG = [
+  { key: 'possession', label: 'Possession', suffix: '%' },
+  { key: 'shots', label: 'Tirs' },
+  { key: 'shotsOnTarget', label: 'Tirs cadrés' },
+  { key: 'passes', label: 'Passes' },
+  { key: 'tackles', label: 'Tacles' },
+  { key: 'interceptions', label: 'Interceptions' },
+  { key: 'saves', label: 'Arrêts' },
+  { key: 'offsides', label: 'Hors-jeu' },
+  { key: 'fouls', label: 'Fautes' },
+  { key: 'corners', label: 'Corners' },
+  { key: 'freeKicks', label: 'Coups Francs' },
+  { key: 'penalties', label: 'Pénaltys' },
+  { key: 'yellowCards', label: 'Cartons Jaunes' },
+  { key: 'redCards', label: 'Cartons Rouges' },
+];
+
+const StatBar = ({ value1, value2 }) => {
+  const total = value1 + value2;
+  const ratio1 = total > 0 ? value1 / total : 0.5;
+  const ratio2 = total > 0 ? value2 / total : 0.5;
+
+  return (
+    <View style={styles.barContainer}>
+      <View style={[styles.barLeft, { flex: ratio1 }]} />
+      <View style={styles.barGap} />
+      <View style={[styles.barRight, { flex: ratio2 }]} />
+    </View>
+  );
+};
+
+const StatRow = ({ label, value1, value2, suffix = '', isEven }) => (
+  <View style={[styles.row, isEven && styles.rowEven]}>
+    <Text style={[styles.teamStat, value1 > value2 && styles.teamStatHighlight]}>
+      {value1}{suffix}
+    </Text>
+    <View style={styles.statCenter}>
+      <Text style={styles.statTitle}>{label}</Text>
+      <StatBar value1={value1} value2={value2} />
+    </View>
+    <Text style={[styles.teamStat, value2 > value1 && styles.teamStatHighlight]}>
+      {value2}{suffix}
+    </Text>
+  </View>
+);
+
+const StatsEquipes = React.memo(() => {
   const matchStats = {
     team1: 'F.C. VIDAUBAN',
     team2: 'A.S. ARCOISE',
@@ -24,157 +70,117 @@ const StatsEquipes = () => {
   return (
     <View style={styles.container}>
       <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
-
-
         <View style={styles.grid}>
-          {/* Ordre des statistiques selon la demande */}
-          
-        <View style={styles.header}>
-          <Text style={styles.headerTeam}>{matchStats.team1}</Text>
-          <Text style={styles.headerTitle}>-</Text>
-          <Text style={styles.headerTeam}>{matchStats.team2}</Text>
-        </View>
-          <View style={styles.row}>
-            <Text style={styles.teamStat}>{matchStats.possession.team1}%</Text>
-            <Text style={styles.statTitle}>Possession</Text>
-            <Text style={styles.teamStat}>{matchStats.possession.team2}%</Text>
-            </View>
-          <View style={styles.row}>
-            <Text style={styles.teamStat}>{matchStats.shots.team1}</Text>
-            <Text style={styles.statTitle}>Tirs</Text>
-            <Text style={styles.teamStat}>{matchStats.shots.team2}</Text>
+          <View style={styles.header}>
+            <Text style={styles.headerTeam}>{matchStats.team1}</Text>
+            <Text style={styles.headerTitle}>-</Text>
+            <Text style={styles.headerTeam}>{matchStats.team2}</Text>
           </View>
-          <View style={styles.row}>
-            <Text style={styles.teamStat}>{matchStats.shotsOnTarget.team1}</Text>
-            <Text style={styles.statTitle}>Tirs cadrés</Text>
-            <Text style={styles.teamStat}>{matchStats.shotsOnTarget.team2}</Text>
-          </View>
-          <View style={styles.row}>
-            <Text style={styles.teamStat}>{matchStats.passes.team1}</Text>
-            <Text style={styles.statTitle}>Passes</Text>
-            <Text style={styles.teamStat}>{matchStats.passes.team2}</Text>
-          </View>
-          <View style={styles.row}>
-            <Text style={styles.teamStat}>{matchStats.tackles.team1}</Text>
-            <Text style={styles.statTitle}>Tacles</Text>
-            <Text style={styles.teamStat}>{matchStats.tackles.team2}</Text>
-          </View>
-          <View style={styles.row}>
-            <Text style={styles.teamStat}>{matchStats.interceptions.team1}</Text>
-            <Text style={styles.statTitle}>Interceptions</Text>
-            <Text style={styles.teamStat}>{matchStats.interceptions.team2}</Text>
-          </View>
-          <View style={styles.row}>
-            <Text style={styles.teamStat}>{matchStats.saves.team1}</Text>
-            <Text style={styles.statTitle}>Arrêts</Text>
-            <Text style={styles.teamStat}>{matchStats.saves.team2}</Text>
-          </View>
-          <View style={styles.row}>
-            <Text style={styles.teamStat}>{matchStats.offsides.team1}</Text>
-            <Text style={styles.statTitle}>Hors-jeu</Text>
-            <Text style={styles.teamStat}>{matchStats.offsides.team2}</Text>
-          </View>
-          <View style={styles.row}>
-            <Text style={styles.teamStat}>{matchStats.fouls.team1}</Text>
-            <Text style={styles.statTitle}>Fautes</Text>
-            <Text style={styles.teamStat}>{matchStats.fouls.team2}</Text>
-          </View>
-          <View style={styles.row}>
-            <Text style={styles.teamStat}>{matchStats.corners.team1}</Text>
-            <Text style={styles.statTitle}>Corners</Text>
-            <Text style={styles.teamStat}>{matchStats.corners.team2}</Text>
-          </View>
-          <View style={styles.row}>
-            <Text style={styles.teamStat}>{matchStats.freeKicks.team1}</Text>
-            <Text style={styles.statTitle}>Coups Francs</Text>
-            <Text style={styles.teamStat}>{matchStats.freeKicks.team2}</Text>
-          </View>
-          <View style={styles.row}>
-            <Text style={styles.teamStat}>{matchStats.penalties.team1}</Text>
-            <Text style={styles.statTitle}>Pénaltys</Text>
-            <Text style={styles.teamStat}>{matchStats.penalties.team2}</Text>
-          </View>
-          <View style={styles.row}>
-            <Text style={styles.teamStat}>{matchStats.yellowCards.team1}</Text>
-            <Text style={styles.statTitle}>Cartons Jaunes</Text>
-            <Text style={styles.teamStat}>{matchStats.yellowCards.team2}</Text>
-          </View>
-          <View style={styles.row}>
-            <Text style={styles.teamStat}>{matchStats.redCards.team1}</Text>
-            <Text style={styles.statTitle}>Cartons Rouges</Text>
-            <Text style={styles.teamStat}>{matchStats.redCards.team2}</Text>
-          </View>
+
+          {STATS_CONFIG.map((stat, index) => (
+            <StatRow
+              key={stat.key}
+              label={stat.label}
+              value1={matchStats[stat.key].team1}
+              value2={matchStats[stat.key].team2}
+              suffix={stat.suffix}
+              isEven={index % 2 === 0}
+            />
+          ))}
         </View>
       </ScrollView>
     </View>
   );
-};
+});
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
     paddingHorizontal: 12,
-    alignItems: 'stretch', // ✅ au lieu de center
+    alignItems: 'stretch',
   },
-
   scrollView: {
     width: '100%',
   },
-
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    borderBottomColor: '#001A31',
+    borderBottomColor: 'rgba(255, 255, 255, 0.1)',
     borderBottomWidth: 1,
-    marginBottom: 10,
-    paddingBottom: 6,
+    marginBottom: 6,
+    paddingBottom: 8,
   },
-
   headerTeam: {
     fontSize: 13,
-    fontWeight: '600',
-    color: '#00A0E9',
+    fontWeight: '700',
+    color: '#FFFFFF',
     flex: 1,
     textAlign: 'center',
   },
-
   headerTitle: {
     fontSize: 13,
     fontWeight: '600',
-    color: '#00A0E9',
-    flex: 0.3, // ✅ le "-" prend moins de place
+    color: '#808080',
+    flex: 0.3,
     textAlign: 'center',
   },
-
   grid: {
-    width: '100%',          // ✅ prend toute la largeur
+    width: '100%',
     borderRadius: 6,
     overflow: 'hidden',
   },
-
   row: {
     flexDirection: 'row',
-    paddingVertical: 6,
+    paddingVertical: 8,
+    paddingHorizontal: 4,
     alignItems: 'center',
-    borderBottomColor: '#001A31',
+    borderBottomColor: 'rgba(255, 255, 255, 0.04)',
     borderBottomWidth: 0.5,
   },
-
+  rowEven: {
+    backgroundColor: 'rgba(255, 255, 255, 0.03)',
+  },
   teamStat: {
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: '600',
-    color: '#ffffff',
-    flex: 1,
+    color: '#FFFFFF',
+    width: 50,
     textAlign: 'center',
   },
-
+  teamStatHighlight: {
+    fontWeight: '800',
+  },
+  statCenter: {
+    flex: 1,
+    alignItems: 'center',
+  },
   statTitle: {
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: '600',
-    color: '#ffffff',
-    flex: 1.2,
+    color: '#A8B4C0',
     textAlign: 'center',
+    marginBottom: 4,
+  },
+  barContainer: {
+    flexDirection: 'row',
+    width: '80%',
+    height: 4,
+    borderRadius: 2,
+    overflow: 'hidden',
+  },
+  barLeft: {
+    height: 4,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 2,
+  },
+  barGap: {
+    width: 3,
+  },
+  barRight: {
+    height: 4,
+    backgroundColor: 'rgba(255, 255, 255, 0.25)',
+    borderRadius: 2,
   },
 });
 

@@ -41,13 +41,15 @@ const routes = {
   diagRoute: safeRequire('./api/diag'),
   hikconnectOpenapiRoute: safeRequire('./api/hikconnectOpenapi'),
   uploadFromUrlRoute: safeRequire('./api/upload-from-url'),
+  isapiRecordStatusRoute: safeRequire('./api/isapiRecordStatus'),
 };
 
 // Attacher les routes sans faire planter l'API
 Object.entries(routes).forEach(([name, route]) => {
   if (route) {
     const router = route.router || route;
-    app.use('/api', router);
+    const mountPath = name.startsWith('isapi') ? '/' : '/api';
+    app.use(mountPath, router);
   } else {
     console.warn(`⚠️  La route ${name} n'a pas été chargée.`);
   }

@@ -101,6 +101,39 @@ async function saveVideo({ cameraId, beginTime, endTime, voiceSwitch = 2 }) {
   });
 }
 
+function shouldRetrySaveVideo(err) {
+  const code = err?.details?.errorCode;
+  if (code === 'OPEN000009') return true;
+  const msg = String(err?.message || '');
+  if (msg.includes('OPEN000009')) return true;
+  return false;
+}
+
+const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+// Hik-Connect may return OPEN000009 immediately after manual STOP (record not indexed yet).
+async function saveVideoWithRetry(
+  { cameraId, beginTime, endTime, voiceSwitch = 2 },
+  { maxAttempts = 6, baseDelayMs = 1500 } = {}
+) {
+  let lastErr = null;
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    try {
+      return await saveVideo({ cameraId, beginTime, endTime, voiceSwitch });
+    } catch (err) {
+      lastErr = err;
+      if (!shouldRetrySaveVideo(err) || attempt === maxAttempts) throw err;
+
+      // Backoff: 1.5s, 3s, 4.5s... (bounded by attempts)
+      const delay = baseDelayMs * attempt;
+      await sleep(delay);
+    }
+  }
+
+  // Should never reach here, but keep a safe fallback.
+  throw lastErr || new Error('saveVideoWithRetry failed');
+}
+
 async function getDownloadUrl({ taskId }) {
   return apiRequest('/api/hccgw/video/v1/video/download/url', {
     body: { taskId },
@@ -109,9 +142,15 @@ async function getDownloadUrl({ taskId }) {
 
 async function waitForDownloadUrl(taskId, timeoutMs = 120000, intervalMs = 3000) {
   const start = Date.now();
+  let lastData = null;
+  let lastStatus = null;
+  let polls = 0;
   while (Date.now() - start < timeoutMs) {
     const data = await getDownloadUrl({ taskId });
+    polls++;
+    lastData = data;
     const status = data?.data?.status;
+    lastStatus = status;
     if (status === 0 && Array.isArray(data?.data?.urls) && data.data.urls.length > 0) {
       return data.data.urls[0];
     }
@@ -125,6 +164,14 @@ async function waitForDownloadUrl(taskId, timeoutMs = 120000, intervalMs = 3000)
   }
   const err = new Error('Timeout waiting for download URL');
   err.status = 504;
+  err.details = {
+    taskId,
+    timeoutMs,
+    intervalMs,
+    polls,
+    lastStatus,
+    lastData,
+  };
   throw err;
 }
 
@@ -132,6 +179,7 @@ module.exports = {
   getLastPlaybackFromDevice,
   getCloudPlaybackUrl,
   saveVideo,
+  saveVideoWithRetry,
   getDownloadUrl,
   waitForDownloadUrl,
 };
