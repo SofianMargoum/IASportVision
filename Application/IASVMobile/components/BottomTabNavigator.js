@@ -21,7 +21,7 @@ const BottomTabNavigator = ({ index, setIndex }) => {
           style={[styles.iconContainer, index === i && styles.iconActive]}
           onPress={() => setIndex(i)}
         >
-          <Icon name={tab.icon} size={25 * scale} color={index === i ? '#00A0E9' : '#ffffff'} />
+          <Icon name={tab.icon} size={25 * scale} color={index === i ? '#ffffff' : '#666666'} />
         </TouchableOpacity>
       ))}
     </View>

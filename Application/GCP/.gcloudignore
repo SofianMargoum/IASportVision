@@ -1,0 +1,6 @@
+Annotation/backend/.venv
+**/__pycache__
+**/*.pyc
+**/*.pyo
+RetexAI
+AppEngine/

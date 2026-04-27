@@ -1,0 +1,15 @@
+# Fichiers temporaires
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+.env
+
+# Datasets / modèles exportés localement
+datasets/
+runs/
+*.pt
+
+# OS
+.DS_Store
+Thumbs.db

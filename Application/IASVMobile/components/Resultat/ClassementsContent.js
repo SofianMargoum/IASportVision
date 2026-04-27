@@ -184,7 +184,7 @@ function ClassementsContent() {
           <Text style={styles.legendText}>P = Perdu</Text>
         </View>
         <View style={styles.legendItem}>
-          <Text style={[styles.legendText, { color: '#00A0E9' }]}>DB = Diff. buts</Text>
+          <Text style={[styles.legendText]}>DB = Diff. buts</Text>
         </View>
       </View>
 

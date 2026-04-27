@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>IA Sport Vision — Validation Ballon</title>
+  <link rel="stylesheet" href="/styles.css" />
+</head>
+<body>
+  <header>
+    <h1>IA Sport Vision — Validation Ballon</h1>
+    <div class="toolbar">
+      <label>Vidéo :
+        <select id="videoSelect"></select>
+      </label>
+      <label>Statut :
+        <select id="statusSelect">
+          <option value="pending" selected>À annoter</option>
+          <option value="annotated">Déjà annotées</option>
+          <option value="all">Toutes</option>
+        </select>
+      </label>
+      <label>Tri :
+        <select id="orderSelect">
+          <option value="confidence" selected>Confiance ↑ (difficiles d'abord)</option>
+          <option value="frame">Frame ↑</option>
+        </select>
+      </label>
+      <button id="reloadBtn">Recharger</button>
+      <span class="progress" id="progress">—</span>
+    </div>
+  </header>
+
+  <main>
+    <section class="viewer">
+      <div class="canvas-wrap">
+        <canvas id="canvas"></canvas>
+      </div>
+      <div class="meta" id="meta"></div>
+    </section>
+
+    <section class="controls">
+      <div class="row">
+        <button class="btn btn-prev" id="prevBtn">◀ Précédent</button>
+        <button class="btn btn-next" id="nextBtn">Suivant ▶</button>
+      </div>
+      <div class="row labels">
+        <button class="btn btn-yes" data-label="true_ball">✓ Vrai ballon (1)</button>
+        <button class="btn btn-no"  data-label="false_positive">✗ Faux positif (2)</button>
+        <button class="btn btn-abs" data-label="no_ball">∅ Ballon absent (3)</button>
+      </div>
+      <div class="row">
+        <button class="btn btn-edit" id="editBtn">✎ Corriger la box (E)</button>
+        <button class="btn btn-reset" id="resetBoxBtn">↺ Reset box</button>
+      </div>
+      <div class="help">
+        <kbd>1</kbd> vrai &nbsp; <kbd>2</kbd> faux positif &nbsp; <kbd>3</kbd> absent &nbsp;
+        <kbd>←</kbd>/<kbd>→</kbd> navigation &nbsp; <kbd>E</kbd> éditer box
+      </div>
+
+      <hr />
+
+      <div class="training" id="trainingPanel">
+        <h3>Entraînement</h3>
+        <div id="readiness" class="readiness">Chargement…</div>
+        <button class="btn btn-train" id="trainBtn" disabled>
+          🚀 Dataset prêt — lancer l'entraînement
+        </button>
+        <details id="trainAdvanced">
+          <summary>Paramètres avancés</summary>
+          <label>Base <input id="optBase" value="yolov8s.pt" /></label>
+          <label>Epochs <input id="optEpochs" type="number" value="80" /></label>
+          <label>imgsz <input id="optImgsz" type="number" value="1280" /></label>
+          <label>batch <input id="optBatch" type="number" value="8" /></label>
+        </details>
+        <div id="trainStatus" class="train-status"></div>
+        <div id="modelRegistry" class="model-registry"></div>
+      </div>
+    </section>
+  </main>
+
+  <script src="/app.js"></script>
+</body>
+</html>

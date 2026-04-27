@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import {
   View,
   Text,
@@ -6,9 +6,12 @@ import {
   StyleSheet,
   ScrollView,
   TouchableOpacity,
-  Image,
+  Alert,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/FontAwesome';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
+const getStorageKey = (matchId) => `@moi_stats_${matchId || 'default'}`;
 
 const STATS_SECTIONS = [
   {
@@ -76,9 +79,22 @@ const STATS_SECTIONS = [
   },
 ];
 
-const Moi = React.memo(() => {
+const Moi = React.memo(({ matchId }) => {
   const [stats, setStats] = useState({});
   const [expandedSections, setExpandedSections] = useState({ Général: true });
+
+  // Charger les stats du match courant
+  useEffect(() => {
+    setStats({});
+    AsyncStorage.getItem(getStorageKey(matchId)).then((data) => {
+      if (data) setStats(JSON.parse(data));
+    });
+  }, [matchId]);
+
+  // Sauvegarder automatiquement à chaque modification
+  useEffect(() => {
+    AsyncStorage.setItem(getStorageKey(matchId), JSON.stringify(stats));
+  }, [stats, matchId]);
 
   const updateStat = useCallback((key, value) => {
     setStats((prev) => ({ ...prev, [key]: value }));
@@ -86,6 +102,24 @@ const Moi = React.memo(() => {
 
   const toggleSection = useCallback((title) => {
     setExpandedSections((prev) => ({ ...prev, [title]: !prev[title] }));
+  }, []);
+
+  const resetStats = useCallback(() => {
+    Alert.alert(
+      'Réinitialiser',
+      'Effacer toutes les stats ?',
+      [
+        { text: 'Annuler', style: 'cancel' },
+        {
+          text: 'Effacer',
+          style: 'destructive',
+          onPress: () => {
+            setStats({});
+            AsyncStorage.removeItem(getStorageKey(matchId));
+          },
+        },
+      ]
+    );
   }, []);
 
   return (
@@ -102,6 +136,10 @@ const Moi = React.memo(() => {
         <Text style={styles.headerSubtitle}>
           Renseigne tes statistiques personnelles
         </Text>
+        <TouchableOpacity style={styles.resetButton} onPress={resetStats}>
+          <Icon name="trash" size={12} color="#FF6B6B" />
+          <Text style={styles.resetText}>Réinitialiser</Text>
+        </TouchableOpacity>
       </View>
 
       {STATS_SECTIONS.map((section) => {
@@ -243,6 +281,23 @@ const styles = StyleSheet.create({
   },
   bottomSpacer: {
     height: 40,
+  },
+  resetButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    marginTop: 10,
+    paddingVertical: 5,
+    paddingHorizontal: 12,
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 107, 107, 0.4)',
+    backgroundColor: 'rgba(255, 107, 107, 0.08)',
+  },
+  resetText: {
+    color: '#FF6B6B',
+    fontSize: 11,
+    fontWeight: '600',
   },
 });
 

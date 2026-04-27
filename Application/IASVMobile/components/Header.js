@@ -6,26 +6,45 @@ import { UserContext } from './../tools/UserContext';
 
 const scale = 0.85;
 
+const resolveImageSource = (value) => {
+  if (!value) return null;
+  const uri = String(value).trim();
+  if (!uri) return null;
+
+  // Remote / file / base64 URIs
+  if (/^(https?:|file:|content:|data:|asset:|res:)/i.test(uri)) {
+    return { uri };
+  }
+
+  // Known local drawable key used in logs
+  if (uri === 'assets_fcmiramas') {
+    return require('../assets/assets_fcmiramas.jpg');
+  }
+
+  return null;
+};
+
 const Header = ({ windowWidth }) => {
   const { selectedClub, competition } = useClubContext();
   const { user } = useContext(UserContext);
+
+  const clubLogoSource = resolveImageSource(selectedClub?.logo);
+  const userPhotoSource = resolveImageSource(user?.photo);
 
   return (
     <View style={styles.header}>
       {selectedClub && (
         <View style={styles.selectedClubLabel}>
-          {selectedClub.logo ? (
-            <Image source={{ uri: selectedClub.logo }} style={styles.clubLogo} />
-          ) : null}
+          {clubLogoSource ? <Image source={clubLogoSource} style={styles.clubLogo} /> : null}
           <View style={styles.selectedClubText}>
             <Text style={styles.clubName}>{selectedClub.name}</Text>
             {competition && <Text style={styles.competitionLabel}>{competition}</Text>}
           </View>
         </View>
       )}
-      {user && user.photo && (
+      {userPhotoSource && (
         <View style={styles.logoMain}>
-          <Image source={{ uri: user.photo }} style={styles.adminLogo} />
+          <Image source={userPhotoSource} style={styles.adminLogo} />
           <Text style={styles.adminLabels}>admin</Text>
         </View>
       )}

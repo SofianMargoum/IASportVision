@@ -529,7 +529,7 @@ const styles = StyleSheet.create({
     // inchangé
   },
   tabText: {
-    color: '#808080',
+    color: '#666666',
     fontWeight: '700',
     fontSize: 12,
   },

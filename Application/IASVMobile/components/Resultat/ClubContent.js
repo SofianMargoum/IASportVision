@@ -185,7 +185,7 @@ const ClubContent = () => {
   if (loading) {
     return (
       <View style={styles.centered}>
-        <ActivityIndicator size="large" color="#00A0E9" />
+        <ActivityIndicator size="large" color="#C0C0C0" />
         <Text style={styles.loadingText}>Chargement des statistiques…</Text>
       </View>
     );
@@ -213,26 +213,13 @@ const ClubContent = () => {
 
   return (
     <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
-      {/* === EN-TÊTE CLUB === */}
-      <View style={styles.header}>
-        {selectedClub.logo ? (
-          <Image source={{ uri: selectedClub.logo }} style={styles.logo} resizeMode="contain" />
-        ) : null}
-        <View style={styles.headerInfo}>
-          <Text style={styles.clubName}>{selectedClub.name}</Text>
-          {competition ? (
-            <Text style={styles.competitionName}>{competition}</Text>
-          ) : null}
-        </View>
-      </View>
-
       {/* === CLASSEMENT ACTUEL === */}
       {classement && (
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>CLASSEMENT</Text>
           <View style={styles.rankBadgeContainer}>
             <LinearGradient
-              colors={['#00A0E9', '#005f8a']}
+              colors={['rgba(255,255,255,0.1)', 'rgba(255,255,255,0.04)']}
               style={styles.rankBadge}
             >
               <Text style={styles.rankNumber}>{classement.rank}</Text>
@@ -277,7 +264,7 @@ const ClubContent = () => {
             <Text style={styles.winRateLabel}>Taux de victoire</Text>
             <View style={styles.progressBarBg}>
               <LinearGradient
-                colors={['#016D14', '#00A0E9']}
+                colors={['#016D14', '#010914']}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 0 }}
                 style={[styles.progressBarFill, { width: `${stats.winRate}%` }]}
@@ -336,7 +323,7 @@ const ClubContent = () => {
             <StatBox
               label="Matchs où a marqué"
               value={stats.matchesScored}
-              color="#00A0E9"
+              color="#C0C0C0"
             />
           </View>
         </View>
@@ -466,34 +453,6 @@ const styles = StyleSheet.create({
     margin: 20,
   },
 
-  /* --- Header --- */
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: 'rgba(255,255,255,0.1)',
-  },
-  logo: {
-    width: 60,
-    height: 60,
-    marginRight: 14,
-    borderRadius: 8,
-  },
-  headerInfo: {
-    flex: 1,
-  },
-  clubName: {
-    color: '#ffffff',
-    fontSize: 20 * scale,
-    fontWeight: 'bold',
-  },
-  competitionName: {
-    color: '#00A0E9',
-    fontSize: 13 * scale,
-    marginTop: 3,
-  },
-
   /* --- Sections --- */
   section: {
     paddingHorizontal: 16,
@@ -505,8 +464,10 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 14 * scale,
     fontWeight: 'bold',
-    color: '#00A0E9',
+    color: '#aaaaaa',
     letterSpacing: 1,
+    alignSelf: 'stretch',
+    textAlign: 'center',
     marginBottom: 12,
   },
 
@@ -525,13 +486,13 @@ const styles = StyleSheet.create({
     marginRight: 14,
   },
   rankNumber: {
-    color: '#fff',
-    fontSize: 32,
+    color: '#C0C0C0',
+    fontSize: 28 * scale,
     fontWeight: 'bold',
   },
   rankSuffix: {
-    color: '#fff',
-    fontSize: 14,
+    color: '#aaaaaa',
+    fontSize: 12 * scale,
     fontWeight: 'bold',
   },
   rankDetails: {
@@ -695,7 +656,7 @@ const styles = StyleSheet.create({
   },
   bilanHeaderCell: {
     flex: 1,
-    color: '#00A0E9',
+    color: '#aaaaaa',
     fontSize: 12 * scale,
     fontWeight: 'bold',
     textAlign: 'center',
@@ -720,7 +681,7 @@ const styles = StyleSheet.create({
     fontWeight: 'normal',
   },
   upcomingText: {
-    color: '#00A0E9',
+    color: '#aaaaaa',
     fontSize: 12 * scale,
     textAlign: 'center',
     marginTop: 10,
@@ -756,7 +717,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   remarkScore: {
-    color: '#00A0E9',
+    color: '#C0C0C0',
     fontSize: 18 * scale,
     fontWeight: 'bold',
     marginHorizontal: 10,

@@ -1,6 +1,7 @@
 import React, { useEffect } from 'react';
-import { BackHandler, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { BackHandler, Linking, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
+import FaIcon from 'react-native-vector-icons/FontAwesome';
 import Boutique from '../Video/Boutique';
 
 const scale = 0.85;
@@ -24,6 +25,14 @@ const BoutiqueScreen = ({ onBack }) => {
       <View style={styles.content}>
         <Boutique />
       </View>
+
+      <TouchableOpacity
+        style={styles.discoverCta}
+        onPress={() => Linking.openURL('https://iasportvision.com')}
+      >
+        <Text style={styles.discoverCtaText}>Découvrir iasportvision.com</Text>
+        <FaIcon name="external-link" size={14} color="#ffffff" />
+      </TouchableOpacity>
     </View>
   );
 };
@@ -51,6 +60,28 @@ const styles = StyleSheet.create({
   },
   content: {
     flex: 1,
+    paddingBottom: 70,
+  },
+
+  discoverCta: {
+    position: 'absolute',
+    left: 16,
+    right: 16,
+    bottom: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    backgroundColor: '#010914',
+    paddingVertical: 10,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#ffffff',
+  },
+  discoverCtaText: {
+    color: '#ffffff',
+    fontWeight: '700',
+    fontSize: 14 * scale,
   },
 });
 

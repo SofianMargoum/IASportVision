@@ -6,9 +6,25 @@ import Effectif from './Effectif'; // Import du composant Effectif
 import Composition from './Composition'; // Import du composant Composition
 import Statistiques from './Statistiques'; // Import du composant Statistiques
 import BoutiqueScreen from './BoutiqueScreen';
-import DecouvrirScreen from './DecouvrirScreen';
+import ProfileScreen from './ProfileScreen';
 
 const scale = 0.85;
+
+const resolveImageSource = (value) => {
+  if (!value) return null;
+  const uri = String(value).trim();
+  if (!uri) return null;
+
+  if (/^(https?:|file:|content:|data:|asset:|res:)/i.test(uri)) {
+    return { uri };
+  }
+
+  if (uri === 'assets_fcmiramas') {
+    return require('../../assets/assets_fcmiramas.jpg');
+  }
+
+  return null;
+};
 
 const menuItems = [
   { key: 'Effectif', label: 'Effectif', icon: 'people-outline', image: require('../../assets/list.png') },
@@ -16,7 +32,7 @@ const menuItems = [
   { key: 'Statistiques', label: 'Statistiques', icon: 'stats-chart-outline', image: require('../../assets/stat.png') },
   { key: 'Appareils', label: 'Appareils', icon: 'videocam-outline', image: require('../../assets/cam.png') },
   { key: 'Boutique', label: 'Boutique', icon: 'cart-outline', image: require('../../assets/boutique.png') },
-  { key: 'Decouvrir', label: 'Découvrir', icon: 'compass-outline', image: require('../../assets/decouvrir.png') },
+  { key: 'Profile', label: 'Profil', icon: 'person-outline', image: require('../../assets/player.png') },
 ];
 
 const UserProfile = ({ user, onLogout }) => {
@@ -34,8 +50,8 @@ const UserProfile = ({ user, onLogout }) => {
         return <Statistiques onBack={() => setActiveComponent(null)} />;
       case 'Boutique':
         return <BoutiqueScreen onBack={() => setActiveComponent(null)} />;
-      case 'Decouvrir':
-        return <DecouvrirScreen onBack={() => setActiveComponent(null)} />;
+      case 'Profile':
+        return <ProfileScreen user={user} onBack={() => setActiveComponent(null)} />;
       default:
         return null;
     }
@@ -46,13 +62,15 @@ const UserProfile = ({ user, onLogout }) => {
     return name.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2);
   };
 
+  const userPhotoSource = resolveImageSource(user?.photo);
+
   return (
     <View style={styles.container}>
       {!activeComponent ? (
         <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
           <View style={styles.header}>
-            {user.photo ? (
-              <Image source={{ uri: user.photo }} style={styles.profileImage} />
+            {userPhotoSource ? (
+              <Image source={userPhotoSource} style={styles.profileImage} />
             ) : (
               <View style={[styles.profileImage, styles.profilePlaceholder]}>
                 <Text style={styles.initials}>{getInitials(user.name)}</Text>

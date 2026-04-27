@@ -54,7 +54,7 @@ const ListeVideo = ({ selectedVideo }) => {
       case 'statsJoueurs':
         return <StatsJoueurs />;
       case 'moi':
-        return <Moi />;
+        return <Moi matchId={selectedVideo?.url} />;
       default:
         return null;
     }

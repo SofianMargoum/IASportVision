@@ -194,7 +194,7 @@ function StatsContent() {
   if (loading) {
     return (
       <View style={styles.centered}>
-        <ActivityIndicator size="large" color="#00A0E9" />
+        <ActivityIndicator size="large" color="#C0C0C0" />
         <Text style={styles.infoText}>Calcul des statistiques…</Text>
       </View>
     );
@@ -227,10 +227,10 @@ function StatsContent() {
       <View style={styles.section}>
         <SectionTitle>VUE D'ENSEMBLE</SectionTitle>
         <View style={styles.overviewRow}>
-          <OverviewBox value={stats.totalTeams} label="Équipes" color="#00A0E9" />
-          <OverviewBox value={stats.totalMatches} label="Matchs joués" color="#00A0E9" />
-          <OverviewBox value={stats.totalGoals} label="Buts marqués" color="#016D14" />
-          <OverviewBox value={stats.avgGoalsPerMatch} label="Buts / match" color="#F5A623" />
+          <OverviewBox value={stats.totalTeams} label="Équipes" color="#C0C0C0" />
+          <OverviewBox value={stats.totalMatches} label="Matchs joués" color="#C0C0C0" />
+          <OverviewBox value={stats.totalGoals} label="Buts marqués" color="#C0C0C0" />
+          <OverviewBox value={stats.avgGoalsPerMatch} label="Buts / match" color="#C0C0C0" />
         </View>
       </View>
 
@@ -333,7 +333,7 @@ function StatsContent() {
             label={t.teamName}
             value={t.goalsAgainst}
             maxValue={stats.worstDefense?.goalsAgainst || 1}
-            color="#00A0E9"
+            color="#016D14"
           />
         ))}
       </View>
@@ -386,7 +386,7 @@ function StatsContent() {
             team={stats.bestAttack?.teamName}
             value={(stats.bestAttack?.goalsFor / (stats.bestAttack?.totalGames || 1)).toFixed(1)}
             suffix="buts/m"
-            color="#00A0E9"
+            color="#C0C0C0"
           />
         </View>
       </View>
@@ -448,8 +448,10 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 14 * scale,
     fontWeight: 'bold',
-    color: '#00A0E9',
+    color: '#aaaaaa',
     letterSpacing: 1,
+    alignSelf: 'stretch',
+    textAlign: 'center',
     marginBottom: 12,
   },
 
