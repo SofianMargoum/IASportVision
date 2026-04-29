@@ -102,7 +102,7 @@ const Statistiques = ({ onBack }) => {
         }
         if (savedMatchs) setMatchs(parseInt(savedMatchs, 10) || 0);
       } catch (e) {
-        console.error('Stats load error', e);
+        if (__DEV__) console.error('Stats load error', e?.message);
       }
     })();
   }, [effectif]);

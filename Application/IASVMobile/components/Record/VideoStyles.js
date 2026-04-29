@@ -298,6 +298,70 @@ export default StyleSheet.create({
         fontSize: 11,
         color: '#9aa0a6',
     },
+    pendingListWrapper: {
+        width: '100%',
+        marginTop: 12,
+        paddingHorizontal: 4,
+    },
+    pendingListTitle: {
+        fontSize: 12,
+        color: '#9aa0a6',
+        marginBottom: 6,
+    },
+    pendingItem: {
+        marginBottom: 10,
+        paddingVertical: 6,
+        paddingHorizontal: 8,
+        backgroundColor: '#0b1a33',
+        borderRadius: 6,
+    },
+    pendingItemHeader: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        marginBottom: 4,
+    },
+    pendingItemLabel: {
+        flex: 1,
+        fontSize: 12,
+        color: '#ffffff',
+    },
+    pendingItemLabelDone: {
+        color: '#7be07b',
+    },
+    pendingItemLabelError: {
+        color: '#ff8a8a',
+    },
+    pendingItemCloseBtn: {
+        marginLeft: 8,
+        paddingHorizontal: 6,
+    },
+    pendingItemCloseTxt: {
+        color: '#9aa0a6',
+        fontSize: 16,
+        fontWeight: 'bold',
+    },
+    pendingItemBarBg: {
+        height: 4,
+        borderRadius: 4,
+        backgroundColor: '#010E1E',
+        overflow: 'hidden',
+    },
+    pendingItemBarFill: {
+        height: '100%',
+        backgroundColor: '#4aa3ff',
+    },
+    pendingItemBarFillDone: {
+        backgroundColor: '#4ec06b',
+    },
+    pendingItemBarFillError: {
+        backgroundColor: '#ff6b6b',
+    },
+    pendingItemStatus: {
+        marginTop: 4,
+        fontSize: 10,
+        color: '#9aa0a6',
+    },
     buttonContainer: {
         width: '100%',
         alignItems: 'center',

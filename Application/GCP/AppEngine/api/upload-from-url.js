@@ -142,13 +142,13 @@ router.post('/upload-from-url', async (req, res) => {
     };
 
     nodeReadable.on('error', (err) => {
-      console.error(`[upload-from-url:${traceId}] upstream stream error`, err);
-      fail(502, { status: 'error', message: 'Upstream stream error', details: err.message });
+      console.error(`[upload-from-url:${traceId}] upstream stream error`, err.message);
+      fail(502, { status: 'error', message: 'Upstream stream error' });
     });
 
     gcsWriteStream.on('error', (err) => {
-      console.error(`[upload-from-url:${traceId}] GCS write error`, err);
-      fail(500, { status: 'error', message: 'Failed to upload to GCS', details: err.message });
+      console.error(`[upload-from-url:${traceId}] GCS write error`, err.message);
+      fail(500, { status: 'error', message: 'Failed to upload to GCS' });
     });
 
     gcsWriteStream.on('finish', () => {
@@ -174,11 +174,10 @@ router.post('/upload-from-url', async (req, res) => {
     // ✅ Pipe Node stream vers GCS
     nodeReadable.pipe(gcsWriteStream);
   } catch (err) {
-    console.error(`[upload-from-url:${traceId}] unexpected error`, err);
+    console.error(`[upload-from-url:${traceId}] unexpected error`, err.message);
     return res.status(500).json({
       status: 'error',
       message: 'Unexpected server error',
-      details: err.message,
     });
   }
 });

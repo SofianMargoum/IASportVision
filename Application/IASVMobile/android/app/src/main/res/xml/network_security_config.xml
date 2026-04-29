@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Production : HTTPS uniquement, aucune exception cleartext.
+  L'app n'utilise que https://ia-sport.oa.r.appspot.com et les domaines FFF.
+  La config debug surcharge ceci pour autoriser localhost (Metro).
+-->
+<network-security-config>
+    <base-config cleartextTrafficPermitted="false">
+        <trust-anchors>
+            <certificates src="system" />
+        </trust-anchors>
+    </base-config>
+</network-security-config>

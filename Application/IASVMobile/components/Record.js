@@ -27,6 +27,8 @@ const Record = () => {
     progressVisible,
     progressValue,
     progressLines,
+    pendingUploads,
+    removePending,
     counter,
     secondCounter,
     handleInputChange,
@@ -140,7 +142,10 @@ const Record = () => {
 
   const isConnected = deviceStatus.startsWith('Connecté');
   const isDisconnected = deviceStatus.startsWith('Non connecté');
-  const canStartRecording = !!filename && isConnected;
+  // Button requires a club name + a selected device; we do NOT gate on
+  // isConnected so the user can always attempt to start and get a clear
+  // error if the camera is truly offline (hikStartRecording will fail).
+  const canStartRecording = !!filename && !!selectedDevice;
   const buttonDisabled = isRecording ? false : !canStartRecording;
 
   // Pick the right color style for device name
@@ -331,6 +336,82 @@ const Record = () => {
                 {(progressLines && progressLines[progressLines.length - 1]) || ''}
               </Text>
             </View>
+          </View>
+        )}
+
+        {/* === Pending uploads queue === */}
+        {Array.isArray(pendingUploads) && pendingUploads.length > 0 && (
+          <View style={styles.pendingListWrapper}>
+            <Text style={styles.pendingListTitle}>
+              Téléchargements en attente ({pendingUploads.length})
+            </Text>
+            {pendingUploads.map((item) => {
+              const pct = Math.round(
+                Math.max(0, Math.min(1, Number(item.progress) || 0)) * 100
+              );
+              const isDone = item.status === 'done';
+              const isError = item.status === 'error';
+              const isQueued =
+                item.status === 'queued' || item.backendStatus === 'queued';
+              return (
+                <View key={item.id} style={styles.pendingItem}>
+                  <View style={styles.pendingItemHeader}>
+                    <Text
+                      style={[
+                        styles.pendingItemLabel,
+                        isError && styles.pendingItemLabelError,
+                        isDone && styles.pendingItemLabelDone,
+                      ]}
+                      numberOfLines={1}
+                    >
+                      {item.label || item.rollingId || item.id}
+                    </Text>
+                    {(isDone || isError) && (
+                      <TouchableOpacity
+                        onPress={() => removePending && removePending(item.id)}
+                        style={styles.pendingItemCloseBtn}
+                      >
+                        <Text style={styles.pendingItemCloseTxt}>×</Text>
+                      </TouchableOpacity>
+                    )}
+                    {!isDone && !isError && (
+                      <TouchableOpacity
+                        onLongPress={() =>
+                          removePending && removePending(item.id)
+                        }
+                        delayLongPress={800}
+                        style={styles.pendingItemCloseBtn}
+                      >
+                        <Text style={styles.pendingItemCloseTxt}>×</Text>
+                      </TouchableOpacity>
+                    )}
+                  </View>
+                  <View style={styles.pendingItemBarBg}>
+                    <View
+                      style={[
+                        styles.pendingItemBarFill,
+                        isError && styles.pendingItemBarFillError,
+                        isDone && styles.pendingItemBarFillDone,
+                        { width: `${pct}%` },
+                      ]}
+                    />
+                  </View>
+                  <Text style={styles.pendingItemStatus} numberOfLines={1}>
+                    {isQueued
+                      ? `En file d’attente${
+                          item.queuedBehind
+                            ? ` (après ${String(item.queuedBehind).slice(0, 6)}…)`
+                            : ''
+                        }`
+                      : isDone
+                      ? 'Terminé'
+                      : isError
+                      ? `Erreur${item.error ? ` — ${item.error}` : ''}`
+                      : `${item.statusText || 'En cours'} — ${pct}%`}
+                  </Text>
+                </View>
+              );
+            })}
           </View>
         )}
 

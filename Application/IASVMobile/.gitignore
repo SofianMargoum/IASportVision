@@ -33,6 +33,8 @@ local.properties
 .cxx/
 *.keystore
 !debug.keystore
+# Secrets keystore (signature release) — JAMAIS dans git
+android/keystore.properties
 
 # node.js
 #

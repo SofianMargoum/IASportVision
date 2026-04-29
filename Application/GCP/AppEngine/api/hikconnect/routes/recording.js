@@ -67,8 +67,9 @@ router.put('/hikconnect/start-recording', async (req, res) => {
     await logRecording('START_RECORDING_OK', { deviceId });
     res.status(200).json(payload);
   } catch (err) {
-    await logRecording('START_RECORDING_ERR', { deviceId, message: err?.message, status: err?.status, details: err?.details });
-    res.status(err.status || 500).json({ message: err.message, details: err.details });
+    await logRecording('START_RECORDING_ERR', { deviceId, message: err?.message, status: err?.status });
+    const status = err?.status || 500;
+    res.status(status).json({ message: status < 500 ? err.message : 'Recording error' });
   }
 });
 
@@ -86,8 +87,9 @@ router.put('/hikconnect/stop-recording', async (req, res) => {
     await logSofian('enregistrement arrêté', { deviceId });
     res.status(200).json(payload);
   } catch (err) {
-    await logRecording('STOP_RECORDING_ERR', { deviceId, message: err?.message, status: err?.status, details: err?.details });
-    res.status(err.status || 500).json({ message: err.message, details: err.details });
+    await logRecording('STOP_RECORDING_ERR', { deviceId, message: err?.message, status: err?.status });
+    const status = err?.status || 500;
+    res.status(status).json({ message: status < 500 ? err.message : 'Recording error' });
   }
 });
 
@@ -140,8 +142,9 @@ router.post('/hikconnect/recording-status', async (req, res) => {
           }
     );
   } catch (err) {
-    await logRecording('RECORDING_STATUS_ERR', { deviceId, cameraId: cameraId ?? null, message: err?.message, status: err?.status, details: err?.details });
-    res.status(err.status || 500).json({ message: err.message, details: err.details });
+    await logRecording('RECORDING_STATUS_ERR', { deviceId, cameraId: cameraId ?? null, message: err?.message, status: err?.status });
+    const status = err?.status || 500;
+    res.status(status).json({ message: status < 500 ? err.message : 'Status error' });
   }
 });
 
@@ -151,11 +154,11 @@ router.post('/hikconnect/record/element/search', async (req, res) => {
     const data = await recordElementSearch(req.body || {});
     res.status(200).json(data);
   } catch (err) {
-    res.status(err.status || 500).json({ message: err.message, details: err.details });
+    res.status(err.status || 500).json({ message: err.status < 500 ? err.message : 'Search error' });
   }
 });
 
-// Quick ISAPI proxypass test (use to inspect camera capabilities)
+// Quick ISAPI proxypass test
 router.post('/hikconnect/isapi/proxypass-test', async (req, res) => {
   const source = req.body?.payload && typeof req.body.payload === 'object' ? req.body.payload : req.body;
 
@@ -191,7 +194,7 @@ router.post('/hikconnect/isapi/proxypass-test', async (req, res) => {
     });
     res.status(200).json(data);
   } catch (err) {
-    res.status(err.status || 500).json({ message: err.message, details: err.details });
+    res.status(err.status || 500).json({ message: err.status < 500 ? err.message : 'Proxypass error' });
   }
 });
 
@@ -209,7 +212,7 @@ router.delete('/hikconnect/record/delete-by-time-range', async (req, res) => {
     const data = await deleteRecordsByTimeRange(deviceId, startTime, endTime);
     res.status(200).json(data);
   } catch (err) {
-    res.status(err.status || 500).json({ message: err.message, details: err.details });
+    res.status(err.status || 500).json({ message: err.status < 500 ? err.message : 'Delete error' });
   }
 });
 

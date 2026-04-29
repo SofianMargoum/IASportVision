@@ -1,6 +1,6 @@
 // components/PlayerControls.js
 import React from 'react';
-import { View, Text, TouchableOpacity, Switch } from 'react-native';
+import { View, Text, TouchableOpacity } from 'react-native';
 import Icon from 'react-native-vector-icons/FontAwesome';
 import Slider from '@react-native-community/slider';
 import styles from './styles';
@@ -20,34 +20,9 @@ const PlayerControls = ({
   toggleFullScreen,
   exitFullScreen,
   isFullScreen,
-  isUploadMode,
-  setIsUploadMode,
-  balloonActive,
-  setBalloonActive,
 }) => {
-
-  const handleBalloonPress = () => {
-    setBalloonActive(prev => !prev);
-  };
-
   return (
     <View style={styles.overlay}>
-
-      {/* 📍 TOP BAR — Upload en haut à droite (plein écran uniquement) */}
-      {isFullScreen && (
-        <View style={{
-          position: 'absolute',
-          top: 10,
-          right: 10,
-          flexDirection: 'row',
-          alignItems: 'center',
-          zIndex: 20,
-        }}>
-          <Text style={[styles.switchLabel, { marginRight: 8 }]}>Upload</Text>
-          <Switch value={isUploadMode} onValueChange={setIsUploadMode} />
-        </View>
-      )}
-
       {/* 🎛 BOUTON PLAY / PAUSE AU CENTRE */}
       <View style={styles.centerButtonContainer}>
         <TouchableOpacity onPress={togglePlayPause} style={styles.centerPlayButton}>
@@ -63,7 +38,7 @@ const PlayerControls = ({
             position: 'absolute',
             left: 0,
             right: 0,
-            bottom: 0,        // 👈 collé parfaitement en bas
+            bottom: 0,
             paddingHorizontal: 15,
             paddingBottom: 10,
           },
@@ -90,19 +65,7 @@ const PlayerControls = ({
         >
           <Icon name={isFullScreen ? 'compress' : 'expand'} size={22} color="white" />
         </TouchableOpacity>
-
-        {/* ⚽ BALLON TOUT À DROITE (plein écran uniquement) */}
-        {isFullScreen && (
-          <TouchableOpacity onPress={handleBalloonPress}>
-            <Icon
-              name="soccer-ball-o"
-              size={20}
-              color={balloonActive ? '#010E1E' : 'white'}
-            />
-          </TouchableOpacity>
-        )}
       </View>
-
     </View>
   );
 };

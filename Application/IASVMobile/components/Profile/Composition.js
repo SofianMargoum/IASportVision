@@ -133,7 +133,7 @@ const Composition = ({ onBack }) => {
           setPositions(JSON.parse(data));
         }
       } catch (error) {
-        console.error('Erreur de chargement des positions :', error);
+        if (__DEV__) console.error('Erreur de chargement des positions :', error?.message);
       }
     };
     loadPositions();

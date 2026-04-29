@@ -20,30 +20,36 @@ const Welcome = () => {
           buttonNegative: 'Annuler',
         }
       );
-      console.log('Permission fine location:', granted);
       if (granted === PermissionsAndroid.RESULTS.GRANTED) return true;
       const coarseGranted = await PermissionsAndroid.request(
         PermissionsAndroid.PERMISSIONS.ACCESS_COARSE_LOCATION
       );
-      console.log('Permission coarse location:', coarseGranted);
       return coarseGranted === PermissionsAndroid.RESULTS.GRANTED;
     }
 
     const status = await Geolocation.requestAuthorization?.('whenInUse');
-    console.log('Permission iOS status:', status);
     return status === 'granted' || status === true;
   };
 
   const fetchCityFromCoords = async (latitude, longitude) => {
-    const response = await fetch(
-      `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${latitude}&lon=${longitude}`,
-      {
-        headers: {
-          Accept: 'application/json',
-          'User-Agent': 'IASVMobile/1.0 (support@iasportvision.com)'
+    // Sécurité : timeout pour éviter les hangs sur Nominatim
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 10000);
+    let response;
+    try {
+      response = await fetch(
+        `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${encodeURIComponent(latitude)}&lon=${encodeURIComponent(longitude)}`,
+        {
+          headers: {
+            Accept: 'application/json',
+            'User-Agent': 'IASVMobile/1.0 (support@iasportvision.com)'
+          },
+          signal: controller.signal,
         }
-      }
-    );
+      );
+    } finally {
+      clearTimeout(timer);
+    }
 
     if (!response.ok) {
       throw new Error(`HTTP ${response.status}`);
@@ -51,32 +57,20 @@ const Welcome = () => {
 
     const contentType = response.headers.get('content-type') || '';
     const responseText = await response.text();
-    console.log('Nominatim status:', response.status, 'content-type:', contentType);
     if (!contentType.includes('application/json')) {
       throw new Error('Réponse non JSON');
     }
 
     const data = JSON.parse(responseText);
-    console.log('Nominatim raw address:', data?.address);
     const address = data?.address || {};
-    const city =
+    return (
       address.city ||
       address.town ||
       address.village ||
       address.municipality ||
       address.county ||
-      '';
-
-    console.log('City candidates:', {
-      city: address.city,
-      town: address.town,
-      village: address.village,
-      municipality: address.municipality,
-      county: address.county,
-      chosen: city,
-    });
-
-    return city;
+      ''
+    );
   };
 
   const getPosition = (options) =>
@@ -87,24 +81,23 @@ const Welcome = () => {
   const resolveCityFromLocation = async () => {
     const allowed = await requestLocationPermission();
     if (!allowed) {
-      console.warn('Permission de localisation refusée');
+      if (__DEV__) console.warn('Permission de localisation refusée');
       return '';
     }
 
     try {
       const position = await getPosition({ enableHighAccuracy: true, timeout: 8000, maximumAge: 300000 });
       const { latitude, longitude } = position.coords;
-      console.log('Geoloc coords:', { latitude, longitude });
+      // Ne jamais logger les coordonnées GPS (PII)
       return await fetchCityFromCoords(latitude, longitude);
     } catch (error) {
-      console.warn('Erreur de géolocalisation (précision élevée):', error);
+      if (__DEV__) console.warn('Erreur géolocalisation (haute précision):', error?.message);
       try {
         const position = await getPosition({ enableHighAccuracy: false, timeout: 8000, maximumAge: 300000 });
         const { latitude, longitude } = position.coords;
-        console.log('Geoloc coords (faible précision):', { latitude, longitude });
         return await fetchCityFromCoords(latitude, longitude);
       } catch (fallbackError) {
-        console.warn('Erreur de géolocalisation (fallback):', fallbackError);
+        if (__DEV__) console.warn('Erreur géolocalisation (fallback):', fallbackError?.message);
         return '';
       }
     }

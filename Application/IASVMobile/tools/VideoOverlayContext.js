@@ -4,7 +4,6 @@ const VideoOverlayContext = createContext(null);
 
 export const VideoOverlayProvider = ({ rootRef, children }) => {
   const [videoUri, setVideoUri] = useState(null);
-  const [zoomMap, setZoomMap] = useState(null);
   const [isFullScreen, setIsFullScreen] = useState(false);
   const [isTransitioning, setIsTransitioning] = useState(false);
   const [anchorRectInWindow, setAnchorRectInWindow] = useState(null);
@@ -27,16 +26,14 @@ export const VideoOverlayProvider = ({ rootRef, children }) => {
     });
   }, [rootRef]);
 
-  const openVideo = useCallback((nextVideoUri, nextZoomMap) => {
+  const openVideo = useCallback((nextVideoUri) => {
     setVideoUri(nextVideoUri);
-    setZoomMap(nextZoomMap);
   }, []);
 
   const closeVideo = useCallback(() => {
     setIsFullScreen(false);
     setIsTransitioning(false);
     setVideoUri(null);
-    setZoomMap(null);
     setAnchorRectInWindow(null);
     anchorRectRef.current = null;
   }, []);
@@ -77,7 +74,6 @@ export const VideoOverlayProvider = ({ rootRef, children }) => {
   const value = useMemo(
     () => ({
       videoUri,
-      zoomMap,
       isFullScreen,
       isTransitioning,
       anchorRectInWindow,
@@ -91,7 +87,6 @@ export const VideoOverlayProvider = ({ rootRef, children }) => {
     }),
     [
       videoUri,
-      zoomMap,
       isFullScreen,
       isTransitioning,
       anchorRectInWindow,

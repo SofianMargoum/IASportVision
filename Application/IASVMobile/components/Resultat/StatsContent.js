@@ -105,7 +105,8 @@ function StatsContent() {
         const data = await fetchClassementJournees(cp_no, phase, poule);
         if (isMounted) setClassements(Array.isArray(data) ? data : []);
       } catch (e) {
-        if (isMounted) setError(e);
+        if (__DEV__) console.error('Stats load error:', e?.message);
+        if (isMounted) setError('Erreur lors du chargement des statistiques.');
       } finally {
         if (isMounted) setLoading(false);
       }
@@ -203,9 +204,7 @@ function StatsContent() {
   if (error) {
     return (
       <View style={styles.centered}>
-        <Text style={styles.errorText}>
-          Erreur lors du chargement des statistiques : {error.message}
-        </Text>
+        <Text style={styles.errorText}>{error}</Text>
       </View>
     );
   }

@@ -277,7 +277,7 @@ const ListeVideoSidebar = ({ onVideoSelect, isActive }) => {
         const sortedVideos = await fetchVideosByClub(selectedClub.name);
         setVideos(sortedVideos);
       } catch (error) {
-        console.error('Erreur lors de la recherche des vidéos:', error);
+        if (__DEV__) console.error('Erreur lors de la recherche des vidéos:', error?.message);
         setError('Impossible de charger les vidéos. Veuillez réessayer plus tard.');
       } finally {
         setLoading(false);
@@ -319,8 +319,8 @@ const ListeVideoSidebar = ({ onVideoSelect, isActive }) => {
             await deleteVideoByClub(selectedClub.name, video.name);
             setVideos((prev) => (prev || []).filter((v) => v.name !== video.name));
           } catch (e) {
-            console.error('Erreur suppression vidéo:', e);
-            Alert.alert('Erreur', e?.message || 'Impossible de supprimer la vidéo.');
+            if (__DEV__) console.error('Erreur suppression vidéo:', e?.message);
+            Alert.alert('Erreur', 'Impossible de supprimer la vidéo.');
           }
         },
       },
@@ -343,7 +343,14 @@ const ListeVideoSidebar = ({ onVideoSelect, isActive }) => {
 
   const submitRename = useCallback(async () => {
     const oldName = renameTarget?.name;
-    const newName = String(renameValue || '').trim();
+    // Anti path-traversal : séparateurs et `..` interdits dans un nom de
+    // fichier qui sera transmis au backend pour renommer un objet GCS.
+    const rawNew = String(renameValue || '').trim();
+    const newName = rawNew
+      .replace(/[\\/]/g, '_')
+      .replace(/\.\.+/g, '_')
+      .replace(/[\u0000-\u001f\u007f]/g, '')
+      .slice(0, 200);
 
     if (!selectedClub || !oldName) {
       setRenameVisible(false);
@@ -351,7 +358,7 @@ const ListeVideoSidebar = ({ onVideoSelect, isActive }) => {
     }
 
     if (!newName) {
-      Alert.alert('Erreur', 'Le nouveau nom est vide.');
+      Alert.alert('Erreur', 'Le nouveau nom est vide ou invalide.');
       return;
     }
 
@@ -367,8 +374,8 @@ const ListeVideoSidebar = ({ onVideoSelect, isActive }) => {
       setRenameValue('');
       await handleSearch();
     } catch (e) {
-      console.error('Erreur renommage vidéo:', e);
-      Alert.alert('Erreur', e?.message || 'Impossible de renommer la vidéo.');
+      if (__DEV__) console.error('Erreur renommage vidéo:', e?.message);
+      Alert.alert('Erreur', 'Impossible de renommer la vidéo.');
     }
   }, [renameTarget, renameValue, selectedClub, handleSearch]);
 

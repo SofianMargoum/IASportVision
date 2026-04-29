@@ -4,9 +4,10 @@ try {
 } catch {}
 
 const HIK_BASE_URL = process.env.HIK_BASE_URL || 'https://ieu.hikcentralconnect.com';
-// ⚠️ Évite les clés en dur en prod (env vars override if set)
-const HIK_APP_KEY = process.env.HIK_APP_KEY || 'r2dHJrezsz1YUAV6PfRNkAUGSfisdzm8';
-const HIK_SECRET_KEY = process.env.HIK_SECRET_KEY || 'wHdmXyBmBeTbMNh7Gy14OlBh9AZQyCas';
+// Les clés DOIVENT être injectées via les variables d'environnement (app.yaml ou Secret Manager).
+// Ne JAMAIS les committer en dur dans le source.
+const HIK_APP_KEY = process.env.HIK_APP_KEY;
+const HIK_SECRET_KEY = process.env.HIK_SECRET_KEY;
 
 // Simple in-memory token cache
 let tokenCache = {

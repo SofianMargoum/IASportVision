@@ -32,15 +32,23 @@ const Explore = ({ selectedClub, selectedCompetition, onSelectClub, onCompetitio
   };
 
   const fetchCityFromCoords = async (latitude, longitude) => {
-    const response = await fetch(
-      `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${latitude}&lon=${longitude}`,
-      {
-        headers: {
-          Accept: 'application/json',
-          'User-Agent': 'IASVMobile/1.0 (support@iasportvision.com)'
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 10000);
+    let response;
+    try {
+      response = await fetch(
+        `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${encodeURIComponent(latitude)}&lon=${encodeURIComponent(longitude)}`,
+        {
+          headers: {
+            Accept: 'application/json',
+            'User-Agent': 'IASVMobile/1.0 (support@iasportvision.com)'
+          },
+          signal: controller.signal,
         }
-      }
-    );
+      );
+    } finally {
+      clearTimeout(timer);
+    }
 
     if (!response.ok) {
       throw new Error(`HTTP ${response.status}`);

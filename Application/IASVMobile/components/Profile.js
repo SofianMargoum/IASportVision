@@ -1,34 +1,48 @@
 import React, { useContext, useEffect, useState } from 'react';
 import { View, StyleSheet, ActivityIndicator } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { GoogleSignin } from '@react-native-google-signin/google-signin';
 import LoginForm from './Profile/LoginForm';
 import UserProfile from './Profile/UserProfile';
-import { UserContext } from './../tools/UserContext'; // Importez le contexte
+import { UserContext } from './../tools/UserContext';
 
-const Profile = ({ navigation }) => { // Ajoutez navigation comme prop
-  const { user, setUser } = useContext(UserContext); // Accédez au contexte utilisateur
+// Sécurité : on ne persiste JAMAIS de tokens. Whitelist stricte des champs.
+const sanitizeUserForStorage = (user) => {
+  if (!user || typeof user !== 'object') return null;
+  const {
+    id,
+    name,
+    email,
+    photo,
+    givenName,
+    familyName,
+    nom,
+    prenom,
+    age,
+    poste,
+  } = user;
+  return { id, name, email, photo, givenName, familyName, nom, prenom, age, poste };
+};
+
+const Profile = ({ navigation }) => {
+  const { user, setUser } = useContext(UserContext);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    GoogleSignin.configure({
-      webClientId: '417232013163-of6mf1nmu8tqibvfmm864oq7uhp7ka8g.apps.googleusercontent.com',
-    });
-
     const initializeUser = async () => {
       try {
         const storedUser = await AsyncStorage.getItem('user');
         if (storedUser) {
-          setUser(JSON.parse(storedUser));
-        } else {
-          const userInfo = await GoogleSignin.getCurrentUser();
-          if (userInfo && userInfo.user) {
-            setUser(userInfo.user);
-            await saveUserToStorage(userInfo.user);
+          try {
+            const parsed = JSON.parse(storedUser);
+            // On re-sanitize au chargement, au cas où un ancien build aurait
+            // pu persister des tokens.
+            setUser(sanitizeUserForStorage(parsed));
+          } catch {
+            await AsyncStorage.removeItem('user');
           }
         }
       } catch (error) {
-        console.error('Erreur lors de l\'initialisation de l\'utilisateur :', error);
+        if (__DEV__) console.error('Erreur init utilisateur:', error?.message);
       } finally {
         setLoading(false);
       }
@@ -37,11 +51,13 @@ const Profile = ({ navigation }) => { // Ajoutez navigation comme prop
     initializeUser();
   }, []);
 
-  const saveUserToStorage = async (user) => {
+  const saveUserToStorage = async (u) => {
     try {
-      await AsyncStorage.setItem('user', JSON.stringify(user));
+      const safe = sanitizeUserForStorage(u);
+      if (!safe) return;
+      await AsyncStorage.setItem('user', JSON.stringify(safe));
     } catch (error) {
-      console.error('Erreur lors de la sauvegarde des informations utilisateur :', error);
+      if (__DEV__) console.error('Erreur sauvegarde utilisateur:', error?.message);
     }
   };
 
@@ -49,45 +65,26 @@ const Profile = ({ navigation }) => { // Ajoutez navigation comme prop
     try {
       await AsyncStorage.removeItem('user');
     } catch (error) {
-      console.error('Erreur lors de la suppression des informations utilisateur :', error);
+      if (__DEV__) console.error('Erreur suppression utilisateur:', error?.message);
     }
   };
 
-  const handleGoogleLogin = async () => {
-    try {
-      setLoading(true);
-      await GoogleSignin.hasPlayServices();
-      const userInfo = await GoogleSignin.signIn();
-      const userFromCurrent = await GoogleSignin.getCurrentUser();
-      const finalUser = userInfo?.user || userFromCurrent?.user;
-
-      if (finalUser) {
-        setUser(finalUser);
-        await saveUserToStorage(finalUser);
-      } else {
-        console.error('Connexion échouée, utilisateur introuvable.');
-      }
-    } catch (error) {
-      console.error('Erreur lors de la connexion Google :', error);
-    } finally {
-      setLoading(false);
+  const handleLocalLogin = async (userData) => {
+    if (!userData || typeof userData !== 'object' || (!userData.id && !userData.email)) {
+      if (__DEV__) console.warn('handleLocalLogin: données utilisateur invalides');
+      return;
     }
+    setUser(userData);
+    await saveUserToStorage(userData);
   };
-// Profile.js
-const handleLocalLogin = async (userData) => {
-  setUser(userData);                // on met l'objet tel quel
-  await saveUserToStorage(userData);
-};
 
-
-  const handleGoogleLogout = async () => {
+  const handleLogout = async () => {
     try {
       setLoading(true);
-      await GoogleSignin.signOut();
       setUser(null);
       await clearUserFromStorage();
     } catch (error) {
-      console.error('Erreur lors de la déconnexion :', error);
+      if (__DEV__) console.error('Erreur déconnexion:', error?.message);
     } finally {
       setLoading(false);
     }
@@ -106,13 +103,11 @@ const handleLocalLogin = async (userData) => {
       {user ? (
         <UserProfile
           user={user}
-          onLogout={handleGoogleLogout}
-          navigation={navigation} // Transmettez navigation à UserProfile
+          onLogout={handleLogout}
+          navigation={navigation}
         />
-      ) : (<LoginForm
-            onLocalLogin={handleLocalLogin}
-            handleGoogleLogin={handleGoogleLogin}
-          />
+      ) : (
+        <LoginForm onLocalLogin={handleLocalLogin} />
       )}
     </View>
   );

@@ -21,6 +21,9 @@ const SearchClub = ({ initialSearchTerm, locationCity, locationRequestId, onLoca
   const previousSearchTerm = useRef('');
   const searchTermRef = useRef(searchTerm);
   const recentClubsRef = useRef(recentClubs);
+  // Garde-fou anti race-condition : on ignore les réponses liées à un cl_no
+  // qui n'est plus le club sélectionné.
+  const competitionsRequestRef = useRef(0);
 
   useEffect(() => { searchTermRef.current = searchTerm; }, [searchTerm]);
   useEffect(() => { recentClubsRef.current = recentClubs; }, [recentClubs]);
@@ -36,52 +39,31 @@ const SearchClub = ({ initialSearchTerm, locationCity, locationRequestId, onLoca
     try {
       const savedSelectedClub = await AsyncStorage.getItem('selectedClub');
       const savedRecentClubs = await AsyncStorage.getItem('recentClubs');
-      const savedSelectedCompetition = await AsyncStorage.getItem('selectedCompetition');
 
       if (savedRecentClubs) {
-        setRecentClubs(JSON.parse(savedRecentClubs));
+        try {
+          const parsed = JSON.parse(savedRecentClubs);
+          if (Array.isArray(parsed)) setRecentClubs(parsed);
+        } catch {
+          await AsyncStorage.removeItem('recentClubs');
+        }
       }
 
       if (savedSelectedClub) {
-        const club = JSON.parse(savedSelectedClub);
+        let club = null;
+        try {
+          club = JSON.parse(savedSelectedClub);
+        } catch {
+          await AsyncStorage.removeItem('selectedClub');
+        }
+        if (!club || typeof club !== 'object' || !club.cl_no) return;
+        // Le useEffect([selectedClub]) se chargera de fetcher les compétitions :
+        // une seule source de vérité pour éviter les races.
         setSelectedClub(club);
         setClNo(club.cl_no);
-
-        const storedCompetitions = await fetchCompetitionsForClub(club.cl_no);
-        const sortedCompetitions = storedCompetitions.sort((a, b) =>
-          a.competitionName.localeCompare(b.competitionName, 'fr', { sensitivity: 'base' })
-        );
-
-        const uniqueCompetitions = sortedCompetitions.filter((comp, index, self) =>
-          self.findIndex((c) => c.competitionName === comp.competitionName) === index
-        );
-
-        setCompetitionNames(uniqueCompetitions.map((comp) => comp.competitionName));
-        setDetailedCompetitions(uniqueCompetitions);
-
-        if (
-          savedSelectedCompetition &&
-          sortedCompetitions.some((comp) => comp.competitionName === savedSelectedCompetition)
-        ) {
-          const selectedCompDetails = sortedCompetitions.find(
-            (comp) => comp.competitionName === savedSelectedCompetition
-          );
-          setSelectedCompetition(selectedCompDetails.competitionName);
-          setCompetition(selectedCompDetails.competitionName);
-          setPhase(selectedCompDetails.phaseNumber);
-          setPoule(selectedCompDetails.stageNumber);
-          setCp_no(selectedCompDetails.cp_no);
-        } else if (sortedCompetitions.length > 0) {
-          const firstCompDetails = sortedCompetitions[0];
-          setSelectedCompetition(firstCompDetails.competitionName);
-          setCompetition(firstCompDetails.competitionName);
-          setPhase(firstCompDetails.phaseNumber);
-          setPoule(firstCompDetails.stageNumber);
-          setCp_no(firstCompDetails.cp_no);
-        }
       }
     } catch (error) {
-      console.error('Erreur lors du chargement des données:', error);
+      if (__DEV__) console.error('Erreur lors du chargement des données:', error?.message);
     }
   };
 
@@ -102,28 +84,59 @@ const SearchClub = ({ initialSearchTerm, locationCity, locationRequestId, onLoca
     }
   }, [locationCity, locationRequestId]);
 
-  // Recharger les données depuis le contexte quand selectedClub change
+  // Source unique de vérité : dès que selectedClub change, on (re)charge
+  // ses compétitions, en ignorant toute réponse obsolète.
   useEffect(() => {
-    if (selectedClub) {
-      const syncWithContext = async () => {
-        const storedCompetitions = await fetchCompetitionsForClub(selectedClub.cl_no);
-        const sortedCompetitions = storedCompetitions.sort((a, b) =>
+    if (!selectedClub?.cl_no) {
+      setCompetitionNames([]);
+      setDetailedCompetitions([]);
+      return;
+    }
+
+    const requestId = ++competitionsRequestRef.current;
+    const targetClNo = selectedClub.cl_no;
+
+    (async () => {
+      try {
+        const storedCompetitions = await fetchCompetitionsForClub(targetClNo);
+        // Réponse obsolète (l'utilisateur a changé de club entre-temps) ?
+        if (requestId !== competitionsRequestRef.current) return;
+
+        const sortedCompetitions = (storedCompetitions || []).sort((a, b) =>
           a.competitionName.localeCompare(b.competitionName, 'fr', { sensitivity: 'base' })
         );
         const uniqueCompetitions = sortedCompetitions.filter((comp, index, self) =>
           self.findIndex((c) => c.competitionName === comp.competitionName) === index
         );
+
         setCompetitionNames(uniqueCompetitions.map((comp) => comp.competitionName));
         setDetailedCompetitions(uniqueCompetitions);
-        
-        // Synchroniser aussi la compétition sélectionnée depuis le contexte
+
+        // Restaure la sélection persistée si elle est toujours valide,
+        // sinon prend la première compétition.
         const savedSelectedCompetition = await AsyncStorage.getItem('selectedCompetition');
-        if (savedSelectedCompetition && sortedCompetitions.some(comp => comp.competitionName === savedSelectedCompetition)) {
-          setSelectedCompetition(savedSelectedCompetition);
+        if (requestId !== competitionsRequestRef.current) return;
+
+        const matched = savedSelectedCompetition
+          ? uniqueCompetitions.find((c) => c.competitionName === savedSelectedCompetition)
+          : null;
+        const target = matched || uniqueCompetitions[0] || null;
+        if (target) {
+          setSelectedCompetition(target.competitionName);
+          setCompetition(target.competitionName);
+          setPhase(target.phaseNumber);
+          setPoule(target.stageNumber);
+          setCp_no(target.cp_no);
+          if (!matched) {
+            AsyncStorage.setItem('selectedCompetition', target.competitionName);
+          }
+        } else {
+          setSelectedCompetition('');
         }
-      };
-      syncWithContext();
-    }
+      } catch (error) {
+        if (__DEV__) console.error('Erreur fetch compétitions:', error?.message);
+      }
+    })();
   }, [selectedClub]);
 
 
@@ -181,6 +194,12 @@ const SearchClub = ({ initialSearchTerm, locationCity, locationRequestId, onLoca
   const handleClubClick = useCallback(
     async (club) => {
       setSearchTerm('');
+      // Si on ré-élit le même club, on n'a rien à invalider.
+      // Sinon on supprime la compétition précédemment persistée pour qu'elle
+      // ne soit pas réappliquée à tort sur un autre club.
+      if (selectedClub?.cl_no !== club.cl_no) {
+        await AsyncStorage.removeItem('selectedCompetition');
+      }
       setSelectedClub(club);
       setClNo(club.cl_no);
 
@@ -191,32 +210,10 @@ const SearchClub = ({ initialSearchTerm, locationCity, locationRequestId, onLoca
         return updatedClubs;
       });
 
-      // Récupère les compétitions du club
-      const storedCompetitions = await fetchCompetitionsForClub(club.cl_no);
-      const sortedCompetitions = storedCompetitions.sort((a, b) =>
-        a.competitionName.localeCompare(b.competitionName, 'fr', { sensitivity: 'base' })
-      );
-
-      const uniqueCompetitions = sortedCompetitions.filter((comp, index, self) =>
-        self.findIndex((c) => c.competitionName === comp.competitionName) === index
-      );
-
-      setCompetitionNames(uniqueCompetitions.map((comp) => comp.competitionName));
-      setDetailedCompetitions(uniqueCompetitions);
-
-      if (sortedCompetitions.length > 0) {
-        const firstCompetition = sortedCompetitions[0];
-        setSelectedCompetition(firstCompetition.competitionName);
-        setCompetition(firstCompetition.competitionName);
-        setPhase(firstCompetition.phaseNumber);
-        setPoule(firstCompetition.stageNumber);
-        setCp_no(firstCompetition.cp_no);
-        AsyncStorage.setItem('selectedCompetition', firstCompetition.competitionName);
-      }
-
       AsyncStorage.setItem('selectedClub', JSON.stringify(club));
+      // NB : le fetch des compétitions est géré par le useEffect([selectedClub]).
     },
-    [setSelectedClub, setClNo, setCompetition, setPhase, setPoule, setCp_no]
+    [selectedClub, setSelectedClub, setClNo]
   );
 
   const memoizedClubList = useMemo(() => {

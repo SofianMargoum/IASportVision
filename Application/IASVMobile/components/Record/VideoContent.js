@@ -9,6 +9,9 @@ import {
   startRollingExport,
   tickRollingExport,
   finalizeRollingExport,
+  finalizeRollingAsync,
+  getRollingQueue,
+  dismissRolling,
   uploadFromUrl,     // ✅ HTTP(S) -> GCS
   mergeImages,
 } from './../../tools/api';
@@ -23,8 +26,28 @@ const DEBUG_LOGS = false;
 const debugLog = (...args) => {
   if (DEBUG_LOGS) console.log(...args);
 };
+// En prod, on étouffe warn/error pour ne pas exposer de détails techniques
+// (URL backend, IDs internes, stack traces) via les logs système.
+const warnLog = (...args) => {
+  if (__DEV__) console.warn(...args);
+};
+const errorLog = (...args) => {
+  if (__DEV__) console.error(...args);
+};
 
 const OPPONENT_STORAGE_KEY = 'selectedOpponentClub';
+const ROLLING_STORAGE_KEY = 'activeRollingSession';
+const DISMISSED_UPLOADS_KEY = 'dismissedPendingUploads';
+
+// Anti path-traversal : on enlève les séparateurs et `..` qui pourraient remonter
+// l'arborescence côté backend / GCS si le nom de club contenait une charge.
+const sanitizeName = (s) =>
+  String(s ?? '')
+    .replace(/[\\/]/g, '_')
+    .replace(/\.\.+/g, '_')
+    .replace(/[\u0000-\u001f\u007f]/g, '')
+    .trim()
+    .slice(0, 120);
 
 const safeJson = (x) => {
   try {
@@ -104,6 +127,45 @@ export const useVideoContent = () => {
   const [progressValue, setProgressValue] = useState(0);
   const [progressLines, setProgressLines] = useState([]);
 
+  // Pending uploads queue (background pipelines kicked off by Stop, plus
+  // backend-side queued/active rollings).
+  // Each entry: { id, rollingId, label, status, progress, statusText, error,
+  //               localStartedAt, source: 'client'|'backend' }
+  const [pendingUploads, setPendingUploads] = useState([]);
+  const pendingUploadsRef = useRef([]);
+  useEffect(() => {
+    pendingUploadsRef.current = pendingUploads;
+  }, [pendingUploads]);
+
+  const addPending = (entry) => {
+    setPendingUploads((prev) => {
+      if (prev.find((e) => e.id === entry.id)) return prev;
+      return [...prev, { localStartedAt: Date.now(), source: 'client', ...entry }];
+    });
+  };
+  const updatePending = (id, patch) => {
+    setPendingUploads((prev) =>
+      prev.map((e) => (e.id === id ? { ...e, ...(patch || {}) } : e))
+    );
+  };
+  const removePending = (id) => {
+    // Optimistic UI: drop locally first, then ask backend to forget it.
+    const entry = (pendingUploadsRef.current || []).find(
+      (e) => e.id === id || e.rollingId === id
+    );
+    setPendingUploads((prev) =>
+      prev.filter((e) => e.id !== id && e.rollingId !== id)
+    );
+    const rollingId = entry?.rollingId || (typeof id === 'string' ? id : null);
+    const deviceId = entry?.deviceId || selectedDevice?.deviceId;
+    const cameraId = entry?.cameraId || selectedDevice?.cameraId;
+    if (rollingId && deviceId && cameraId) {
+      dismissRolling({ deviceId, cameraId, rollingId }).catch((e) =>
+        warnLog(TAG, nowIso(), 'dismissRolling failed', { rollingId, message: e?.message })
+      );
+    }
+  };
+
   const pushProgressLine = (line) => {
     if (!line) return;
     setProgressLines((prev) => {
@@ -181,8 +243,17 @@ export const useVideoContent = () => {
         if (cancelled) return;
         if (!raw) return;
 
-        const parsed = JSON.parse(raw);
-        if (!parsed || !parsed.name) return;
+        let parsed = null;
+        try {
+          parsed = JSON.parse(raw);
+        } catch {
+          await AsyncStorage.removeItem(OPPONENT_STORAGE_KEY);
+          return;
+        }
+        if (!parsed || typeof parsed !== 'object' || typeof parsed.name !== 'string') {
+          await AsyncStorage.removeItem(OPPONENT_STORAGE_KEY);
+          return;
+        }
 
         setSelectedClubInfo(parsed);
         setFilename(parsed.name);
@@ -192,6 +263,38 @@ export const useVideoContent = () => {
     };
 
     restoreOpponent();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  // Restore active rolling session (rollingId) from storage on mount.
+  // This survives the app being killed during a recording: when the user
+  // re-opens the app while the camera is still recording, we recover the
+  // server-side rolling session so STOP can finalize cleanly without
+  // having to fall back to a late rolling session.
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const raw = await AsyncStorage.getItem(ROLLING_STORAGE_KEY);
+        if (cancelled || !raw) return;
+        const parsed = JSON.parse(raw);
+        if (!parsed || typeof parsed !== 'object') return;
+        if (typeof parsed.rollingId === 'string' && parsed.rollingId) {
+          rollingIdRef.current = parsed.rollingId;
+          rollingAutoTickActiveRef.current = !!parsed.autoTickActive;
+          if (Number.isFinite(Number(parsed.startMs))) {
+            recordStartMsRef.current = Number(parsed.startMs);
+          }
+          debugLog(TAG, nowIso(), 'restored active rolling session', {
+            rollingId: parsed.rollingId,
+          });
+        }
+      } catch {
+        // ignore
+      }
+    })();
     return () => {
       cancelled = true;
     };
@@ -301,7 +404,6 @@ export const useVideoContent = () => {
 
         if (serverIsRecording) {
           setIsRecording(true);
-          setMessage('Enregistrement en cours...');
 
           if (typeof serverSeconds === 'number') {
             // Ne jamais faire "reculer" le timer à cause d'un reset côté API.
@@ -327,7 +429,7 @@ export const useVideoContent = () => {
         }
       } catch (e) {
         // On ne casse pas l'UI si le status échoue ponctuellement.
-        console.warn(TAG, nowIso(), 'hikGetRecordingStatus error', {
+        warnLog(TAG, nowIso(), 'hikGetRecordingStatus error', {
           message: e?.message,
           status: e?.status,
         });
@@ -365,7 +467,7 @@ export const useVideoContent = () => {
       try {
         await tickRollingExport({ rollingId });
       } catch (e) {
-        console.warn(TAG, nowIso(), 'rolling tick error', {
+        warnLog(TAG, nowIso(), 'rolling tick error', {
           rollingId,
           message: e?.message,
           status: e?.status,
@@ -388,6 +490,106 @@ export const useVideoContent = () => {
     };
   }, [isRecording]);
 
+  // ── Poll backend rolling queue: gives an authoritative view of any rolling
+  //    sessions still active/queued on the server (useful after app reload,
+  //    or when multiple clients share the same camera).
+  useEffect(() => {
+    let cancelled = false;
+    let intervalId = null;
+    const deviceId = selectedDevice?.deviceId;
+    const cameraId = selectedDevice?.cameraId;
+    if (!deviceId || !cameraId) return undefined;
+
+    const syncQueue = async () => {
+      if (cancelled) return;
+      try {
+        const resp = await getRollingQueue({ deviceId, cameraId });
+        const items = Array.isArray(resp?.data?.items) ? resp.data.items : [];
+        if (cancelled) return;
+
+        // Backend is the single source of truth. Every entry the user
+        // hasn't dismissed lives in the per-device download index, so we
+        // simply mirror the response into pendingUploads. Local-only
+        // entries (no rollingId, e.g. legacy non-rolling pipelines) are
+        // preserved as-is.
+        const mapped = items
+          // Skip the still-recording session of the user's *own* camera:
+          // it's already shown via the live progress UI, not the downloads
+          // list. Queued/finalizing/done all stay visible.
+          .filter((item) => item.status !== 'recording')
+          .map((item) => {
+            const mergedIdx = Number(item.mergedThroughIndex);
+            const stopIdx = Number(item.stopMaxIdx);
+            const safeIdx = Number(item.safeIndex);
+            const target = Number.isFinite(stopIdx)
+              ? stopIdx
+              : Number.isFinite(safeIdx)
+              ? safeIdx
+              : null;
+            const chunkText =
+              Number.isFinite(mergedIdx) && target !== null && target >= 0
+                ? ` ${Math.max(0, mergedIdx + 1)}/${target + 1} chunks`
+                : '';
+            const isDone = item.status === 'done' || !!item.finalGcsPath;
+            const statusText = isDone
+              ? 'Vidéo prête'
+              : item.status === 'queued'
+              ? 'En file d’attente'
+              : item.status === 'finalizing'
+              ? `Finalisation…${chunkText}`
+              : item.status === 'merged'
+              ? `Assemblé${chunkText}`
+              : item.status === 'stopped'
+              ? `Arrêté${chunkText}`
+              : 'En cours';
+            const backendProg = Number(item.progress);
+            const progress = isDone
+              ? 1
+              : Number.isFinite(backendProg)
+              ? backendProg
+              : 0.05;
+            return {
+              id: item.rollingId,
+              rollingId: item.rollingId,
+              deviceId: item.deviceId || deviceId,
+              cameraId: item.cameraId || cameraId,
+              label:
+                (typeof item.label === 'string' && item.label.trim()) ||
+                (item.directory && item.combinedFilename
+                  ? `${item.directory} ${item.combinedFilename}`
+                  : `Rolling ${String(item.rollingId).slice(0, 6)}…`),
+              status: isDone ? 'done' : item.status === 'queued' ? 'queued' : 'processing',
+              backendStatus: item.status,
+              queuedBehind: item.queuedBehind || null,
+              progress,
+              statusText,
+              mergedThroughIndex: Number.isFinite(mergedIdx) ? mergedIdx : null,
+              stopMaxIdx: Number.isFinite(stopIdx) ? stopIdx : null,
+              safeIndex: Number.isFinite(safeIdx) ? safeIdx : null,
+              finalGcsPath: item.finalGcsPath || null,
+              finalPublicUrl: item.finalPublicUrl || null,
+              source: 'backend',
+            };
+          });
+
+        setPendingUploads((prev) => {
+          const localOnly = prev.filter((e) => !e.rollingId);
+          return [...localOnly, ...mapped];
+        });
+      } catch (e) {
+        // ignore: queue is best-effort
+      }
+    };
+
+    syncQueue();
+    intervalId = setInterval(syncQueue, 2000);
+    return () => {
+      cancelled = true;
+      if (intervalId) clearInterval(intervalId);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedDevice?.deviceId, selectedDevice?.cameraId]);
+
   const handleInputChange = (text) => {
     debugLog(TAG, nowIso(), 'handleInputChange', { text });
 
@@ -407,7 +609,7 @@ export const useVideoContent = () => {
         });
         setSearchResults(results);
       } catch (e) {
-        console.error(TAG, nowIso(), 'searchClubs error', e);
+        errorLog(TAG, nowIso(), 'searchClubs error', e);
         setSearchResults([]);
       }
     }, 1000);
@@ -458,10 +660,9 @@ export const useVideoContent = () => {
 
   // --- Helpers ---
   const buildNames = (clubSnap, opponentSnap) => {
-    const directory = clubSnap ? clubSnap.name : 'Unknown Club';
-    const combinedFilename = opponentSnap
-      ? `${counter} - ${secondCounter} ${opponentSnap.name}`
-      : `${counter} - ${secondCounter} Unknown Club`;
+    const directory = sanitizeName(clubSnap ? clubSnap.name : 'Unknown Club') || 'Unknown Club';
+    const oppName = sanitizeName(opponentSnap ? opponentSnap.name : 'Unknown Club') || 'Unknown Club';
+    const combinedFilename = `${counter} - ${secondCounter} ${oppName}`;
 
     debugLog(TAG, nowIso(), 'buildNames', { directory, combinedFilename });
     return { directory, combinedFilename };
@@ -524,7 +725,7 @@ export const useVideoContent = () => {
 
     if (!selectedDevice?.deviceId || !selectedDevice?.cameraId) {
       setMessage('❌ Aucun appareil Hik-Connect sélectionné (deviceId/cameraId manquant).');
-      console.warn(TAG, nowIso(), 'invalid device', {
+      warnLog(TAG, nowIso(), 'invalid device', {
         selectedDevice,
         selectedIndex,
         devicesLen: devices?.length,
@@ -553,7 +754,6 @@ export const useVideoContent = () => {
 
       // 1) STOP côté HikConnect
       try {
-        setMessage('⏹️ Arrêt enregistrement (HikConnect)...');
         stepProgress(0.12, 'Stop caméra…');
         debugLog(TAG, nowIso(), 'hikStopRecording start', { deviceId: selectedDevice.deviceId });
 
@@ -565,7 +765,7 @@ export const useVideoContent = () => {
         debugLog(TAG, nowIso(), 'hikStopRecording success', safeJson(stopResp));
         stepProgress(0.18, 'Stop OK.');
       } catch (e) {
-        console.error(TAG, nowIso(), '❌ hikStopRecording error', {
+        errorLog(TAG, nowIso(), '❌ hikStopRecording error', {
           message: e?.message,
           status: e?.status,
           details: e?.details,
@@ -580,7 +780,124 @@ export const useVideoContent = () => {
       setSelectedClubInfo(null);
       setIsRecording(false);
 
-      try {
+      // ── Capture snapshot BEFORE resetting refs so the background pipeline
+      //    keeps using the right rollingId / club info, while the foreground
+      //    is freed for a brand-new recording.
+      const snapshot = {
+        rollingId: rollingIdRef.current,
+        rollingAutoTickActive: rollingAutoTickActiveRef.current,
+        startMs,
+        endMs,
+        timeElapsed: timeElapsedRef.current,
+        clubSnap,
+        opponentSnap,
+        counter,
+        secondCounter,
+        deviceId: selectedDevice.deviceId,
+        cameraId: selectedDevice.cameraId,
+      };
+
+      // Reset shared refs so a fresh recording can start cleanly.
+      recordStartMsRef.current = null;
+      rollingIdRef.current = null;
+      rollingAutoTickActiveRef.current = false;
+      rollingNextIndexRef.current = 0;
+      rollingTickInFlightRef.current = false;
+      rollingInFlightIndicesRef.current = new Set();
+      rollingRetryQueueRef.current = [];
+      setTimeElapsed(0);
+      // Clear persisted rolling session: the recording is being stopped.
+      AsyncStorage.removeItem(ROLLING_STORAGE_KEY).catch(() => {});
+
+      // Add a pending-upload entry that the UI will display under the
+      // progress bar. The pipeline below will keep it up to date.
+      const _entryDir = clubSnap ? clubSnap.name : 'Unknown Club';
+      const _entryFile = opponentSnap
+        ? `${snapshot.counter} - ${snapshot.secondCounter} ${opponentSnap.name}`
+        : `${snapshot.counter} - ${snapshot.secondCounter} Unknown Club`;
+      const entryId = snapshot.rollingId || `local-${Date.now()}`;
+      addPending({
+        id: entryId,
+        rollingId: snapshot.rollingId || null,
+        deviceId: snapshot.deviceId || selectedDevice?.deviceId || null,
+        cameraId: snapshot.cameraId || selectedDevice?.cameraId || null,
+        label: `${_entryDir} ${_entryFile}`,
+        status: 'processing',
+        progress: 0.2,
+        statusText: 'Stop OK.',
+      });
+
+      // Hide the foreground progress bar; the entry list takes over.
+      setProgressVisible(false);
+      setProgressLines([]);
+      setProgressValue(0);
+
+      // Fire-and-forget the heavy pipeline. We shadow refs/setters with
+      // snapshot-bound locals so the pipeline body can stay (almost)
+      // unchanged AND so a concurrent new recording cannot corrupt it.
+      void (async () => {
+        // shadow refs with snapshot
+        const rollingIdRef = { current: snapshot.rollingId };
+        const rollingAutoTickActiveRef = { current: snapshot.rollingAutoTickActive };
+        const recordStartMsRef = { current: snapshot.startMs };
+        const lastStopMsRef = { current: snapshot.endMs };
+        const rollingNextIndexRef = { current: 0 };
+        const rollingTickInFlightRef = { current: false };
+        const rollingInFlightIndicesRef = { current: new Set() };
+        const rollingRetryQueueRef = { current: [] };
+
+        // shadow snapshot-bound locals so closures inside the body resolve
+        // them to the snapshot values.
+        const selectedClub = snapshot.clubSnap;
+        const selectedClubInfo = snapshot.opponentSnap;
+        const counter = snapshot.counter;
+        const secondCounter = snapshot.secondCounter;
+        const startMs = snapshot.startMs;
+        const endMs = snapshot.endMs;
+        const timeElapsed = snapshot.timeElapsed;
+        const clubSnap = snapshot.clubSnap;
+        const opponentSnap = snapshot.opponentSnap;
+        const selectedDevice = { deviceId: snapshot.deviceId, cameraId: snapshot.cameraId };
+
+        // shadow UI setters: redirect to the pending entry, no foreground UI.
+        const setMessage = (m) =>
+          updatePending(entryId, { statusText: String(m || '') });
+        const stepProgress = (v, l) => {
+          if (typeof v === 'number') {
+            updatePending(entryId, {
+              progress: Math.max(0, Math.min(1, v)),
+            });
+          }
+          if (l) updatePending(entryId, { statusText: String(l) });
+        };
+        const beginProgress = (l) =>
+          updatePending(entryId, {
+            progress: 0.05,
+            statusText: l ? String(l) : '',
+          });
+        const endProgress = (l) => {
+          updatePending(entryId, { progress: 1, statusText: l ? String(l) : '' });
+        };
+        const pushProgressLine = (l) => {
+          if (l) updatePending(entryId, { statusText: String(l) });
+        };
+
+        // shadow state setters that the pipeline body accidentally calls
+        // (we already reset them in the foreground above).
+        const setFilename = () => {};
+        const setSelectedClubInfo = () => {};
+        const setIsRecording = () => {};
+        const setTimeElapsed = () => {};
+        const setProgressVisible = () => {};
+        const setProgressLines = () => {};
+        const setProgressValue = () => {};
+
+        // shadow progressValue (read once inside the catch block)
+        const progressValue = 0.5;
+
+        let stopHadError = false;
+
+        try {
         setMessage('📦 Génération MP4 via Hik-Connect...');
         stepProgress(0.25, 'MP4…');
 
@@ -610,142 +927,135 @@ export const useVideoContent = () => {
 
         const { directory, combinedFilename } = buildNames(clubSnap, opponentSnap);
 
-        // Prefer rolling finalize (chunks downloaded during recording). Fallback to async export job.
+        // Backend handles the entire export pipeline (chunks → merge →
+        // copy → thumbnail) via Cloud Tasks. The client just stamps the
+        // finalize request and exits. Status is observed via /rolling/queue.
         let res;
         let rollingFinalized = false;
+
         try {
-          if (rollingIdRef.current) {
-            // Final catch-up tick: ask server to merge any ready chunk(s) before finalize.
-            // If backend auto-tick is active, do NOT tick from the app (avoid duplicate orchestration).
-            if (!rollingAutoTickActiveRef.current) {
-              try {
-                const startCatch = Date.now();
-                const maxCatchMs = 90_000;
-                let lastMerged = null;
-
-                while (Date.now() - startCatch < maxCatchMs) {
-                  // eslint-disable-next-line no-await-in-loop
-                  const t = await tickRollingExport({ rollingId: rollingIdRef.current });
-
-                  const notReady = !!t?.data?.notReady;
-                  const inProgress = !!t?.data?.inProgress;
-                  const merged = Number(t?.data?.mergedThroughIndex);
-
-                  if (notReady || inProgress || !Number.isFinite(merged)) break;
-                  if (lastMerged !== null && merged <= lastMerged) break;
-                  lastMerged = merged;
-
-                  // avoid hammering the backend
-                  // eslint-disable-next-line no-await-in-loop
-                  await new Promise((r) => setTimeout(r, 2000));
-                }
-              } catch (eCatchup) {
-                console.warn(TAG, nowIso(), 'rolling catch-up error', {
-                  message: eCatchup?.message,
-                  status: eCatchup?.status,
-                });
+          // Ensure we have a rolling session (start one late if needed).
+          if (!rollingIdRef.current) {
+            warnLog(TAG, nowIso(), 'no rollingId at stop – starting late rolling session');
+            try {
+              stepProgress(0.25, 'Démarrage rolling tardif…');
+              const lateRoll = await startRollingExport({
+                deviceId: selectedDevice.deviceId,
+                cameraId: selectedDevice.cameraId,
+                beginTime,
+                offset: tz,
+                voiceSwitch: 0,
+                chunkSec: 60,
+                lagSec: 0,
+                directory,
+                combinedFilename,
+                homeLogoUrl: clubSnap?.logo || undefined,
+                awayLogoUrl: opponentSnap?.logo || undefined,
+                label: `${directory} ${combinedFilename}`,
+              });
+              const lateId = lateRoll?.data?.rollingId || lateRoll?.rollingId;
+              if (!lateId) throw new Error('late startRollingExport: no rollingId');
+              rollingIdRef.current = lateId;
+              rollingAutoTickActiveRef.current = !!lateRoll?.data?.autoTickEnabled;
+            } catch (eLate) {
+              const st = Number(eLate?.status) || 0;
+              const isNetwork =
+                !st && /network request failed/i.test(String(eLate?.message || ''));
+              if (isNetwork) {
+                setMessage('❌ Réseau indisponible pendant le STOP. Réessaie quand la connexion revient.');
+                stepProgress(0.3, 'Réseau KO.');
+                throw eLate;
               }
+              warnLog(TAG, nowIso(), 'late rolling start failed', {
+                message: eLate?.message,
+                status: st,
+              });
+              throw eLate;
             }
-
-            setMessage('🧩 Assemblage MP4 (rolling)…');
-            stepProgress(0.32, 'Assemblage…');
-
-            const finalName = `${directory} ${combinedFilename}.mp4`;
-            let finalizeRolling = null;
-            const startFinalize = Date.now();
-            const maxWaitMs = 12 * 60 * 1000; // user prefers completeness over speed
-            let attempt = 0;
-            while (Date.now() - startFinalize < maxWaitMs) {
-              attempt += 1;
-              try {
-                if (attempt > 1) {
-                  setMessage(`🧩 Assemblage MP4 (rolling)… (attente ${Math.round((Date.now() - startFinalize) / 1000)}s)`);
-                }
-
-                // eslint-disable-next-line no-await-in-loop
-                finalizeRolling = await finalizeRollingExport({
-                  rollingId: rollingIdRef.current,
-                  directory,
-                  filename: finalName,
-                  stopTime: endTime,
-                  tailTryCount: 1,
-                  requireComplete: 1,
-                });
-                break;
-              } catch (eFin) {
-                const st = Number(eFin?.status) || 0;
-                const msg = String(eFin?.message || '');
-                const isNetwork = !st && /network request failed/i.test(msg);
-                const retryable =
-                  isNetwork ||
-                  st === 409 || // still processing / incomplete
-                  st === 500 ||
-                  st === 502 ||
-                  st === 503 ||
-                  st === 504;
-
-                if (!retryable) throw eFin;
-
-                const retryAfterMsRaw =
-                  Number(eFin?.details?.retryAfterMs) ||
-                  Number(eFin?.details?.details?.retryAfterMs) ||
-                  5000;
-                const waitMs = Math.max(1000, Math.min(30_000, retryAfterMsRaw));
-
-                // eslint-disable-next-line no-await-in-loop
-                await new Promise((r) => setTimeout(r, waitMs));
-              }
-            }
-
-            if (!finalizeRolling) {
-              const err = new Error('Rolling finalize timeout (still incomplete)');
-              err.status = 504;
-              throw err;
-            }
-
-            // Provide a "saveLastRecording-like" shape for downstream code
-            res = {
-              data: {
-                url: finalizeRolling?.data?.publicUrl,
-                gcsPath: finalizeRolling?.data?.gcsPath,
-                rollingId: rollingIdRef.current,
-              },
-            };
-            rollingFinalized = true;
-            stepProgress(0.4, 'MP4 prêt.');
-          } else {
-            throw new Error('No rollingId');
           }
+
+          // Fire-and-forget: backend will finalize via Cloud Tasks. We do
+          // NOT wait for completion. The queue endpoint exposes the status
+          // (status=done + finalGcsPath when ready).
+          setMessage('📤 Demande de finalisation envoyée…');
+          stepProgress(0.4, 'Traitement serveur…');
+          try {
+            const finalName = `${directory} ${combinedFilename}.mp4`;
+            await finalizeRollingAsync({
+              rollingId: rollingIdRef.current,
+              directory,
+              filename: finalName,
+              stopTime: endTime,
+              tailTryCount: 1,
+              requireComplete: 1,
+              combinedFilename: `${combinedFilename}.png`,
+              homeLogoUrl: clubSnap?.logo || undefined,
+              awayLogoUrl: opponentSnap?.logo || undefined,
+              label: `${directory} ${combinedFilename}`,
+            });
+          } catch (eAsync) {
+            // finalize-async is short and idempotent – a failure here is
+            // a real network problem. Surface it but do not block.
+            warnLog(TAG, nowIso(), 'finalizeRollingAsync failed', {
+              message: eAsync?.message,
+              status: eAsync?.status,
+            });
+          }
+
+          res = {
+            data: {
+              gcsPath: null,
+              rollingId: rollingIdRef.current,
+            },
+          };
+          rollingFinalized = true;
+          stepProgress(0.5, 'Traitement serveur…');
         } catch (eRolling) {
-          console.warn(TAG, nowIso(), 'rolling finalize failed, fallback to legacy saveLastRecording', {
+          warnLog(TAG, nowIso(), 'rolling stop pipeline failed', {
             message: eRolling?.message,
             status: eRolling?.status,
           });
 
-          // If backend is temporarily unreachable, do not start the slow fallback (it will fail too).
-          if (!eRolling?.status && /network request failed/i.test(String(eRolling?.message || ''))) {
+          if (
+            !eRolling?.status &&
+            /network request failed/i.test(String(eRolling?.message || ''))
+          ) {
             setMessage('❌ Réseau indisponible pendant le STOP. Réessaie quand la connexion revient.');
             stepProgress(0.4, 'Réseau KO.');
             throw eRolling;
           }
 
-          // Legacy fallback only (kept for resilience).
+          // Legacy fallback only as last resort (no rolling at all available).
           try {
             setMessage('⏳ Génération MP4 (fallback legacy) en cours...');
             stepProgress(0.32, 'Traitement…');
-            debugLog(TAG, nowIso(), 'fallback saveLastRecording call start');
             res = await saveLastRecording(payload);
-            debugLog(TAG, nowIso(), 'fallback saveLastRecording call success', safeJson(res));
             stepProgress(0.4, 'MP4 prêt.');
           } catch (e2) {
-            console.error(TAG, nowIso(), 'fallback saveLastRecording error', e2);
+            errorLog(TAG, nowIso(), 'fallback saveLastRecording error', e2);
             throw eRolling;
           }
         }
 
+        // ── Fast path: rolling handled the export server-side; skip legacy
+        //    upload/merge steps entirely.
+        if (rollingFinalized) {
+          if (typeof res?.data?.gcsPath === 'string' && res.data.gcsPath) {
+            // GCS path already known – fully done.
+            setMessage('Vidéo enregistrée avec succès');
+            stepProgress(1, 'Terminé.');
+          } else {
+            // Backend still processing (finalize timed out client-side).
+            // Entry stays visible in the list; syncQueue will update it.
+            setMessage('Vidéo en cours de traitement…');
+            stepProgress(0.6, 'En attente serveur…');
+          }
+          return;
+        }
+
         const sourceUrl = resolveUrlFromSaveLastRecordingResponse(res);
         if (!sourceUrl) {
-          console.error(TAG, nowIso(), '❌ saveLastRecording: no URL', safeJson(res));
+          errorLog(TAG, nowIso(), '❌ saveLastRecording: no URL', safeJson(res));
           setMessage("❌ MP4 non disponible (pas d'URL retournée).");
           stepProgress(0.4, 'URL MP4 manquante.');
           stopHadError = true;
@@ -754,11 +1064,8 @@ export const useVideoContent = () => {
 
         const duration = resolveDurationSeconds(res, timeElapsed);
 
-        // 2) Upload HTTP(S) -> GCS (skip if rolling already produced final file in GCS)
-        if (rollingFinalized && typeof res?.data?.gcsPath === 'string' && res.data.gcsPath) {
-          setMessage('Vidéo uploadée avec succès');
-          stepProgress(0.78, 'Upload OK.');
-        } else {
+        // 2) Upload HTTP(S) -> GCS (legacy fallback only – rolling fast-path returned above).
+        {
           try {
             setMessage('☁️ Upload vidéo en cours...');
             stepProgress(0.55, 'Upload…');
@@ -782,45 +1089,55 @@ export const useVideoContent = () => {
             setMessage('Vidéo uploadée avec succès');
             stepProgress(0.78, 'Upload OK.');
           } catch (err) {
-            console.error(TAG, nowIso(), '❌ Upload-from-url échoué', err);
+            errorLog(TAG, nowIso(), '❌ Upload-from-url échoué', err);
             setMessage('❌ Upload vidéo échoué');
             stepProgress(0.78, 'Upload KO.');
             stopHadError = true;
           }
         }
 
-        // 3) Fusion images
-        const mergeParams = {
-          logo1Url:
-            clubSnap?.logo ||
-            'https://storage.googleapis.com/ia-sport.appspot.com/images/logo_default.png',
-          logo2Url:
-            opponentSnap?.logo ||
-            'https://storage.googleapis.com/ia-sport.appspot.com/images/logo_default.png',
-          finalFolder: directory,
-          finalName: `${directory} ${combinedFilename}.png`,
-        };
-
-        debugLog(TAG, nowIso(), 'mergeImages params', mergeParams);
-
-        try {
-          setMessage('🖼️ Fusion des images en cours...');
-          stepProgress(0.9, 'Miniature…');
-          debugLog(TAG, nowIso(), 'mergeImages start');
-          const mergeResponse = await mergeImages(mergeParams);
-          debugLog(TAG, nowIso(), 'mergeImages success', safeJson(mergeResponse));
-          setMessage('Fusion réussie');
+        // 3) Fusion images - generated server-side by rolling/finalize.
+        //    Client-side merge is only kept as fallback for non-rolling exports
+        //    and runs immediately to keep legacy behavior intact.
+        if (rollingFinalized) {
           stepProgress(0.98, 'Miniature OK.');
-        } catch (err) {
-          console.error(TAG, nowIso(), '❌ Fusion images échouée', err);
-          setMessage('❌ Fusion images échouée');
-          stepProgress(0.98, 'Miniature KO.');
-          stopHadError = true;
+        } else {
+          const mergeParams = {
+            logo1Url:
+              clubSnap?.logo ||
+              'https://storage.googleapis.com/ia-sport.appspot.com/images/logo_default.png',
+            logo2Url:
+              opponentSnap?.logo ||
+              'https://storage.googleapis.com/ia-sport.appspot.com/images/logo_default.png',
+            finalFolder: directory,
+            finalName: `${directory} ${combinedFilename}.png`,
+          };
+
+          debugLog(TAG, nowIso(), 'mergeImages params', mergeParams);
+
+          try {
+            setMessage('🖼️ Fusion des images en cours...');
+            stepProgress(0.9, 'Miniature…');
+            debugLog(TAG, nowIso(), 'mergeImages start');
+            const mergeResponse = await mergeImages(mergeParams);
+            debugLog(TAG, nowIso(), 'mergeImages success', safeJson(mergeResponse));
+            setMessage('Fusion réussie');
+            stepProgress(0.98, 'Miniature OK.');
+          } catch (err) {
+            errorLog(TAG, nowIso(), '❌ Fusion images échouée', err);
+            setMessage('❌ Fusion images échouée');
+            stepProgress(0.98, 'Miniature KO.');
+            stopHadError = true;
+          }
         }
       } catch (err) {
-        console.error(TAG, nowIso(), '❌ Erreur générale STOP/save/upload', err);
-        setMessage(`❌ Erreur générale: ${err?.message || 'Erreur inconnue'}`);
-        stepProgress(progressValue || 0.5, 'Erreur.');
+        // Suppress the internal 'No rollingId' sentinel thrown when the late
+        // rolling path already handled things (or decided to use legacy).
+        if (!err._useLegacy) {
+          errorLog(TAG, nowIso(), '❌ Erreur générale STOP/save/upload', err);
+          setMessage(`❌ Erreur générale: ${err?.message || 'Erreur inconnue'}`);
+          stepProgress(progressValue || 0.5, 'Erreur.');
+        }
         stopHadError = true;
       } finally {
         debugLog(TAG, nowIso(), 'STOP finally cleanup');
@@ -832,15 +1149,37 @@ export const useVideoContent = () => {
         rollingInFlightIndicesRef.current = new Set();
         rollingRetryQueueRef.current = [];
         setTimeElapsed(0);
+        // Foreground progress bar already hidden after STOP. The pending
+        // entry's status/progress is driven by syncQueue polling /rolling/queue
+        // — we do NOT force 'done' here because the backend may still be
+        // finalizing for several minutes after STOP. The entry will flip to
+        // 'done' (status=done + finalGcsPath) when Cloud Tasks finishes.
         if (stopHadError) {
-          stepProgress(1, 'Terminé (erreur).');
-          // ne masque pas automatiquement pour laisser le détail visible
-          endProgress(null, { autoHide: false });
+          updatePending(entryId, { status: 'error', progress: 1 });
+        } else if (snapshot.rollingId) {
+          // Keep entry under backend control. Show "Traitement serveur…"
+          // until syncQueue updates it.
+          updatePending(entryId, {
+            status: 'processing',
+            progress: 0.5,
+            statusText: 'Traitement serveur…',
+          });
         } else {
-          setMessage('Enregistrement terminé avec succès');
-          endProgress('Terminé.');
+          // No rolling at all (legacy fallback path) – it really is done now.
+          updatePending(entryId, { status: 'done', progress: 1 });
+          setTimeout(() => removePending(entryId), 5000);
         }
       }
+      })().catch((e) => {
+        errorLog(TAG, nowIso(), '❌ background pipeline crash', {
+          message: e?.message,
+        });
+        updatePending(entryId, {
+          status: 'error',
+          progress: 1,
+          error: e?.message || 'Erreur',
+        });
+      });
     } else {
       // START (HikConnect + UI)
       try {
@@ -863,6 +1202,13 @@ export const useVideoContent = () => {
         try {
           const tz = getLocalOffsetString();
           const beginTime = toFixedOffsetIso(start, tz);
+          // Best-effort placeholder names so the in-progress download list
+          // shows the final video title instead of "Rolling xxxxxx…".
+          // The same fields are sent again (overriding) at finalize time.
+          const _clubSnapStart = selectedClub;
+          const _opponentSnapStart = selectedClubInfo;
+          const _startNames = buildNames(_clubSnapStart, _opponentSnapStart);
+          const _startLabel = `${_startNames.directory} ${_startNames.combinedFilename}`.trim();
           const roll = await startRollingExport({
             deviceId: selectedDevice.deviceId,
             cameraId: selectedDevice.cameraId,
@@ -871,6 +1217,11 @@ export const useVideoContent = () => {
             voiceSwitch: 0,
             chunkSec: 60,
             lagSec: 60,
+            directory: _startNames.directory,
+            combinedFilename: _startNames.combinedFilename,
+            homeLogoUrl: _clubSnapStart?.logo || undefined,
+            awayLogoUrl: _opponentSnapStart?.logo || undefined,
+            label: _startLabel,
           });
 
           const rollingId = roll?.data?.rollingId || roll?.rollingId;
@@ -885,12 +1236,21 @@ export const useVideoContent = () => {
             rollingLagMsRef.current = (Number(roll?.data?.lagSec) || 120) * 1000;
             rollingInFlightIndicesRef.current = new Set();
             rollingRetryQueueRef.current = [];
+            // Persist so we can recover the session if the app is killed.
+            AsyncStorage.setItem(
+              ROLLING_STORAGE_KEY,
+              JSON.stringify({
+                rollingId,
+                autoTickActive: rollingAutoTickActiveRef.current,
+                startMs: start,
+              })
+            ).catch(() => {});
           } else {
             rollingIdRef.current = null;
             rollingAutoTickActiveRef.current = false;
           }
         } catch (eRoll) {
-          console.warn(TAG, nowIso(), 'startRollingExport failed (ignored)', {
+          warnLog(TAG, nowIso(), 'startRollingExport failed (ignored)', {
             message: eRoll?.message,
             status: eRoll?.status,
           });
@@ -903,9 +1263,8 @@ export const useVideoContent = () => {
 
         setIsRecording(true);
         setTimeElapsed(0);
-        setMessage('Enregistrement en cours...');
       } catch (error) {
-        console.error(TAG, nowIso(), '❌ Échec start HikConnect', {
+        errorLog(TAG, nowIso(), '❌ Échec start HikConnect', {
           message: error?.message,
           status: error?.status,
           details: error?.details,
@@ -927,6 +1286,8 @@ export const useVideoContent = () => {
     progressVisible,
     progressValue,
     progressLines,
+    pendingUploads,
+    removePending,
     counter,
     secondCounter,
     handleInputChange,

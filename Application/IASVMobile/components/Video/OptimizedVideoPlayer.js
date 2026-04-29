@@ -6,7 +6,6 @@ import styles from './OptimizedVideoPlayer/styles';
 
 const OptimizedVideoPlayer = ({
   videoUri,
-  zoomMap,
   isFullScreen,
   isTransitioning,
   onToggleFullScreen,
@@ -17,7 +16,7 @@ const OptimizedVideoPlayer = ({
   const {
     videoHeight, windowWidth, windowHeight,
     renderPlayer,
-  } = useVideoLogic(videoUri, zoomMap, {
+  } = useVideoLogic(videoUri, {
     isFullScreen,
     isTransitioning,
     onToggleFullScreen,

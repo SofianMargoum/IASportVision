@@ -3,12 +3,22 @@ instance_class: F4_1G
 
 # Variables d'environnement pour la configuration de la base de données
 env_variables:
-  DB_HOST: '34.163.248.199' # Adresse IP publique de votre instance Cloud SQL
-  DB_USER: 'postgres' # Remplacez par le nom d'utilisateur de votre base de données
-  DB_PASS: 'postgres' # Remplacez par le mot de passe de votre base de données
-  DB_NAME: 'iasportvision2025' # Remplacez par le nom de la base de données
-  DB_PORT: '5432' # Port par défaut de votre instance Cloud SQL
-  
+
+  # Clés API Hikvision HikCentral
+  # ⚠️ Régénérer ces clés dans l'interface HikCentral (les anciennes étaient committées dans le source)
+  HIK_APP_KEY: 'r2dHJrezsz1YUAV6PfRNkAUGSfisdzm8'
+  HIK_SECRET_KEY: 'wHdmXyBmBeTbMNh7Gy14OlBh9AZQyCas'
+
+  # Secret pour l'endpoint debug /hikconnect/token (laisser vide = endpoint désactivé)
+  DEBUG_TOKEN_SECRET: ''
+
+  # CORS : restreindre les appels cross-origin (laisser vide = wildcard, utile si app mobile uniquement)
+  ALLOWED_ORIGIN: ''
+
+  # Diag : allowlist des hosts et ports sondables (séparés par virgule)
+  DIAG_ALLOWED_HOSTS: '34.163.248.199,127.0.0.1,localhost'
+  DIAG_ALLOWED_PORTS: '5432,3307'
+
   ROLLING_AUTOTICK_ENABLED: "1"
   ROLLING_AUTOTICK_INTERVAL_SEC: "10"
   ROLLING_LOG_DOWNLOADURL_EVERY: "1"
@@ -21,6 +31,7 @@ env_variables:
   CLOUD_TASKS_LOCATION: "europe-west6"
   CLOUD_TASKS_QUEUE: "hikconnect-rolling"
   ROLLING_AUTOTICK_SECRET: "9f3c7a8b1d4e6f2a9c0b5e7d3a1f8c6e2d9a4b7c1e6f3d8a0b2c5e9f7a4d1c3"
+
 # Connexion à Cloud SQL (format : <PROJECT_ID>:<REGION>:<INSTANCE_NAME>)
 beta_settings:
   cloud_sql_instances: 'ia-sport:europe-west9:ia-sport-vision'

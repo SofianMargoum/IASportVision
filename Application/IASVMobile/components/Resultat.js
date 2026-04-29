@@ -181,11 +181,6 @@ const Resultat = ({ isActive }) => {
         />
       ) : (
         <Animated.View style={[styles.videoContainer, { opacity: fadeAnim }]}>
-          <Image
-            source={require('../assets/ballon.png')}
-            style={styles.emptyIcon}
-            resizeMode="contain"
-          />
           <Text style={styles.noContentText}>Aucun club sélectionné</Text>
           <Text style={styles.noContentSub}>
             Recherche un club dans l'onglet Explorer pour afficher ses résultats

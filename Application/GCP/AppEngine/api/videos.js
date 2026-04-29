@@ -7,6 +7,20 @@ const bucket = storage.bucket(bucketName);
 
 const DEFAULT_COVER_URL = 'https://storage.googleapis.com/ia-sport.appspot.com/images/cover.png';
 
+// Anti path-traversal : séparateurs, `..`, et caractères de contrôle interdits.
+function sanitizeGcsSegment(v) {
+  return String(v || '')
+    .replace(/\\/g, '')
+    .replace(/\/\.\.(\/|$)/g, '/_/')
+    .replace(/^\.\./g, '_')
+    .replace(/[\u0000-\u001f\u007f]/g, '')
+    .trim();
+}
+
+function hasTraversal(v) {
+  return v.includes('/') || v.includes('\\') || v.includes('..');
+}
+
 // Formatage de date
 function formatDateTime(dateString) {
     const date = new Date(dateString);
@@ -39,7 +53,7 @@ async function checkJsonExists(folder, videoName) {
 
 // Route pour lister les vidéos
 router.get('/videos', async (req, res) => {
-    const folder = req.query.folder || '';
+    const folder = sanitizeGcsSegment(req.query.folder || '');
     const prefix = folder.endsWith('/') ? folder : `${folder}/`;
 
     try {
@@ -71,7 +85,7 @@ router.get('/videos', async (req, res) => {
         res.status(200).json({ videos: videoData });
 
     } catch (error) {
-        console.error('Error fetching video URLs:', error);
+        console.error('Error fetching video URLs:', error.message);
         res.status(500).json({ status: 'error', message: 'Failed to retrieve video URLs' });
     }
 });
@@ -79,14 +93,18 @@ router.get('/videos', async (req, res) => {
 // Route pour supprimer une vidéo (et fichiers associés)
 // DELETE /api/videos?folder=CLUB&name=VIDEO_NAME_SANS_EXTENSION
 router.delete('/videos', async (req, res) => {
-    const folder = req.query.folder || '';
-    const name = req.query.name;
+    const folder = sanitizeGcsSegment(req.query.folder || '');
+    const name = sanitizeGcsSegment(req.query.name || '');
 
     if (!folder || !name) {
         return res.status(400).json({
             status: 'error',
             message: 'Missing required query params: folder, name',
         });
+    }
+
+    if (hasTraversal(folder) || hasTraversal(name)) {
+        return res.status(400).json({ status: 'error', message: 'Invalid folder or name' });
     }
 
     const prefix = folder.endsWith('/') ? folder : `${folder}/`;
@@ -128,7 +146,7 @@ router.delete('/videos', async (req, res) => {
             },
         });
     } catch (error) {
-        console.error('Error deleting video:', error);
+        console.error('Error deleting video:', error.message);
         return res.status(500).json({
             status: 'error',
             message: 'Failed to delete video',

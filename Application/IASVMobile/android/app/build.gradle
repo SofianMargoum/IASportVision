@@ -10,13 +10,16 @@ react {
     autolinkLibrariesWithApp()
 }
 
-def enableProguardInReleaseBuilds = false
+def enableProguardInReleaseBuilds = true
 def jscFlavor = 'org.webkit:android-jsc:+'
 
-// Ajouter les informations sensibles dans gradle.properties pour plus de sécurité
+// Charge les credentials de signature depuis android/keystore.properties
+// (gitignoré). Le build release échoue volontairement si le fichier manque.
 def keystorePropertiesFile = rootProject.file("keystore.properties")
 def keystoreProperties = new Properties()
-keystoreProperties.load(new FileInputStream(keystorePropertiesFile))
+if (keystorePropertiesFile.exists()) {
+    keystoreProperties.load(new FileInputStream(keystorePropertiesFile))
+}
 
 android {
     ndkVersion rootProject.ext.ndkVersion
@@ -33,29 +36,27 @@ android {
     }
 
     signingConfigs {
-    debug {
-        storeFile file(keystoreProperties["MYAPP_UPLOAD_STORE_FILE"])
-        storePassword keystoreProperties["MYAPP_UPLOAD_STORE_PASSWORD"]
-        keyAlias keystoreProperties["MYAPP_UPLOAD_KEY_ALIAS"]
-        keyPassword keystoreProperties["MYAPP_UPLOAD_KEY_PASSWORD"]
-    }
         release {
-            storeFile file(keystoreProperties["MYAPP_UPLOAD_STORE_FILE"])
-            storePassword keystoreProperties["MYAPP_UPLOAD_STORE_PASSWORD"]
-            keyAlias keystoreProperties["MYAPP_UPLOAD_KEY_ALIAS"]
-            keyPassword keystoreProperties["MYAPP_UPLOAD_KEY_PASSWORD"]
+            if (keystorePropertiesFile.exists()) {
+                storeFile file(keystoreProperties["MYAPP_UPLOAD_STORE_FILE"])
+                storePassword keystoreProperties["MYAPP_UPLOAD_STORE_PASSWORD"]
+                keyAlias keystoreProperties["MYAPP_UPLOAD_KEY_ALIAS"]
+                keyPassword keystoreProperties["MYAPP_UPLOAD_KEY_PASSWORD"]
+            }
         }
     }
 
     buildTypes {
         debug {
+            // Utilise le debug.keystore standard d'Android, jamais la clé release.
             signingConfig signingConfigs.debug
         }
         release {
             signingConfig signingConfigs.release
             minifyEnabled enableProguardInReleaseBuilds
-            shrinkResources false
+            shrinkResources enableProguardInReleaseBuilds
             proguardFiles getDefaultProguardFile("proguard-android.txt"), "proguard-rules.pro"
+            debuggable false
         }
     }
 }

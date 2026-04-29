@@ -1,19 +1,110 @@
 // --- API HikConnect ---
 
 const API_BASE = 'https://ia-sport.oa.r.appspot.com/api';
+const DEFAULT_TIMEOUT_MS = 30000;
+const UPLOAD_TIMEOUT_MS = 120000;
+
+// Sécurité : on force HTTPS pour toute l'API.
+if (!/^https:\/\//i.test(API_BASE)) {
+  throw new Error('API_BASE must use HTTPS');
+}
+
+/**
+ * Helper fetch sécurisé :
+ *  - impose HTTPS
+ *  - applique un timeout via AbortController
+ *  - parse JSON en sécurité
+ *  - normalise les erreurs (status / details) sans fuite d'infos sensibles
+ */
+async function secureFetch(url, { method = 'GET', headers, body, timeoutMs = DEFAULT_TIMEOUT_MS, parse = 'json' } = {}) {
+  if (typeof url !== 'string' || !/^https:\/\//i.test(url)) {
+    throw new Error('Insecure or invalid URL');
+  }
+
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+
+  try {
+    const resp = await fetch(url, {
+      method,
+      headers: {
+        Accept: 'application/ld+json, application/json;q=0.9, */*;q=0.1',
+        ...(body ? { 'Content-Type': 'application/json' } : {}),
+        ...(headers || {}),
+      },
+      body: body ? JSON.stringify(body) : undefined,
+      signal: controller.signal,
+    });
+
+    let data = null;
+    if (parse === 'json') {
+      data = await resp.json().catch(() => ({}));
+    } else if (parse === 'text') {
+      data = await resp.text().catch(() => '');
+    }
+
+    if (!resp.ok) {
+      const err = new Error(
+        (data && typeof data === 'object' && data.message) || `HTTP ${resp.status}`
+      );
+      err.status = resp.status;
+      err.details = (data && typeof data === 'object' && (data.details ?? data)) || null;
+      throw err;
+    }
+
+    // Erreur "métier" : 200 OK mais errorCode != '0'
+    if (data && typeof data === 'object' && data.errorCode && data.errorCode !== '0') {
+      const err = new Error(data.message || `Hik errorCode=${data.errorCode}`);
+      err.status = 502;
+      err.details = data;
+      throw err;
+    }
+
+    return data;
+  } catch (e) {
+    if (e?.name === 'AbortError') {
+      const err = new Error('Request timed out');
+      err.status = 408;
+      throw err;
+    }
+    throw e;
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+// Helper d'encodage défensif pour un segment de chemin
+const encPath = (v) => encodeURIComponent(String(v ?? ''));
+
+// L'API FFF DOFA renvoie tantôt une collection Hydra (`{"hydra:member":[...]}`),
+// tantôt un tableau JSON brut. On normalise.
+const extractList = (data) => {
+  if (Array.isArray(data)) return data;
+  if (Array.isArray(data?.['hydra:member'])) return data['hydra:member'];
+  return [];
+};
+
+// Validation de schéma d'URL externe (anti-SSRF côté client)
+function assertHttpsUrl(value, fieldName = 'url') {
+  if (typeof value !== 'string') throw new Error(`Invalid ${fieldName}`);
+  let parsed;
+  try {
+    parsed = new URL(value);
+  } catch {
+    throw new Error(`Invalid ${fieldName}`);
+  }
+  if (parsed.protocol !== 'https:') {
+    throw new Error(`${fieldName} must use HTTPS`);
+  }
+  return parsed.toString();
+}
 
 /**
  * Source unique de vérité :
  * retourne toutes les caméras avec leurs infos device, area, channel, etc.
  */
 export const fetchAllCameras = async () => {
-  const resp = await fetch(`${API_BASE}/hikconnect/cameras`);
-
-  if (!resp.ok) {
-    throw new Error(`HTTP ${resp.status}`);
-  }
-
-  return resp.json();
+  return secureFetch(`${API_BASE}/hikconnect/cameras`);
 };
 
 export async function saveLastRecording({
@@ -33,39 +124,10 @@ export async function saveLastRecording({
     ...(endTime ? { endTime } : {}),
   };
 
-  const resp = await fetch(`${API_BASE}/hikconnect/video/save-last-from-device`, {
+  return secureFetch(`${API_BASE}/hikconnect/video/save-last-from-device`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(body),
+    body,
   });
-
-  const data = await resp.json().catch(() => ({}));
-
-  // HTTP error
-  if (!resp.ok) {
-    const err = new Error(data?.message || `HTTP ${resp.status}`);
-    err.status = resp.status;
-    err.details = data?.details ?? data;
-    throw err;
-  }
-
-  // Business error (même si HTTP 200)
-  if (data?.errorCode && data.errorCode !== '0') {
-    const err = new Error(data?.message || `Hik errorCode=${data.errorCode}`);
-    err.status = 502;
-    err.details = data;
-    throw err;
-  }
-
-  // Certains retours d’erreur sont "emballés" en {message, details:{errorCode,...}}
-  if (data?.message && data?.details?.errorCode) {
-    const err = new Error(data.message);
-    err.status = 502;
-    err.details = data.details;
-    throw err;
-  }
-
-  return data;
 }
 
 // ===== Rolling chunked export during recording =====
@@ -77,6 +139,11 @@ export async function startRollingExport({
   voiceSwitch = 0,
   chunkSec = 60,
   lagSec = 120,
+  directory,
+  combinedFilename,
+  homeLogoUrl,
+  awayLogoUrl,
+  label,
 }) {
   const body = {
     deviceId,
@@ -86,60 +153,49 @@ export async function startRollingExport({
     chunkSec,
     lagSec,
     ...(typeof offset === 'string' && offset ? { offset } : {}),
+    ...(typeof directory === 'string' && directory ? { directory } : {}),
+    ...(typeof combinedFilename === 'string' && combinedFilename ? { combinedFilename } : {}),
+    ...(typeof homeLogoUrl === 'string' && homeLogoUrl ? { homeLogoUrl } : {}),
+    ...(typeof awayLogoUrl === 'string' && awayLogoUrl ? { awayLogoUrl } : {}),
+    ...(typeof label === 'string' && label ? { label } : {}),
   };
 
-  const resp = await fetch(`${API_BASE}/hikconnect/video/rolling/start`, {
+  return secureFetch(`${API_BASE}/hikconnect/video/rolling/start`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(body),
+    body,
   });
-
-  const data = await resp.json().catch(() => ({}));
-
-  if (!resp.ok) {
-    const err = new Error(data?.message || `HTTP ${resp.status}`);
-    err.status = resp.status;
-    err.details = data?.details ?? data;
-    throw err;
-  }
-
-  if (data?.errorCode && data.errorCode !== '0') {
-    const err = new Error(data?.message || `Hik errorCode=${data.errorCode}`);
-    err.status = 502;
-    err.details = data;
-    throw err;
-  }
-
-  return data;
 }
 
 export async function tickRollingExport({ rollingId, index } = {}) {
-  const resp = await fetch(`${API_BASE}/hikconnect/video/rolling/tick`, {
+  return secureFetch(`${API_BASE}/hikconnect/video/rolling/tick`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
+    body: {
       rollingId,
       ...(index === null || index === undefined ? {} : { index }),
-    }),
+    },
   });
+}
 
-  const data = await resp.json().catch(() => ({}));
-
-  if (!resp.ok) {
-    const err = new Error(data?.message || `HTTP ${resp.status}`);
-    err.status = resp.status;
-    err.details = data?.details ?? data;
-    throw err;
+export async function getRollingQueue({ deviceId, cameraId } = {}) {
+  if (!deviceId || !cameraId) {
+    throw new Error('Missing deviceId or cameraId');
   }
+  const url = `${API_BASE}/hikconnect/video/rolling/queue?deviceId=${encodeURIComponent(
+    deviceId
+  )}&cameraId=${encodeURIComponent(cameraId)}`;
 
-  if (data?.errorCode && data.errorCode !== '0') {
-    const err = new Error(data?.message || `Hik errorCode=${data.errorCode}`);
-    err.status = 502;
-    err.details = data;
-    throw err;
+  return secureFetch(url, { method: 'GET' });
+}
+
+export async function dismissRolling({ deviceId, cameraId, rollingId } = {}) {
+  if (!deviceId || !cameraId || !rollingId) {
+    throw new Error('Missing deviceId, cameraId or rollingId');
   }
-
-  return data;
+  return secureFetch(`${API_BASE}/hikconnect/video/rolling/dismiss`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ deviceId, cameraId, rollingId }),
+  });
 }
 
 export async function finalizeRollingExport({
@@ -149,37 +205,60 @@ export async function finalizeRollingExport({
   stopTime,
   tailTryCount = 3,
   requireComplete,
+  homeLogoUrl,
+  awayLogoUrl,
+  combinedFilename,
+  label,
 }) {
-  const resp = await fetch(`${API_BASE}/hikconnect/video/rolling/finalize`, {
+  return secureFetch(`${API_BASE}/hikconnect/video/rolling/finalize`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
+    body: {
       rollingId,
       directory,
       filename,
       stopTime,
       tailTryCount,
       ...(requireComplete === null || requireComplete === undefined ? {} : { requireComplete }),
-    }),
+      ...(typeof homeLogoUrl === 'string' && homeLogoUrl ? { homeLogoUrl } : {}),
+      ...(typeof awayLogoUrl === 'string' && awayLogoUrl ? { awayLogoUrl } : {}),
+      ...(typeof combinedFilename === 'string' && combinedFilename ? { combinedFilename } : {}),
+      ...(typeof label === 'string' && label ? { label } : {}),
+    },
   });
+}
 
-  const data = await resp.json().catch(() => ({}));
-
-  if (!resp.ok) {
-    const err = new Error(data?.message || `HTTP ${resp.status}`);
-    err.status = resp.status;
-    err.details = data?.details ?? data;
-    throw err;
-  }
-
-  if (data?.errorCode && data.errorCode !== '0') {
-    const err = new Error(data?.message || `Hik errorCode=${data.errorCode}`);
-    err.status = 502;
-    err.details = data;
-    throw err;
-  }
-
-  return data;
+/**
+ * Fire-and-forget finalize. Returns 202 immediately. The backend handles
+ * the heavy work via Cloud Tasks. The client polls /rolling/queue for
+ * status (finalGcsPath / finalPublicUrl when ready).
+ */
+export async function finalizeRollingAsync({
+  rollingId,
+  directory,
+  filename,
+  stopTime,
+  tailTryCount = 1,
+  requireComplete = 1,
+  homeLogoUrl,
+  awayLogoUrl,
+  combinedFilename,
+  label,
+}) {
+  return secureFetch(`${API_BASE}/hikconnect/video/rolling/finalize-async`, {
+    method: 'POST',
+    body: {
+      rollingId,
+      directory,
+      filename,
+      stopTime,
+      tailTryCount,
+      requireComplete,
+      ...(typeof homeLogoUrl === 'string' && homeLogoUrl ? { homeLogoUrl } : {}),
+      ...(typeof awayLogoUrl === 'string' && awayLogoUrl ? { awayLogoUrl } : {}),
+      ...(typeof combinedFilename === 'string' && combinedFilename ? { combinedFilename } : {}),
+      ...(typeof label === 'string' && label ? { label } : {}),
+    },
+  });
 }
 
 /**
@@ -200,27 +279,32 @@ export async function uploadFromUrl({
   filename,
   contentType = 'video/mp4',
 }) {
+  // Validation anti-SSRF côté client (le backend doit aussi valider)
+  const safeUrl = assertHttpsUrl(sourceUrl, 'sourceUrl');
+
+  if (typeof directory !== 'string' || !directory.trim()) {
+    throw new Error('Invalid directory');
+  }
+  if (typeof filename !== 'string' || !filename.trim()) {
+    throw new Error('Invalid filename');
+  }
+  // Empêche path traversal côté client
+  if (/[\\/]/.test(filename) || filename.includes('..')) {
+    throw new Error('Invalid filename');
+  }
+
   const body = {
-    sourceUrl,
+    sourceUrl: safeUrl,
     directory,
     filename,
     ...(contentType ? { contentType } : {}),
   };
 
-  const resp = await fetch(`${API_BASE}/upload-from-url`, {
+  const data = await secureFetch(`${API_BASE}/upload-from-url`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(body),
+    body,
+    timeoutMs: UPLOAD_TIMEOUT_MS,
   });
-
-  const data = await resp.json().catch(() => ({}));
-
-  if (!resp.ok) {
-    const err = new Error(data?.message || `HTTP ${resp.status}`);
-    err.status = resp.status;
-    err.details = data?.details ?? data;
-    throw err;
-  }
 
   // Contrat route: {status:'success', ...} sinon {status:'error', ...}
   if (data?.status && data.status !== 'success') {
@@ -239,134 +323,52 @@ export async function uploadFromUrl({
 // Démarrer l'enregistrement côté device HikConnect
 export async function hikStartRecording({ deviceId }) {
   if (!deviceId) throw new Error('Missing deviceId');
-
-  const resp = await fetch(`${API_BASE}/hikconnect/start-recording`, {
+  return secureFetch(`${API_BASE}/hikconnect/start-recording`, {
     method: 'PUT',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ deviceId }),
+    body: { deviceId },
   });
-
-  const data = await resp.json().catch(() => ({}));
-
-  if (!resp.ok) {
-    const err = new Error(data?.message || `HTTP ${resp.status}`);
-    err.status = resp.status;
-    err.details = data?.details ?? data;
-    throw err;
-  }
-
-  // au cas où Hik répondrait errorCode != '0' dans un 200
-  if (data?.errorCode && data.errorCode !== '0') {
-    const err = new Error(data?.message || `Hik errorCode=${data.errorCode}`);
-    err.status = 502;
-    err.details = data;
-    throw err;
-  }
-
-  return data;
 }
 
 // Arrêter l'enregistrement côté device HikConnect
 export async function hikStopRecording({ deviceId }) {
   if (!deviceId) throw new Error('Missing deviceId');
-
-  const resp = await fetch(`${API_BASE}/hikconnect/stop-recording`, {
+  return secureFetch(`${API_BASE}/hikconnect/stop-recording`, {
     method: 'PUT',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ deviceId }),
+    body: { deviceId },
   });
-
-  const data = await resp.json().catch(() => ({}));
-
-  if (!resp.ok) {
-    const err = new Error(data?.message || `HTTP ${resp.status}`);
-    err.status = resp.status;
-    err.details = data?.details ?? data;
-    throw err;
-  }
-
-  if (data?.errorCode && data.errorCode !== '0') {
-    const err = new Error(data?.message || `Hik errorCode=${data.errorCode}`);
-    err.status = 502;
-    err.details = data;
-    throw err;
-  }
-
-  return data;
 }
 
 // Statut d'enregistrement côté device HikConnect
 export async function hikGetRecordingStatus({ deviceId, cameraId, recordingStateToken }) {
   if (!deviceId) throw new Error('Missing deviceId');
 
-  const resp = await fetch(`${API_BASE}/hikconnect/recording-status`, {
+  const data = await secureFetch(`${API_BASE}/hikconnect/recording-status`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
+    body: {
       deviceId,
       ...(cameraId ? { cameraId } : {}),
       ...(recordingStateToken ? { recordingStateToken } : {}),
-    }),
+    },
   });
-
-  const data = await resp.json().catch(() => ({}));
-
-  if (!resp.ok) {
-    const err = new Error(data?.message || `HTTP ${resp.status}`);
-    err.status = resp.status;
-    err.details = data?.details ?? data;
-    throw err;
-  }
 
   return {
     isRecording: !!data?.isRecording,
     recordingTime: typeof data?.recordingTime === 'string' ? data.recordingTime : null,
   };
 }
-export const uploadZoomMapToApi = async (zoomMapExport, filename) => {
-  if (!filename) {
-    console.error('❌ filename est requis pour uploadZoomMapToApi');
-    return;
-  }
-
-  try {
-    const response = await fetch(`${API_BASE}/uploadZoomMap`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        filename: filename,
-        data: zoomMapExport,
-      }),
-    });
-
-    const result = await response.json();
-
-    if (response.ok) {
-      console.log('✅ ZoomMap uploaded:', result.gcsUrl);
-    } else {
-      console.error('Erreur API:', result.message);
-    }
-  } catch (error) {
-    console.error('Erreur fetch:', error);
-  }
-};
 
 export const fetchVideosByClub = async (clubName) => {
+  if (typeof clubName !== 'string' || !clubName.trim()) {
+    throw new Error('Missing clubName');
+  }
   const url = `${API_BASE}/videos?folder=${encodeURIComponent(clubName)}`;
 
-  const response = await fetch(url);
-  if (!response.ok) {
-    throw new Error('Erreur lors de la récupération des vidéos');
-  }
-
-  const data = await response.json();
+  const data = await secureFetch(url);
 
   const sortedVideos = (data.videos || []).sort((a, b) => {
     const convertToISO = (dateStr) => {
-      const [datePart, timePart] = dateStr.split(' ');
-      const [day, month, year] = datePart.split('/');
+      const [datePart, timePart] = String(dateStr || '').split(' ');
+      const [day, month, year] = String(datePart || '').split('/');
       return `${year}-${month}-${day}T${timePart || '00:00:00'}`;
     };
     return new Date(convertToISO(b.creationDate)) - new Date(convertToISO(a.creationDate));
@@ -376,20 +378,15 @@ export const fetchVideosByClub = async (clubName) => {
 };
 
 export const deleteVideoByClub = async (clubName, videoName) => {
-  if (!clubName) throw new Error('Missing clubName');
-  if (!videoName) throw new Error('Missing videoName');
+  if (typeof clubName !== 'string' || !clubName.trim()) throw new Error('Missing clubName');
+  if (typeof videoName !== 'string' || !videoName.trim()) throw new Error('Missing videoName');
+  if (/[\\/]/.test(videoName) || videoName.includes('..')) {
+    throw new Error('Invalid videoName');
+  }
 
   const url = `${API_BASE}/videos?folder=${encodeURIComponent(clubName)}&name=${encodeURIComponent(videoName)}`;
 
-  const resp = await fetch(url, { method: 'DELETE' });
-  const data = await resp.json().catch(() => ({}));
-
-  if (!resp.ok) {
-    const err = new Error(data?.message || `HTTP ${resp.status}`);
-    err.status = resp.status;
-    err.details = data?.details ?? data;
-    throw err;
-  }
+  const data = await secureFetch(url, { method: 'DELETE' });
 
   if (data?.status && data.status !== 'success') {
     const err = new Error(data?.message || 'Delete failed');
@@ -402,24 +399,16 @@ export const deleteVideoByClub = async (clubName, videoName) => {
 };
 
 export const renameVideoByClub = async (clubName, oldName, newName) => {
-  if (!clubName) throw new Error('Missing clubName');
-  if (!oldName) throw new Error('Missing oldName');
-  if (!newName) throw new Error('Missing newName');
+  if (typeof clubName !== 'string' || !clubName.trim()) throw new Error('Missing clubName');
+  if (typeof oldName !== 'string' || !oldName.trim()) throw new Error('Missing oldName');
+  if (typeof newName !== 'string' || !newName.trim()) throw new Error('Missing newName');
+  if (/[\\/]/.test(oldName) || oldName.includes('..')) throw new Error('Invalid oldName');
+  if (/[\\/]/.test(newName) || newName.includes('..')) throw new Error('Invalid newName');
 
-  const resp = await fetch(`${API_BASE}/videos/rename`, {
+  const data = await secureFetch(`${API_BASE}/videos/rename`, {
     method: 'PUT',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ folder: clubName, oldName, newName }),
+    body: { folder: clubName, oldName, newName },
   });
-
-  const data = await resp.json().catch(() => ({}));
-
-  if (!resp.ok) {
-    const err = new Error(data?.message || `HTTP ${resp.status}`);
-    err.status = resp.status;
-    err.details = data?.details ?? data;
-    throw err;
-  }
 
   if (data?.status && data.status !== 'success') {
     const err = new Error(data?.message || 'Rename failed');
@@ -433,35 +422,30 @@ export const renameVideoByClub = async (clubName, oldName, newName) => {
 
 // Fonction pour appeler l'API de fusion d'images
 export const mergeImages = async ({ logo1Url, logo2Url, finalFolder, finalName }) => {
+  // Validation : URLs externes -> HTTPS uniquement
+  const safeLogo1 = assertHttpsUrl(logo1Url, 'logo1Url');
+  const safeLogo2 = assertHttpsUrl(logo2Url, 'logo2Url');
+  if (typeof finalFolder !== 'string' || !finalFolder.trim()) {
+    throw new Error('Invalid finalFolder');
+  }
+  if (finalName != null) {
+    if (typeof finalName !== 'string' || /[\\/]/.test(finalName) || finalName.includes('..')) {
+      throw new Error('Invalid finalName');
+    }
+  }
+
   try {
     const queryParams = new URLSearchParams({
-      logo1Url,
-      logo2Url,
+      logo1Url: safeLogo1,
+      logo2Url: safeLogo2,
       finalFolder,
-      ...(finalName && { finalName }), // Ajoute finalName seulement s'il est défini
+      ...(finalName ? { finalName } : {}),
     });
 
     const url = `${API_BASE}/mergeImages?${queryParams.toString()}`;
-    console.log('Fetching URL:', url); // Log de l'URL complète de la requête
-
-    const response = await fetch(url, {
-      method: 'GET',
-    });
-
-    console.log('Response status:', response.status); // Log du statut de la réponse
-    console.log('Response headers:', response.headers); // Log des en-têtes de la réponse
-
-    if (!response.ok) {
-      const errorText = await response.text(); // Lire le texte d'erreur renvoyé par le serveur
-      console.error('Server error response:', errorText);
-      throw new Error('Échec de la fusion des images');
-    }
-
-    const data = await response.json();
-    console.log('Response data:', data); // Log des données reçues
-    return data; // Réponse avec l'URL de l'image fusionnée
+    return await secureFetch(url, { method: 'GET' });
   } catch (error) {
-    console.error('Error merging images:', error.message, error.stack);
+    if (__DEV__) console.error('Error merging images:', error?.message);
     throw error;
   }
 };
@@ -469,16 +453,21 @@ export const mergeImages = async ({ logo1Url, logo2Url, finalFolder, finalName }
 
 // Fonction pour rechercher des clubs
 export const searchClubs = async (searchTerm) => {
+  // Validation pour limiter l'attaque par injection d'URL
+  if (typeof searchTerm !== 'string') return [];
+  const cleaned = searchTerm.trim().slice(0, 100);
+  if (!cleaned) return [];
+
   try {
-    const response = await fetch(`https://api-dofa.fff.fr/api/clubs?clNom=${searchTerm}`);
-    const data = await response.json();
-    return data['hydra:member'].map(club => ({
+    const url = `https://api-dofa.fff.fr/api/clubs?clNom=${encodeURIComponent(cleaned)}`;
+    const data = await secureFetch(url);
+    return extractList(data).map((club) => ({
       name: club.name,
       logo: club.logo,
       cl_no: club.cl_no,
     }));
   } catch (error) {
-    console.error('Error fetching clubs:', error);
+    if (__DEV__) console.error('Error fetching clubs:', error?.message);
     return [];
   }
 };
@@ -487,39 +476,45 @@ const normalizeCompetitionName = (name) =>
   String(name || '').replace(/\s+/g, ' ').trim();
 
 export const fetchCompetitionsForClub = async (cl_no) => {
+  if (cl_no == null || cl_no === '') return [];
   try {
-    const response = await fetch(`https://api-dofa.fff.fr/api/clubs/${cl_no}/equipes`);
-    const data = await response.json();
+    const url = `https://api-dofa.fff.fr/api/clubs/${encPath(cl_no)}/equipes`;
+    const data = await secureFetch(url);
 
-    // Extraire les informations des compétitions avec les détails supplémentaires
-    const competitionDetails = data['hydra:member'].flatMap(team =>
-      team.engagements
-        .filter(engagement => engagement.competition.type === "CH")
-        .map(engagement => ({
+    // L'API FFF DOFA renvoie tantôt une collection Hydra (`{"hydra:member":[...]}`),
+    // tantôt un tableau JSON brut. On gère les deux formats.
+    const teams = extractList(data);
+
+    const competitionDetails = teams.flatMap((team) =>
+      (team?.engagements || [])
+        .filter((engagement) => engagement?.competition?.type === 'CH')
+        .map((engagement) => ({
           competitionName: normalizeCompetitionName(engagement.competition.name),
           cp_no: engagement.competition.cp_no,
-          phaseNumber: engagement.phase?.number || null, // Vérifie si phase existe
-          stageNumber: engagement.poule?.stage_number || null, // Vérifie si poule existe
+          phaseNumber: engagement.phase?.number || null,
+          stageNumber: engagement.poule?.stage_number || null,
         }))
     );
 
     return competitionDetails;
   } catch (error) {
-    console.error('Error fetching competitions:', error);
+    if (__DEV__) console.error('Error fetching competitions:', error?.message);
     return [];
   }
 };
 
 
-export const fetchMatchesForClub = async ( cp_no, phaseId, pouleId, cl_no) => {
+export const fetchMatchesForClub = async (cp_no, phaseId, pouleId, cl_no) => {
+  if ([cp_no, phaseId, pouleId, cl_no].some((v) => v == null || v === '')) return [];
   try {
-    const response = await fetch(`https://api-dofa.fff.fr/api/compets/${cp_no}/phases/${phaseId}/poules/${pouleId}/matchs?clNo=${cl_no}`);
-    if (!response.ok) {
-      throw new Error('Échec de la récupération des matchs');
-    }
-    const data = await response.json();
+    const url =
+      `https://api-dofa.fff.fr/api/compets/${encPath(cp_no)}` +
+      `/phases/${encPath(phaseId)}` +
+      `/poules/${encPath(pouleId)}` +
+      `/matchs?clNo=${encodeURIComponent(cl_no)}`;
+    const data = await secureFetch(url);
 
-    return data['hydra:member'].map(match => {
+    return extractList(data).map((match) => {
       let homeCompetitionName = '';
       let awayCompetitionName = '';
 
@@ -541,12 +536,12 @@ export const fetchMatchesForClub = async ( cp_no, phaseId, pouleId, cl_no) => {
       const pouleNumber = match.poule ? match.poule.stage_number : '';
 
       return {
-        id: match['@id'] ? match['@id'].split('/').pop(): null, // Extraction de l'ID depuis l'URL
+        id: match['@id'] ? match['@id'].split('/').pop() : null,
         date: match.date,
         time: match.time,
         home_score: match.home_score,
         away_score: match.away_score,
-        season: match.competition ? match.competition.season : null, // Ajout de la saison
+        season: match.competition ? match.competition.season : null,
         homeTeam: match.home ? match.home.short_name : '',
         awayTeam: match.away ? match.away.short_name : '',
         homeLogo: match.home && match.home.club ? match.home.club.logo : '',
@@ -561,7 +556,7 @@ export const fetchMatchesForClub = async ( cp_no, phaseId, pouleId, cl_no) => {
       };
     });
   } catch (error) {
-    console.error('Error fetching matches:', error);
+    if (__DEV__) console.error('Error fetching matches:', error?.message);
     return [];
   }
 };
@@ -569,14 +564,16 @@ export const fetchMatchesForClub = async ( cp_no, phaseId, pouleId, cl_no) => {
 
 // Fonction pour récupérer le classement des journées pour une poule spécifique
 export const fetchClassementJournees = async (competitionId, phaseId, pouleId) => {
+  if ([competitionId, phaseId, pouleId].some((v) => v == null || v === '')) return [];
   try {
-    const response = await fetch(`https://api-dofa.fff.fr/api/compets/${competitionId}/phases/${phaseId}/poules/${pouleId}/classement_journees`);
-    if (!response.ok) {
-      throw new Error('Échec de la récupération du classement des journées');
-    }
-    const data = await response.json();
+    const url =
+      `https://api-dofa.fff.fr/api/compets/${encPath(competitionId)}` +
+      `/phases/${encPath(phaseId)}` +
+      `/poules/${encPath(pouleId)}` +
+      `/classement_journees`;
+    const data = await secureFetch(url);
 
-    return data['hydra:member'].map(journee => ({
+    return extractList(data).map((journee) => ({
       journeeNumber: journee.cj_no,
       season: journee.season,
       date: journee.date,
@@ -598,7 +595,7 @@ export const fetchClassementJournees = async (competitionId, phaseId, pouleId) =
       stageNumber: journee.poule.stage_number,
     }));
   } catch (error) {
-    console.error('Error fetching classement journées:', error);
+    if (__DEV__) console.error('Error fetching classement journées:', error?.message);
     return [];
   }
 };

@@ -15,9 +15,9 @@ const MatchComplet = ({ selectedVideo }) => {
 
   useEffect(() => {
     if (selectedVideo?.url) {
-      openVideo(selectedVideo.url, selectedVideo.jsonUrl);
+      openVideo(selectedVideo.url);
     }
-  }, [selectedVideo?.url, selectedVideo?.jsonUrl, openVideo]);
+  }, [selectedVideo?.url, openVideo]);
 
 
   const measureAnchor = () => {

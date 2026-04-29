@@ -6,12 +6,17 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
 
   const login = (userData) => {
-    console.log('Connexion de l\'utilisateur avec les données :', userData); // Debug
+    // Ne jamais logger userData : peut contenir un token, email, etc.
+    if (__DEV__) {
+      console.log('Connexion utilisateur (id only):', userData?.id ?? '[anonymous]');
+    }
     setUser(userData);
   };
 
   const logout = () => {
-    console.log('Déconnexion de l\'utilisateur');
+    if (__DEV__) {
+      console.log('Déconnexion de l\'utilisateur');
+    }
     setUser(null);
   };
 

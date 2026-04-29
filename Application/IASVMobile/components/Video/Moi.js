@@ -87,8 +87,18 @@ const Moi = React.memo(({ matchId }) => {
   useEffect(() => {
     setStats({});
     AsyncStorage.getItem(getStorageKey(matchId)).then((data) => {
-      if (data) setStats(JSON.parse(data));
-    });
+      if (!data) return;
+      try {
+        const parsed = JSON.parse(data);
+        if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
+          setStats(parsed);
+        } else {
+          AsyncStorage.removeItem(getStorageKey(matchId));
+        }
+      } catch {
+        AsyncStorage.removeItem(getStorageKey(matchId));
+      }
+    }).catch(() => {});
   }, [matchId]);
 
   // Sauvegarder automatiquement à chaque modification

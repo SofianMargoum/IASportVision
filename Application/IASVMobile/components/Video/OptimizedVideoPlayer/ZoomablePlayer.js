@@ -17,13 +17,8 @@ const ZoomablePlayer = ({
   setDuration,
   handleTouchStart,
   handleTouchEnd,
-  windowWidth,
-  windowHeight,
-  currentTime,
-  setZoomMapExport,
   tapped,
   renderControls,
-  balloonActive, // 👈 ajouté
   onLoad,
 }) => {
   return (
@@ -33,28 +28,7 @@ const ZoomablePlayer = ({
         maxZoom={3}
         minZoom={1}
         initialZoom={3}
-        zoomEnabled={!balloonActive}  // ⚪ OFF => zoomEnabled = true, 🔵 ON => false
         style={{ flex: 1 }}
-        onTransform={(event) => {
-          if (!event) return;
-          const { offsetX, offsetY, zoomLevel } = event;
-          
-          const time = currentTimeRef.current;
-          const percentX = (Math.round(offsetX)/Math.round(windowWidth)*3-1)*-50;
-          const percentY = (Math.round(offsetY)/Math.round(windowHeight)*3-1)*-50;
-
-          setZoomMapExport(prev => {
-            if (prev[time]) return prev;
-            return {
-              ...prev,
-              [time]: {
-                scale: parseFloat(zoomLevel.toFixed(2)),
-                x: parseFloat(percentX.toFixed(2)),
-                y: parseFloat(percentY.toFixed(2)),
-              },
-            };
-          });
-        }}
       >
         <Animated.View style={styles.content}>
           <View style={[styles.videoWrapper, containerStyle]}>

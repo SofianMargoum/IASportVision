@@ -18,7 +18,6 @@ const hideSystemUI = () => {
 const VideoOverlayHost = () => {
   const {
     videoUri,
-    zoomMap,
     isFullScreen,
     isTransitioning,
     setIsTransitioning,
@@ -234,7 +233,6 @@ const VideoOverlayHost = () => {
       >
         <OptimizedVideoPlayer
           videoUri={videoUri}
-          zoomMap={zoomMap}
           isFullScreen={isFullScreen}
           isTransitioning={isTransitioning}
           onToggleFullScreen={toggleFullScreenSmooth}

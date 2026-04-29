@@ -36,7 +36,7 @@ const DiscoverTab = () => {
         const data = await fetchVideosByClub(discoverClubName);
         setDiscoverVideos(data || []);
       } catch (error) {
-        console.error('Erreur lors de la recherche des vidéos (Promotion):', error);
+        if (__DEV__) console.error('Erreur lors de la recherche des vidéos (Promotion):', error?.message);
         setDiscoverError("Impossible de charger les vidéos de 'Promotion'.");
       } finally {
         setDiscoverLoading(false);

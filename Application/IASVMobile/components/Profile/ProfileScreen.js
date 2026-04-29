@@ -413,7 +413,14 @@ const ProfileScreen = ({ user, onBack }) => {
         poste:  editPoste.trim()  || undefined,
       };
       setUser(updatedUser);
-      await AsyncStorage.setItem('user', JSON.stringify(updatedUser));
+
+      // Sécurité : whitelist des champs persistables (pas de tokens).
+      const {
+        id, name, email, photo, givenName, familyName,
+        nom, prenom, age, poste,
+      } = updatedUser;
+      const safeUser = { id, name, email, photo, givenName, familyName, nom, prenom, age, poste };
+      await AsyncStorage.setItem('user', JSON.stringify(safeUser));
 
       if (localClub) {
         setSelectedClub(localClub);
