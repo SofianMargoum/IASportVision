@@ -1,10 +1,13 @@
-import React, { useState, useEffect, useMemo } from 'react';
-import { View, Text, StyleSheet, ActivityIndicator, Image, ScrollView } from 'react-native';
-import { fetchClassementJournees } from './../../tools/api';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import { View, Text, StyleSheet, ActivityIndicator, Image, ScrollView, TouchableOpacity } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { fetchClassementJournees, fetchClubByClNo } from './../../tools/api';
 import { useClubContext } from './../../tools/ClubContext';
 import LinearGradient from 'react-native-linear-gradient';
+import { moderateScale, scale as s, verticalScale } from './../../tools/responsive';
 
-const scale = 0.85;
+const ms = moderateScale;
+const vs = verticalScale;
 
 // ─── Composants réutilisables ───
 
@@ -24,48 +27,65 @@ const StatCompareRow = ({
   bestTeam,
   bestValue,
   bestSuffix,
+  bestItem,
   worstTitle,
   worstTeam,
   worstValue,
   worstSuffix,
+  worstItem,
   icon,
+  onTeamPress,
 }) => (
   <View style={styles.statBlock}>
     <SectionTitle>{label}</SectionTitle>
     <View style={styles.compareRow}>
-      <LinearGradient
-        colors={['#016D14', '#010914']}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 0.12, y: 0 }}
-        style={styles.compareCard}
+      <TouchableOpacity
+        activeOpacity={0.7}
+        disabled={!bestItem?.clNo}
+        onPress={() => onTeamPress && onTeamPress(bestItem)}
+        style={styles.compareCardWrapper}
       >
-        <Text style={styles.compareTitleGood}>{bestTitle}</Text>
-        <Text style={styles.compareTeam} numberOfLines={1}>{bestTeam}</Text>
-        <Text style={styles.compareValue}>{bestValue} <Text style={styles.compareSuffix}>{bestSuffix}</Text></Text>
-      </LinearGradient>
+        <LinearGradient
+          colors={['#016D14', '#010914']}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 0.12, y: 0 }}
+          style={styles.compareCard}
+        >
+          <Text style={styles.compareTitleGood}>{bestTitle}</Text>
+          <Text style={styles.compareTeam} numberOfLines={1}>{bestTeam}</Text>
+          <Text style={styles.compareValue}>{bestValue} <Text style={styles.compareSuffix}>{bestSuffix}</Text></Text>
+        </LinearGradient>
+      </TouchableOpacity>
 
       {icon && <Image source={icon} style={styles.compareIcon} />}
 
-      <LinearGradient
-        colors={['#010914', '#640914']}
-        start={{ x: 0.88, y: 0 }}
-        end={{ x: 1, y: 0 }}
-        style={styles.compareCard}
+      <TouchableOpacity
+        activeOpacity={0.7}
+        disabled={!worstItem?.clNo}
+        onPress={() => onTeamPress && onTeamPress(worstItem)}
+        style={styles.compareCardWrapper}
       >
-        <Text style={styles.compareTitleBad}>{worstTitle}</Text>
-        <Text style={styles.compareTeam} numberOfLines={1}>{worstTeam}</Text>
-        <Text style={styles.compareValue}>{worstValue} <Text style={styles.compareSuffix}>{worstSuffix}</Text></Text>
-      </LinearGradient>
+        <LinearGradient
+          colors={['#010914', '#640914']}
+          start={{ x: 0.88, y: 0 }}
+          end={{ x: 1, y: 0 }}
+          style={styles.compareCard}
+        >
+          <Text style={styles.compareTitleBad}>{worstTitle}</Text>
+          <Text style={styles.compareTeam} numberOfLines={1}>{worstTeam}</Text>
+          <Text style={styles.compareValue}>{worstValue} <Text style={styles.compareSuffix}>{worstSuffix}</Text></Text>
+        </LinearGradient>
+      </TouchableOpacity>
     </View>
   </View>
 );
 
 // ─── Barres horizontales proportionnelles ───
 
-const HBar = ({ value, maxValue, color, label, suffix }) => {
+const HBar = ({ value, maxValue, color, label, suffix, onPress, disabled }) => {
   const pct = maxValue > 0 ? Math.round((value / maxValue) * 100) : 0;
-  return (
-    <View style={styles.hBarRow}>
+  const content = (
+    <>
       <Text style={styles.hBarLabel} numberOfLines={1}>{label}</Text>
       <View style={styles.hBarTrack}>
         <LinearGradient
@@ -76,8 +96,21 @@ const HBar = ({ value, maxValue, color, label, suffix }) => {
         />
       </View>
       <Text style={styles.hBarValue}>{value}{suffix ? ` ${suffix}` : ''}</Text>
-    </View>
+    </>
   );
+  if (onPress) {
+    return (
+      <TouchableOpacity
+        style={styles.hBarRow}
+        activeOpacity={0.7}
+        onPress={onPress}
+        disabled={disabled}
+      >
+        {content}
+      </TouchableOpacity>
+    );
+  }
+  return <View style={styles.hBarRow}>{content}</View>;
 };
 
 // ─── Composant principal ───
@@ -87,7 +120,46 @@ function StatsContent() {
   const [error, setError] = useState(null);
   const [classements, setClassements] = useState([]);
 
-  const { selectedClub, competition, phase, poule, cp_no } = useClubContext();
+  const { selectedClub, competition, phase, poule, cp_no, setSelectedClub, setClNo } = useClubContext();
+
+  // Même comportement que dans MatchsContent / ClassementsContent.
+  const handleTeamPress = useCallback(
+    async (item) => {
+      const clNo = item?.clNo;
+      if (!clNo || clNo === selectedClub?.cl_no) return;
+
+      let resolvedName = item?.clubName || item?.teamName || '';
+      let resolvedLogo = item?.clubLogo || '';
+      if (!resolvedLogo) {
+        const fetched = await fetchClubByClNo(clNo);
+        if (fetched) {
+          resolvedLogo = fetched.logo || resolvedLogo;
+          resolvedName = resolvedName || fetched.name || '';
+        }
+      }
+
+      const club = { cl_no: clNo, name: resolvedName, logo: resolvedLogo };
+      setSelectedClub(club);
+      setClNo(clNo);
+
+      try {
+        await AsyncStorage.setItem('selectedClub', JSON.stringify(club));
+        const stored = await AsyncStorage.getItem('recentClubs');
+        let recent = [];
+        if (stored) {
+          try {
+            const parsed = JSON.parse(stored);
+            if (Array.isArray(parsed)) recent = parsed;
+          } catch { /* ignore */ }
+        }
+        const updated = [club, ...recent.filter((c) => c?.cl_no !== clNo)].slice(0, 3);
+        await AsyncStorage.setItem('recentClubs', JSON.stringify(updated));
+      } catch (e) {
+        if (__DEV__) console.error('Erreur sélection club stats:', e?.message);
+      }
+    },
+    [selectedClub, setSelectedClub, setClNo]
+  );
 
   useEffect(() => {
     let isMounted = true;
@@ -240,7 +312,12 @@ function StatsContent() {
         <SectionTitle>PODIUM</SectionTitle>
         <View style={styles.podiumRow}>
           {/* 2e */}
-          <View style={styles.podiumSlot}>
+          <TouchableOpacity
+            style={styles.podiumSlot}
+            activeOpacity={0.7}
+            disabled={!topThree[1]?.clNo}
+            onPress={() => handleTeamPress(topThree[1])}
+          >
             <View style={[styles.podiumBadge, { backgroundColor: 'rgba(192,192,192,0.15)' }]}>
               <Text style={[styles.podiumRank, { color: '#C0C0C0' }]}>2</Text>
             </View>
@@ -248,11 +325,16 @@ function StatsContent() {
               {topThree[1]?.teamName ?? '—'}
             </Text>
             <Text style={styles.podiumPts}>{topThree[1]?.points ?? '—'} pts</Text>
-            <View style={[styles.podiumBar, { height: 50, backgroundColor: '#C0C0C0' }]} />
-          </View>
+            <View style={[styles.podiumBar, { height: vs(50), backgroundColor: '#C0C0C0' }]} />
+          </TouchableOpacity>
 
           {/* 1er */}
-          <View style={styles.podiumSlot}>
+          <TouchableOpacity
+            style={styles.podiumSlot}
+            activeOpacity={0.7}
+            disabled={!topThree[0]?.clNo}
+            onPress={() => handleTeamPress(topThree[0])}
+          >
             <View style={[styles.podiumBadge, { backgroundColor: 'rgba(255,215,0,0.2)' }]}>
               <Text style={[styles.podiumRank, { color: '#FFD700' }]}>1</Text>
             </View>
@@ -260,11 +342,16 @@ function StatsContent() {
               {topThree[0]?.teamName ?? '—'}
             </Text>
             <Text style={styles.podiumPts}>{topThree[0]?.points ?? '—'} pts</Text>
-            <View style={[styles.podiumBar, { height: 70, backgroundColor: '#FFD700' }]} />
-          </View>
+            <View style={[styles.podiumBar, { height: vs(70), backgroundColor: '#FFD700' }]} />
+          </TouchableOpacity>
 
           {/* 3e */}
-          <View style={styles.podiumSlot}>
+          <TouchableOpacity
+            style={styles.podiumSlot}
+            activeOpacity={0.7}
+            disabled={!topThree[2]?.clNo}
+            onPress={() => handleTeamPress(topThree[2])}
+          >
             <View style={[styles.podiumBadge, { backgroundColor: 'rgba(205,127,50,0.15)' }]}>
               <Text style={[styles.podiumRank, { color: '#CD7F32' }]}>3</Text>
             </View>
@@ -272,8 +359,8 @@ function StatsContent() {
               {topThree[2]?.teamName ?? '—'}
             </Text>
             <Text style={styles.podiumPts}>{topThree[2]?.points ?? '—'} pts</Text>
-            <View style={[styles.podiumBar, { height: 35, backgroundColor: '#CD7F32' }]} />
-          </View>
+            <View style={[styles.podiumBar, { height: vs(35), backgroundColor: '#CD7F32' }]} />
+          </TouchableOpacity>
         </View>
       </View>
 
@@ -286,11 +373,14 @@ function StatsContent() {
         bestTeam={stats.bestAttack?.teamName}
         bestValue={stats.bestAttack?.goalsFor}
         bestSuffix="buts"
+        bestItem={stats.bestAttack}
         worstTitle="Pire"
         worstTeam={stats.worstAttack?.teamName}
         worstValue={stats.worstAttack?.goalsFor}
         worstSuffix="buts"
+        worstItem={stats.worstAttack}
         icon={require('../../assets/actionsblanc.png')}
+        onTeamPress={handleTeamPress}
       />
 
       {/* Top 5 Attaque */}
@@ -303,6 +393,8 @@ function StatsContent() {
             value={t.goalsFor}
             maxValue={stats.topAttack[0]?.goalsFor || 1}
             color="#016D14"
+            onPress={() => handleTeamPress(t)}
+            disabled={!t.clNo}
           />
         ))}
       </View>
@@ -316,11 +408,14 @@ function StatsContent() {
         bestTeam={stats.bestDefense?.teamName}
         bestValue={stats.bestDefense?.goalsAgainst}
         bestSuffix="enc."
+        bestItem={stats.bestDefense}
         worstTitle="Pire"
         worstTeam={stats.worstDefense?.teamName}
         worstValue={stats.worstDefense?.goalsAgainst}
         worstSuffix="enc."
+        worstItem={stats.worstDefense}
         icon={require('../../assets/bouclier.png')}
+        onTeamPress={handleTeamPress}
       />
 
       {/* Top 5 Défense */}
@@ -333,6 +428,8 @@ function StatsContent() {
             value={t.goalsAgainst}
             maxValue={stats.worstDefense?.goalsAgainst || 1}
             color="#016D14"
+            onPress={() => handleTeamPress(t)}
+            disabled={!t.clNo}
           />
         ))}
       </View>
@@ -346,11 +443,14 @@ function StatsContent() {
         bestTeam={stats.mostBalanced?.teamName}
         bestValue={stats.mostBalanced?.goalDiff >= 0 ? `+${stats.mostBalanced.goalDiff}` : stats.mostBalanced?.goalDiff}
         bestSuffix=""
+        bestItem={stats.mostBalanced}
         worstTitle="Pire diff."
         worstTeam={stats.leastBalanced?.teamName}
         worstValue={stats.leastBalanced?.goalDiff >= 0 ? `+${stats.leastBalanced.goalDiff}` : stats.leastBalanced?.goalDiff}
         worstSuffix=""
+        worstItem={stats.leastBalanced}
         icon={require('../../assets/equilibre.png')}
+        onTeamPress={handleTeamPress}
       />
 
       <Separator />
@@ -365,6 +465,8 @@ function StatsContent() {
             value={stats.mostWins?.wonGames}
             suffix="V"
             color="#016D14"
+            onPress={() => handleTeamPress(stats.mostWins)}
+            disabled={!stats.mostWins?.clNo}
           />
           <RecordCard
             title="Plus de défaites"
@@ -372,6 +474,8 @@ function StatsContent() {
             value={stats.mostLosses?.lostGames}
             suffix="D"
             color="#D0021B"
+            onPress={() => handleTeamPress(stats.mostLosses)}
+            disabled={!stats.mostLosses?.clNo}
           />
           <RecordCard
             title="Plus de nuls"
@@ -379,6 +483,8 @@ function StatsContent() {
             value={stats.mostDraws?.drawGames}
             suffix="N"
             color="#F5A623"
+            onPress={() => handleTeamPress(stats.mostDraws)}
+            disabled={!stats.mostDraws?.clNo}
           />
           <RecordCard
             title="Meilleur buteur (éq.)"
@@ -386,11 +492,13 @@ function StatsContent() {
             value={(stats.bestAttack?.goalsFor / (stats.bestAttack?.totalGames || 1)).toFixed(1)}
             suffix="buts/m"
             color="#C0C0C0"
+            onPress={() => handleTeamPress(stats.bestAttack)}
+            disabled={!stats.bestAttack?.clNo}
           />
         </View>
       </View>
 
-      <View style={{ height: 30 }} />
+      <View style={{ height: s(30) }} />
     </ScrollView>
   );
 }
@@ -404,15 +512,25 @@ const OverviewBox = ({ value, label, color }) => (
   </View>
 );
 
-const RecordCard = ({ title, team, value, suffix, color }) => (
-  <View style={styles.recordCard}>
-    <Text style={styles.recordTitle}>{title}</Text>
-    <Text style={[styles.recordValue, { color }]}>
-      {value} <Text style={styles.recordSuffix}>{suffix}</Text>
-    </Text>
-    <Text style={styles.recordTeam} numberOfLines={1}>{team}</Text>
-  </View>
-);
+const RecordCard = ({ title, team, value, suffix, color, onPress, disabled }) => {
+  const inner = (
+    <>
+      <Text style={styles.recordTitle}>{title}</Text>
+      <Text style={[styles.recordValue, { color }]}>
+        {value} <Text style={styles.recordSuffix}>{suffix}</Text>
+      </Text>
+      <Text style={styles.recordTeam} numberOfLines={1}>{team}</Text>
+    </>
+  );
+  if (onPress) {
+    return (
+      <TouchableOpacity style={styles.recordCard} activeOpacity={0.7} onPress={onPress} disabled={disabled}>
+        {inner}
+      </TouchableOpacity>
+    );
+  }
+  return <View style={styles.recordCard}>{inner}</View>;
+};
 
 // ─── Styles ───
 
@@ -428,40 +546,40 @@ const styles = StyleSheet.create({
   },
   infoText: {
     color: '#aaaaaa',
-    fontSize: 14 * scale,
-    margin: 10,
+    fontSize: ms(13),
+    margin: s(10),
   },
   errorText: {
     color: 'red',
-    fontSize: 14 * scale,
+    fontSize: ms(13),
     textAlign: 'center',
-    margin: 20,
+    margin: s(20),
   },
 
   /* Sections */
   section: {
-    paddingHorizontal: 16,
-    paddingTop: 16,
-    paddingBottom: 8,
+    paddingHorizontal: s(16),
+    paddingTop: s(16),
+    paddingBottom: s(8),
   },
   sectionTitle: {
-    fontSize: 14 * scale,
+    fontSize: ms(13),
     fontWeight: 'bold',
     color: '#aaaaaa',
     letterSpacing: 1,
     alignSelf: 'stretch',
     textAlign: 'center',
-    marginBottom: 12,
+    marginBottom: s(12),
   },
 
   /* Separator */
   separatorContainer: {
-    paddingHorizontal: 16,
+    paddingHorizontal: s(16),
   },
   separator: {
     height: 1,
     backgroundColor: 'rgba(255,255,255,0.08)',
-    marginVertical: 6,
+    marginVertical: s(6),
   },
 
   /* Vue d'ensemble */
@@ -473,18 +591,18 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     backgroundColor: 'rgba(255,255,255,0.04)',
-    borderRadius: 10,
-    paddingVertical: 12,
-    marginHorizontal: 3,
+    borderRadius: ms(10),
+    paddingVertical: s(12),
+    marginHorizontal: s(3),
   },
   overviewValue: {
-    fontSize: 22 * scale,
+    fontSize: ms(20),
     fontWeight: 'bold',
   },
   overviewLabel: {
     color: '#aaaaaa',
-    fontSize: 10 * scale,
-    marginTop: 4,
+    fontSize: ms(10),
+    marginTop: s(4),
     textAlign: 'center',
   },
 
@@ -493,36 +611,36 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-around',
     alignItems: 'flex-end',
-    paddingTop: 8,
-    paddingBottom: 4,
+    paddingTop: s(8),
+    paddingBottom: s(4),
   },
   podiumSlot: {
     flex: 1,
     alignItems: 'center',
-    marginHorizontal: 4,
+    marginHorizontal: s(4),
   },
   podiumBadge: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
+    width: ms(32),
+    height: ms(32),
+    borderRadius: ms(16),
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 6,
+    marginBottom: s(6),
   },
   podiumRank: {
-    fontSize: 18,
+    fontSize: ms(16),
     fontWeight: 'bold',
   },
   podiumName: {
-    fontSize: 12 * scale,
+    fontSize: ms(11),
     fontWeight: 'bold',
     textAlign: 'center',
-    marginBottom: 4,
+    marginBottom: s(4),
   },
   podiumPts: {
     color: '#aaaaaa',
-    fontSize: 11 * scale,
-    marginBottom: 6,
+    fontSize: ms(10),
+    marginBottom: s(6),
   },
   podiumBar: {
     width: '60%',
@@ -533,97 +651,100 @@ const styles = StyleSheet.create({
 
   /* Stat compare (attaque/défense/équilibre) */
   statBlock: {
-    paddingHorizontal: 16,
-    paddingTop: 16,
-    paddingBottom: 8,
+    paddingHorizontal: s(16),
+    paddingTop: s(16),
+    paddingBottom: s(8),
   },
   compareRow: {
     flexDirection: 'row',
     alignItems: 'center',
   },
+  compareCardWrapper: {
+    flex: 1,
+  },
   compareCard: {
     flex: 1,
     alignItems: 'center',
-    paddingVertical: 14,
-    paddingHorizontal: 6,
-    borderRadius: 10,
+    paddingVertical: s(14),
+    paddingHorizontal: s(6),
+    borderRadius: ms(10),
   },
   compareTitleGood: {
-    fontSize: 12 * scale,
+    fontSize: ms(11),
     fontWeight: 'bold',
     color: '#016D14',
-    marginBottom: 8,
+    marginBottom: s(8),
   },
   compareTitleBad: {
-    fontSize: 12 * scale,
+    fontSize: ms(11),
     fontWeight: 'bold',
     color: '#640914',
-    marginBottom: 8,
+    marginBottom: s(8),
   },
   compareTeam: {
-    fontSize: 13 * scale,
+    fontSize: ms(12),
     color: '#ffffff',
     fontWeight: 'bold',
     textAlign: 'center',
-    marginBottom: 4,
+    marginBottom: s(4),
   },
   compareValue: {
-    fontSize: 18 * scale,
+    fontSize: ms(16),
     color: '#ffffff',
     fontWeight: 'bold',
   },
   compareSuffix: {
-    fontSize: 12 * scale,
+    fontSize: ms(11),
     color: '#aaaaaa',
     fontWeight: 'normal',
   },
   compareIcon: {
-    width: 50 * scale,
-    height: 50 * scale,
-    borderRadius: 25 * scale,
-    marginHorizontal: 8,
+    width: ms(44),
+    height: ms(44),
+    borderRadius: ms(22),
+    marginHorizontal: s(8),
     opacity: 0.8,
   },
 
   /* Horizontal bars */
   barSection: {
-    paddingHorizontal: 16,
-    paddingTop: 10,
-    paddingBottom: 8,
+    paddingHorizontal: s(16),
+    paddingTop: s(10),
+    paddingBottom: s(8),
   },
   barSectionTitle: {
     color: '#aaaaaa',
-    fontSize: 11 * scale,
-    marginBottom: 8,
+    fontSize: ms(11),
+    marginBottom: s(8),
     letterSpacing: 0.5,
   },
   hBarRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 6,
+    marginBottom: s(6),
   },
   hBarLabel: {
     color: '#ffffff',
-    fontSize: 11 * scale,
-    width: 90,
+    fontSize: ms(11),
+    width: s(80),
   },
   hBarTrack: {
     flex: 1,
-    height: 8,
+    height: ms(8),
     backgroundColor: 'rgba(255,255,255,0.08)',
-    borderRadius: 4,
+    borderRadius: ms(4),
     overflow: 'hidden',
-    marginHorizontal: 8,
+    marginHorizontal: s(8),
   },
   hBarFill: {
     height: '100%',
-    borderRadius: 4,
+    borderRadius: ms(4),
   },
   hBarValue: {
     color: '#ffffff',
-    fontSize: 12 * scale,
+    fontSize: ms(12),
     fontWeight: 'bold',
-    width: 30,
+    width: s(30),
     textAlign: 'right',
   },
 
@@ -636,31 +757,31 @@ const styles = StyleSheet.create({
   recordCard: {
     width: '48%',
     backgroundColor: 'rgba(255,255,255,0.04)',
-    borderRadius: 10,
-    padding: 12,
-    marginBottom: 8,
+    borderRadius: ms(10),
+    padding: s(12),
+    marginBottom: s(8),
     alignItems: 'center',
   },
   recordTitle: {
     color: '#aaaaaa',
-    fontSize: 11 * scale,
-    marginBottom: 6,
+    fontSize: ms(11),
+    marginBottom: s(6),
     textAlign: 'center',
   },
   recordValue: {
-    fontSize: 22 * scale,
+    fontSize: ms(20),
     fontWeight: 'bold',
   },
   recordSuffix: {
-    fontSize: 12 * scale,
+    fontSize: ms(11),
     fontWeight: 'normal',
     color: '#aaaaaa',
   },
   recordTeam: {
     color: '#ffffff',
-    fontSize: 12 * scale,
+    fontSize: ms(11),
     fontWeight: 'bold',
-    marginTop: 4,
+    marginTop: s(4),
     textAlign: 'center',
   },
 });

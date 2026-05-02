@@ -1,206 +1,168 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, PermissionsAndroid, Platform } from 'react-native';
-import Geolocation from '@react-native-community/geolocation';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import SearchClub from './Explore/SearchClub';
+import { moderateScale, scale as s } from './../tools/responsive';
+import { useUserRole } from './../tools/UserRoleContext';
+import { SELECTABLE_ROLES } from '../constants/roles';
+
+const STEPS = { ROLE: 'role', CLUB: 'club' };
 
 const Welcome = () => {
-  const [locationCity, setLocationCity] = useState('');
-  const [isLocating, setIsLocating] = useState(false);
-  const [locationRequestId, setLocationRequestId] = useState(0);
+  const { role, setRole } = useUserRole();
 
-  const requestLocationPermission = async () => {
-    if (Platform.OS === 'android') {
-      const granted = await PermissionsAndroid.request(
-        PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION,
-        {
-          title: 'Autoriser la localisation',
-          message: 'IASV Mobile a besoin de votre localisation pour suggérer votre ville.',
-          buttonPositive: 'OK',
-          buttonNegative: 'Annuler',
-        }
-      );
-      if (granted === PermissionsAndroid.RESULTS.GRANTED) return true;
-      const coarseGranted = await PermissionsAndroid.request(
-        PermissionsAndroid.PERMISSIONS.ACCESS_COARSE_LOCATION
-      );
-      return coarseGranted === PermissionsAndroid.RESULTS.GRANTED;
-    }
+  // Si le rôle est déjà défini (mais pas le club), on saute directement à l'étape 2.
+  const [step, setStep] = useState(role ? STEPS.CLUB : STEPS.ROLE);
 
-    const status = await Geolocation.requestAuthorization?.('whenInUse');
-    return status === 'granted' || status === true;
+  const handleSelectRole = async (selectedKey) => {
+    await setRole(selectedKey);
+    setStep(STEPS.CLUB);
   };
 
-  const fetchCityFromCoords = async (latitude, longitude) => {
-    // Sécurité : timeout pour éviter les hangs sur Nominatim
-    const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), 10000);
-    let response;
-    try {
-      response = await fetch(
-        `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${encodeURIComponent(latitude)}&lon=${encodeURIComponent(longitude)}`,
-        {
-          headers: {
-            Accept: 'application/json',
-            'User-Agent': 'IASVMobile/1.0 (support@iasportvision.com)'
-          },
-          signal: controller.signal,
-        }
-      );
-    } finally {
-      clearTimeout(timer);
-    }
-
-    if (!response.ok) {
-      throw new Error(`HTTP ${response.status}`);
-    }
-
-    const contentType = response.headers.get('content-type') || '';
-    const responseText = await response.text();
-    if (!contentType.includes('application/json')) {
-      throw new Error('Réponse non JSON');
-    }
-
-    const data = JSON.parse(responseText);
-    const address = data?.address || {};
-    return (
-      address.city ||
-      address.town ||
-      address.village ||
-      address.municipality ||
-      address.county ||
-      ''
-    );
-  };
-
-  const getPosition = (options) =>
-    new Promise((resolve, reject) => {
-      Geolocation.getCurrentPosition(resolve, reject, options);
-    });
-
-  const resolveCityFromLocation = async () => {
-    const allowed = await requestLocationPermission();
-    if (!allowed) {
-      if (__DEV__) console.warn('Permission de localisation refusée');
-      return '';
-    }
-
-    try {
-      const position = await getPosition({ enableHighAccuracy: true, timeout: 8000, maximumAge: 300000 });
-      const { latitude, longitude } = position.coords;
-      // Ne jamais logger les coordonnées GPS (PII)
-      return await fetchCityFromCoords(latitude, longitude);
-    } catch (error) {
-      if (__DEV__) console.warn('Erreur géolocalisation (haute précision):', error?.message);
-      try {
-        const position = await getPosition({ enableHighAccuracy: false, timeout: 8000, maximumAge: 300000 });
-        const { latitude, longitude } = position.coords;
-        return await fetchCityFromCoords(latitude, longitude);
-      } catch (fallbackError) {
-        if (__DEV__) console.warn('Erreur géolocalisation (fallback):', fallbackError?.message);
-        return '';
-      }
-    }
-  };
-
-  const handleLocatePress = async () => {
-    if (isLocating) return;
-    setIsLocating(true);
-    try {
-      const cachedCity = await AsyncStorage.getItem('lastKnownCity');
-      if (cachedCity) {
-        setLocationCity(cachedCity);
-      }
-
-      const city = await resolveCityFromLocation();
-      if (city) {
-        setLocationCity(city);
-        await AsyncStorage.setItem('lastKnownCity', city);
-      }
-    } finally {
-      setLocationRequestId((id) => id + 1);
-      setIsLocating(false);
-    }
-  };
+  const handleBack = () => setStep(STEPS.ROLE);
 
   return (
-    <View style={styles.container}>
-      <View style={styles.backgroundGlow} />
-      <View style={styles.header}>
-        <Text style={styles.kicker}>IA Sport Vision</Text>
-        <Text style={styles.welcomeText}>Bienvenue !</Text>
-        <View style={styles.titleUnderline} />
-        <Text style={styles.instructionText}>
-          Sélectionnez votre club pour commencer.
-        </Text>
-      </View>
-      <View style={styles.searchContainer}>
-        <SearchClub
-          locationCity={locationCity}
-          locationRequestId={locationRequestId}
-          onLocatePress={handleLocatePress}
-          isLocating={isLocating}
-        />
-      </View>
-    </View>
+    <SafeAreaView style={styles.safeArea} edges={['top', 'bottom', 'left', 'right']}>
+      <ScrollView
+        contentContainerStyle={styles.container}
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
+      >
+        <View style={styles.backgroundGlow} />
+
+        <View style={styles.header}>
+          <Text style={styles.kicker}>IA Sport Vision</Text>
+          <Text style={styles.welcomeText}>Bienvenue !</Text>
+          <View style={styles.titleUnderline} />
+          <Text style={styles.instructionText}>
+            {step === STEPS.ROLE
+              ? 'Sélectionnez votre profil'
+              : 'Sélectionnez votre club'}
+          </Text>
+        </View>
+
+        {step === STEPS.ROLE && (
+          <View style={styles.rolesContainer}>
+            {SELECTABLE_ROLES.map((r) => (
+              <TouchableOpacity
+                key={r.key}
+                style={styles.roleCard}
+                activeOpacity={0.85}
+                onPress={() => handleSelectRole(r.key)}
+              >
+                <Text style={styles.roleLabel}>{r.label}</Text>
+                <Text style={styles.roleDescription}>{r.description}</Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        )}
+
+        {step === STEPS.CLUB && (
+          <>
+            <View style={styles.searchContainer}>
+              <SearchClub />
+            </View>
+            <TouchableOpacity
+              style={styles.backButton}
+              activeOpacity={0.8}
+              onPress={handleBack}
+            >
+              <Text style={styles.backButtonText}>← Précédent</Text>
+            </TouchableOpacity>
+          </>
+        )}
+      </ScrollView>
+    </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
+  safeArea: {
     flex: 1,
+    backgroundColor: '#010914',
+  },
+  container: {
+    flexGrow: 1,
     backgroundColor: '#010914',
     justifyContent: 'center',
     alignItems: 'center',
-    padding: 20,
+    padding: s(20),
   },
   backgroundGlow: {
     position: 'absolute',
-    top: -120,
-    right: -80,
-    width: 260,
-    height: 260,
-    borderRadius: 130,
+    top: -s(120),
+    right: -s(80),
+    width: s(260),
+    height: s(260),
+    borderRadius: s(130),
     backgroundColor: 'rgba(0, 153, 255, 0.18)',
   },
   header: {
     width: '100%',
     alignItems: 'center',
-    marginBottom: 24,
+    marginBottom: s(24),
   },
   kicker: {
-    fontSize: 12,
+    fontSize: moderateScale(12),
     letterSpacing: 2,
     color: '#7FB6FF',
-    marginBottom: 6,
+    marginBottom: s(6),
     fontWeight: '600',
   },
   welcomeText: {
-    fontSize: 32,
+    fontSize: moderateScale(28),
     color: '#FFFFFF',
     fontWeight: '800',
     textAlign: 'center',
   },
   titleUnderline: {
-    width: 64,
+    width: s(64),
     height: 4,
     backgroundColor: '#2F8CFF',
     borderRadius: 2,
-    marginTop: 10,
-    marginBottom: 14,
+    marginTop: s(10),
+    marginBottom: s(14),
   },
   instructionText: {
-    fontSize: 15,
+    fontSize: moderateScale(14),
     color: '#C8D4E3',
     textAlign: 'center',
-    lineHeight: 22,
-    paddingHorizontal: 10,
+    lineHeight: moderateScale(20),
+    paddingHorizontal: s(10),
+  },
+  rolesContainer: {
+    width: '100%',
+  },
+  roleCard: {
+    width: '100%',
+    backgroundColor: '#0A1424',
+    borderRadius: moderateScale(16),
+    padding: s(16),
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.08)',
+    marginBottom: s(12),
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.3,
+    shadowRadius: 10,
+    elevation: 4,
+  },
+  roleLabel: {
+    fontSize: moderateScale(18),
+    color: '#FFFFFF',
+    fontWeight: '700',
+    marginBottom: s(4),
+  },
+  roleDescription: {
+    fontSize: moderateScale(13),
+    color: '#9FB1C7',
+    lineHeight: moderateScale(18),
   },
   searchContainer: {
     width: '100%',
     backgroundColor: '#0A1424',
-    borderRadius: 16,
-    padding: 14,
+    borderRadius: moderateScale(16),
+    padding: s(14),
     borderWidth: 1,
     borderColor: 'rgba(255, 255, 255, 0.06)',
     shadowColor: '#000',
@@ -208,6 +170,20 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.35,
     shadowRadius: 12,
     elevation: 6,
+  },
+  backButton: {
+    marginTop: s(18),
+    paddingVertical: s(10),
+    paddingHorizontal: s(18),
+    borderRadius: moderateScale(12),
+    borderWidth: 1,
+    borderColor: 'rgba(127, 182, 255, 0.4)',
+    backgroundColor: 'rgba(47, 140, 255, 0.08)',
+  },
+  backButtonText: {
+    color: '#7FB6FF',
+    fontSize: moderateScale(14),
+    fontWeight: '600',
   },
 });
 

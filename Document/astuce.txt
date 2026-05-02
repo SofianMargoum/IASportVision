@@ -17,6 +17,7 @@ color: #00BFFF; /* Couleur bleu de texte / icon selectioner */
 	--creer apk
 		cd android
 		gradlew clean
+		gradlew bundleRelease
 		gradlew assembleRelease
 		gradlew app:assembleRelease
 		/android/app/build/outputs/apk/release/
@@ -24,10 +25,3 @@ color: #00BFFF; /* Couleur bleu de texte / icon selectioner */
 --deployer sur app engine
 		gcloud app deploy
 
-
-  DB_HOST: '34.163.248.199'
-  DB_USER: 'postgres'
-  # ⚠️ REMPLACER DB_PASS par le vrai mot de passe (ne jamais utiliser 'postgres' en prod)
-  DB_PASS: 'postgres'
-  DB_NAME: 'iasportvision2025'
-  DB_PORT: '5432'

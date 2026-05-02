@@ -49,13 +49,18 @@ const routes = {
   hikconnectOpenapiRoute: safeRequire('./api/hikconnectOpenapi'),
   uploadFromUrlRoute: safeRequire('./api/upload-from-url'),
   isapiRecordStatusRoute: safeRequire('./api/isapiRecordStatus'),
+  authRoute: safeRequire('./api/auth'),
+  adminUsersRoute: safeRequire('./api/adminUsers'),
 };
+
+// Routes montées à la racine "/" plutôt que sous "/api"
+const ROOT_MOUNTED = new Set(['authRoute', 'adminUsersRoute']);
 
 // Attacher les routes sans faire planter l'API
 Object.entries(routes).forEach(([name, route]) => {
   if (route) {
     const router = route.router || route;
-    const mountPath = name.startsWith('isapi') ? '/' : '/api';
+    const mountPath = name.startsWith('isapi') || ROOT_MOUNTED.has(name) ? '/' : '/api';
     app.use(mountPath, router);
   } else {
     console.warn(`⚠️  La route ${name} n'a pas été chargée.`);

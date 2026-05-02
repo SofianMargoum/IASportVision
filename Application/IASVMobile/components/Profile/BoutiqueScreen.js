@@ -3,8 +3,9 @@ import { BackHandler, Linking, StyleSheet, Text, TouchableOpacity, View } from '
 import Icon from 'react-native-vector-icons/Ionicons';
 import FaIcon from 'react-native-vector-icons/FontAwesome';
 import Boutique from '../Video/Boutique';
+import { moderateScale, scale as s } from './../../tools/responsive';
 
-const scale = 0.85;
+const ms = moderateScale;
 
 const BoutiqueScreen = ({ onBack }) => {
   useEffect(() => {
@@ -40,48 +41,48 @@ const BoutiqueScreen = ({ onBack }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 16 * scale,
+    padding: s(16),
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 12,
-    paddingVertical: 8,
+    marginBottom: s(12),
+    paddingVertical: s(8),
   },
   backBtn: {
-    padding: 4,
+    padding: s(4),
   },
   title: {
     flex: 1,
-    fontSize: 18 * scale,
+    fontSize: ms(18),
     fontWeight: '700',
     color: '#fff',
     textAlign: 'center',
   },
   content: {
     flex: 1,
-    paddingBottom: 70,
+    paddingBottom: s(70),
   },
 
   discoverCta: {
     position: 'absolute',
-    left: 16,
-    right: 16,
-    bottom: 12,
+    left: s(16),
+    right: s(16),
+    bottom: s(12),
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 8,
+    gap: s(8),
     backgroundColor: '#010914',
-    paddingVertical: 10,
-    borderRadius: 12,
+    paddingVertical: s(10),
+    borderRadius: ms(12),
     borderWidth: 1,
     borderColor: '#ffffff',
   },
   discoverCtaText: {
     color: '#ffffff',
     fontWeight: '700',
-    fontSize: 14 * scale,
+    fontSize: ms(14),
   },
 });
 

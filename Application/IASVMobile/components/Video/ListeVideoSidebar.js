@@ -16,10 +16,13 @@ import {
 import PagerView from 'react-native-pager-view';
 import Icon from 'react-native-vector-icons/FontAwesome';
 import { useClubContext } from '../../tools/ClubContext';
+import { useUserRole } from '../../tools/UserRoleContext';
+import { UserContext } from '../../tools/UserContext';
 import { fetchVideosByClub, deleteVideoByClub, renameVideoByClub } from '../../tools/api';
+import { moderateScale, scale as s } from './../../tools/responsive';
 
 const { width, height } = Dimensions.get('window');
-const scale = 0.85;
+const ms = moderateScale;
 const promoVideoHeight = Math.round(height * 0.82);
 const promoVideoWidth = Math.min(width - 32, Math.round(promoVideoHeight * 9 / 16));
 
@@ -81,6 +84,7 @@ const VideoItem = ({
   handleVideoDelete,
   handleVideoEdit,
   isGridView,
+  isAdmin,
 }) => {
   const [isPressed, setIsPressed] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -109,21 +113,28 @@ const VideoItem = ({
       />
       <View style={styles.videoDetails}>
         <View style={styles.videoTextContainer}>
-          <Text style={styles.videoName}>{item.name || 'Nom non disponible'}</Text>
-          <Text style={styles.creationDate}>
+          <Text
+            style={[styles.videoName, isGridView && styles.videoNameGrid]}
+            numberOfLines={isGridView ? 2 : undefined}
+          >
+            {item.name || 'Nom non disponible'}
+          </Text>
+          <Text style={[styles.creationDate, isGridView && styles.creationDateGrid]}>
             {item.creationDate ? formatDate(item.creationDate) : 'Date non disponible'}
           </Text>
         </View>
 
-        <TouchableOpacity
-          style={styles.menuButtonAbs}
-          onPress={() => setMenuOpen((prev) => !prev)}
-          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-        >
-          <Icon name="ellipsis-v" size={18} color="#ffffff" />
-        </TouchableOpacity>
+        {isAdmin && (
+          <TouchableOpacity
+            style={styles.menuButtonAbs}
+            onPress={() => setMenuOpen((prev) => !prev)}
+            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+          >
+            <Icon name="ellipsis-v" size={18} color="#ffffff" />
+          </TouchableOpacity>
+        )}
 
-        {menuOpen && (
+        {isAdmin && menuOpen && (
           <View style={styles.menuPopoverAbs}>
             <TouchableOpacity
               style={styles.menuItem}
@@ -172,6 +183,7 @@ const VideoTabPage = ({
   onRefresh,
   refreshing,
   emptySubtitle,
+  isAdmin,
 }) => {
   const hasData = data.length > 0;
 
@@ -215,6 +227,7 @@ const VideoTabPage = ({
                 handleVideoDelete={onVideoDelete}
                 handleVideoEdit={onVideoEdit}
                 isGridView={isGridView}
+                isAdmin={isAdmin}
               />
             )}
             keyExtractor={(item, index) => index.toString()}
@@ -252,6 +265,10 @@ const ListeVideoSidebar = ({ onVideoSelect, isActive }) => {
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState(null);
   const [isGridView, setIsGridView] = useState(false);
+
+  const { isAdmin: isAdminRole } = useUserRole();
+  const { user } = React.useContext(UserContext);
+  const isAdmin = isAdminRole || user?.role === 'admin';
 
   const [renameVisible, setRenameVisible] = useState(false);
   const [renameTarget, setRenameTarget] = useState(null);
@@ -494,6 +511,7 @@ const ListeVideoSidebar = ({ onVideoSelect, isActive }) => {
               onVideoEdit={openRename}
               onRefresh={onRefresh}
               refreshing={refreshing}
+              isAdmin={isAdmin}
               emptySubtitle={
                 tab === 'tout'
                   ? (selectedClub
@@ -517,19 +535,19 @@ const styles = StyleSheet.create({
   switchContainer: {
     flexDirection: 'row',
     justifyContent: 'center',
-    marginVertical: 3,
+    marginVertical: s(3),
     zIndex: 2,
   },
   tabHeader: {
     flexDirection: 'row',
     justifyContent: 'center',
     flexWrap: 'wrap',
-    gap: 8,
+    gap: s(8),
     backgroundColor: '#010E1E',
   },
   tabButton: {
-    paddingVertical: 8,
-    paddingHorizontal: 10,
+    paddingVertical: s(8),
+    paddingHorizontal: s(10),
     borderRadius: 999,
   },
   tabButtonActive: {
@@ -538,7 +556,7 @@ const styles = StyleSheet.create({
   tabText: {
     color: '#666666',
     fontWeight: '700',
-    fontSize: 12,
+    fontSize: ms(11),
   },
   tabTextActive: {
     color: '#ffffff',
@@ -547,8 +565,8 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   switchButton: {
-    marginHorizontal: 85,
-    borderRadius: 5,
+    marginHorizontal: s(85),
+    borderRadius: ms(5),
     backgroundColor: 'transparent',
   },
   activeButton: {
@@ -562,10 +580,10 @@ const styles = StyleSheet.create({
     flex: 1,
     flexDirection: 'column',
     alignItems: 'center',
-    marginBottom: 10,
+    marginBottom: s(10),
   },
   gridItem: {
-    marginHorizontal: 5,
+    marginHorizontal: s(5),
   },
   videoImage: {
     width: '100%',
@@ -578,11 +596,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     width: '100%',
-    paddingHorizontal: 8,
-    paddingTop: 6,
-    paddingBottom: 2,
+    paddingHorizontal: s(8),
+    paddingTop: s(6),
+    paddingBottom: s(2),
     position: 'relative',
-    paddingRight: 44,
+    paddingRight: s(44),
   },
   videoTextContainer: {
     flex: 1,
@@ -591,23 +609,23 @@ const styles = StyleSheet.create({
   },
   menuButtonAbs: {
     position: 'absolute',
-    right: 8,
+    right: s(8),
     top: 0,
     bottom: 0,
-    width: 36,
+    width: s(36),
     alignItems: 'center',
     justifyContent: 'center',
   },
   menuPopoverAbs: {
     position: 'absolute',
-    right: 44,
-    top: 4,
+    right: s(44),
+    top: s(4),
     backgroundColor: '#010E1E',
     borderWidth: 1,
     borderColor: '#ffffff',
-    borderRadius: 10,
-    paddingVertical: 6,
-    paddingHorizontal: 10,
+    borderRadius: ms(10),
+    paddingVertical: s(6),
+    paddingHorizontal: s(10),
     flexDirection: 'row',
     alignItems: 'center',
     zIndex: 50,
@@ -616,73 +634,80 @@ const styles = StyleSheet.create({
   menuItem: {
     alignItems: 'center',
     justifyContent: 'center',
-    paddingHorizontal: 4,
+    paddingHorizontal: s(4),
   },
   menuItemSecond: {
-    marginLeft: 14,
+    marginLeft: s(14),
   },
   creationDate: {
-    fontSize: 14 * scale,
+    fontSize: ms(12),
     color: '#CCCCCC',
     textAlign: 'center',
-    paddingBottom: 5 * scale,
+    paddingBottom: s(4),
+  },
+  creationDateGrid: {
+    fontSize: ms(8),
+    paddingBottom: s(2),
   },
   videoName: {
-    fontSize: 16 * scale,
+    fontSize: ms(14),
     fontWeight: 'bold',
     textAlign: 'center',
     color: '#FFFFFF',
   },
+  videoNameGrid: {
+    fontSize: ms(9),
+  },
   errorMessage: {
     color: '#FF4C4C',
-    fontSize: 16 * scale,
+    fontSize: ms(14),
     textAlign: 'center',
     backgroundColor: 'rgba(255, 76, 76, 0.1)',
     borderWidth: 1,
     borderColor: 'rgba(255, 76, 76, 0.2)',
-    padding: 10 * scale,
-    borderRadius: 5,
-    marginVertical: 10 * scale,
+    padding: s(10),
+    borderRadius: ms(5),
+    marginVertical: s(10),
   },
   emptyStateContainer: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingHorizontal: 24,
+    paddingHorizontal: s(24),
   },
   emptyIconWrapper: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
+    width: ms(56),
+    height: ms(56),
+    borderRadius: ms(28),
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: '#010E1E',
-    marginBottom: 16,
+    marginBottom: s(16),
     borderWidth: 1,
     borderColor: '#ffffff',
   },
   emptyTitle: {
-    fontSize: 18 * scale,
+    fontSize: ms(16),
     fontWeight: '700',
     color: '#FFFFFF',
     textAlign: 'center',
-    marginBottom: 6,
+    marginBottom: s(6),
   },
   emptySubtitle: {
-    fontSize: 14 * scale,
+    fontSize: ms(12),
     color: '#ffffff',
     textAlign: 'center',
-    lineHeight: 20,
-    marginBottom: 16,
+    lineHeight: ms(18),
+    marginBottom: s(16),
     opacity: 0.75,
   },
   emptyAction: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    gap: s(8),
     backgroundColor: '#010E1E',
-    paddingHorizontal: 16,
-    paddingVertical: 10,
+    paddingHorizontal: s(16),
+    paddingVertical: s(10),
     borderRadius: 999,
     borderWidth: 1,
     borderColor: '#ffffff',
@@ -690,13 +715,13 @@ const styles = StyleSheet.create({
   emptyActionText: {
     color: '#ffffff',
     fontWeight: '700',
-    fontSize: 14 * scale,
+    fontSize: ms(13),
   },
   listContent: {
     flexGrow: 1,
   },
   gridContent: {
-    paddingHorizontal: 5,
+    paddingHorizontal: s(5),
   },
   fullScreenContainer: {
     position: 'absolute',
@@ -709,50 +734,50 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   fullScreenVideo: {
-    width: width,
-    height: height,
+    width: '100%',
+    height: '100%',
   },
   modalBackdrop: {
     flex: 1,
     backgroundColor: 'rgba(1, 9, 20, 0.75)',
     justifyContent: 'center',
     alignItems: 'center',
-    paddingHorizontal: 20,
+    paddingHorizontal: s(20),
   },
   modalCard: {
     width: '100%',
-    maxWidth: 420,
+    maxWidth: s(420),
     backgroundColor: '#010E1E',
     borderWidth: 1,
     borderColor: '#ffffff',
-    borderRadius: 12,
-    padding: 16,
+    borderRadius: ms(12),
+    padding: s(16),
   },
   modalTitle: {
     color: '#ffffff',
     fontWeight: '700',
-    fontSize: 16,
+    fontSize: ms(15),
     textAlign: 'center',
-    marginBottom: 12,
+    marginBottom: s(12),
   },
   modalInput: {
     borderWidth: 1,
     borderColor: '#ffffff',
-    borderRadius: 10,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
+    borderRadius: ms(10),
+    paddingHorizontal: s(12),
+    paddingVertical: s(10),
     color: '#ffffff',
-    marginBottom: 12,
+    marginBottom: s(12),
   },
   modalActions: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    gap: 12,
+    gap: s(12),
   },
   modalActionBtn: {
     flex: 1,
     borderRadius: 999,
-    paddingVertical: 10,
+    paddingVertical: s(10),
     borderWidth: 1,
     borderColor: '#ffffff',
     backgroundColor: '#010914',
@@ -770,9 +795,9 @@ const styles = StyleSheet.create({
   },
   noVideoText: {
     color: '#ffffff',
-    fontSize: 18,
+    fontSize: ms(16),
     textAlign: 'center',
-    marginTop: 50,
+    marginTop: s(50),
   },
 });
 

@@ -1,6 +1,9 @@
 import React from 'react';
 import { View, Text, Image, TextInput, TouchableOpacity } from 'react-native';
 import Icon from 'react-native-vector-icons/FontAwesome';
+import { moderateScale } from '../../tools/responsive';
+
+const ICON_SIZE = moderateScale(18);
 
 const VideoTopSection = ({
   selectedClub,
@@ -22,7 +25,9 @@ const VideoTopSection = ({
     <View style={styles.topSection}>
       {selectedClub ? (
         <View style={styles.selectedClubInfo}>
-          <Image source={{ uri: selectedClub.logo }} style={styles.selectedClubLogo} />
+          {selectedClub.logo ? (
+            <Image source={{ uri: selectedClub.logo }} style={styles.selectedClubLogo} />
+          ) : null}
           <Text style={styles.selectedClubName}>{selectedClub.name}</Text>
         </View>
       ) : (
@@ -30,11 +35,11 @@ const VideoTopSection = ({
       )}
       <View style={styles.counterContainer}>
         <TouchableOpacity onPress={incrementCounter} style={styles.counterButton}>
-          <Icon name="plus" size={20} color="#fff" />
+          <Icon name="plus" size={ICON_SIZE} color="#fff" />
         </TouchableOpacity>
         <Text style={styles.counterLabel}>{counter}</Text>
         <TouchableOpacity onPress={decrementCounter} disabled={counter === 0} style={styles.counterButton}>
-          <Icon name="minus" size={20} color="#fff" />
+          <Icon name="minus" size={ICON_SIZE} color="#fff" />
         </TouchableOpacity>
       </View>
     </View>
@@ -71,11 +76,11 @@ const VideoTopSection = ({
       </View>
       <View style={styles.counterContainer}>
         <TouchableOpacity onPress={incrementSecondCounter} style={styles.counterButton}>
-          <Icon name="plus" size={20} color="#fff" />
+          <Icon name="plus" size={ICON_SIZE} color="#fff" />
         </TouchableOpacity>
         <Text style={styles.counterLabel}>{secondCounter}</Text>
         <TouchableOpacity onPress={decrementSecondCounter} disabled={secondCounter === 0} style={styles.counterButton}>
-          <Icon name="minus" size={20} color="#fff" />
+          <Icon name="minus" size={ICON_SIZE} color="#fff" />
         </TouchableOpacity>
       </View>
     </View>

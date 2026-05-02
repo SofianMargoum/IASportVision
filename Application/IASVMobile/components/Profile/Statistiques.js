@@ -10,8 +10,9 @@ import {
 import Icon from 'react-native-vector-icons/Ionicons';
 import { useEffectifContext } from './../../tools/EffectifContext';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { moderateScale, scale as s } from './../../tools/responsive';
 
-const scale = 0.85;
+const ms = moderateScale;
 
 const STAT_FIELDS = [
   { key: 'buts', label: 'Buts', icon: 'football-outline' },
@@ -56,7 +57,7 @@ const HBar = ({ label, value, maxValue, color }) => {
 
 const OverviewBox = ({ value, label, icon }) => (
   <View style={styles.overviewBox}>
-    <Icon name={icon} size={16 * scale} color="#607D8B" style={{ marginBottom: 4 }} />
+    <Icon name={icon} size={ms(16)} color="#607D8B" style={{ marginBottom: 4 }} />
     <Text style={styles.overviewValue}>{value}</Text>
     <Text style={styles.overviewLabel}>{label}</Text>
   </View>
@@ -190,7 +191,7 @@ const Statistiques = ({ onBack }) => {
 
         {/* ══════ Compteur de matchs ══════ */}
         <View style={styles.matchBar}>
-          <Icon name="calendar-outline" size={16 * scale} color="#607D8B" />
+          <Icon name="calendar-outline" size={ms(16)} color="#607D8B" />
           <Text style={styles.matchLabel}>Matchs joués</Text>
           <TouchableOpacity onPress={() => setMatchs(m => Math.max(0, m - 1))} style={styles.matchBtn}>
             <Icon name="remove" size={16} color="#607D8B" />
@@ -296,7 +297,7 @@ const Statistiques = ({ onBack }) => {
               const best = getBest(key);
               return (
                 <View key={key} style={styles.bestCard}>
-                  <Icon name={icon} size={20 * scale} color="#C5D0DC" />
+                  <Icon name={icon} size={ms(20)} color="#C5D0DC" />
                   <Text style={styles.bestLabel}>{label}</Text>
                   <Text style={styles.bestPlayer} numberOfLines={1}>
                     {best ? best.player.joueur : '-'}
@@ -316,21 +317,21 @@ const Statistiques = ({ onBack }) => {
           <View style={styles.disciplineRow}>
             <View style={styles.disciplineCard}>
               <View style={[styles.cardIconWrap, { backgroundColor: 'rgba(245,166,35,0.15)' }]}>
-                <Icon name="square" size={18 * scale} color="#F5A623" />
+                <Icon name="square" size={ms(18)} color="#F5A623" />
               </View>
               <Text style={styles.disciplineValue}>{totals.carton_j || 0}</Text>
               <Text style={styles.disciplineLabel}>Cartons jaunes</Text>
             </View>
             <View style={styles.disciplineCard}>
               <View style={[styles.cardIconWrap, { backgroundColor: 'rgba(208,2,27,0.15)' }]}>
-                <Icon name="square" size={18 * scale} color="#D0021B" />
+                <Icon name="square" size={ms(18)} color="#D0021B" />
               </View>
               <Text style={styles.disciplineValue}>{totals.carton_r || 0}</Text>
               <Text style={styles.disciplineLabel}>Cartons rouges</Text>
             </View>
             <View style={styles.disciplineCard}>
               <View style={[styles.cardIconWrap, { backgroundColor: 'rgba(96,125,139,0.15)' }]}>
-                <Icon name="alert-circle-outline" size={18 * scale} color="#607D8B" />
+                <Icon name="alert-circle-outline" size={ms(18)} color="#607D8B" />
               </View>
               <Text style={styles.disciplineValue}>{totals.fautes || 0}</Text>
               <Text style={styles.disciplineLabel}>Fautes</Text>
@@ -464,26 +465,26 @@ const Statistiques = ({ onBack }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 16 * scale,
+    padding: s(16),
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 12,
-    paddingVertical: 8,
+    marginBottom: s(12),
+    paddingVertical: s(8),
   },
   backButton: {
-    padding: 4,
+    padding: s(4),
   },
   title: {
     flex: 1,
-    fontSize: 18 * scale,
+    fontSize: ms(18),
     fontWeight: '700',
     color: '#fff',
     textAlign: 'center',
   },
   scrollContent: {
-    paddingBottom: 24,
+    paddingBottom: s(24),
   },
 
   // ── Match counter ──
@@ -491,50 +492,50 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#010E1E',
-    borderRadius: 10,
+    borderRadius: ms(10),
     borderWidth: 1,
     borderColor: '#1A2D45',
-    padding: 10 * scale,
-    marginBottom: 12,
+    padding: s(10),
+    marginBottom: s(12),
   },
   matchLabel: {
     flex: 1,
     color: '#C5D0DC',
-    fontSize: 14 * scale,
+    fontSize: ms(14),
     fontWeight: '600',
-    marginLeft: 8,
+    marginLeft: s(8),
   },
   matchBtn: {
-    width: 30 * scale,
-    height: 30 * scale,
-    borderRadius: 15 * scale,
+    width: ms(30),
+    height: ms(30),
+    borderRadius: ms(15),
     backgroundColor: '#111D2E',
     alignItems: 'center',
     justifyContent: 'center',
   },
   matchValue: {
     color: '#fff',
-    fontSize: 18 * scale,
+    fontSize: ms(18),
     fontWeight: '800',
-    marginHorizontal: 14,
-    minWidth: 28,
+    marginHorizontal: s(14),
+    minWidth: s(28),
     textAlign: 'center',
   },
 
   // ── Section card ──
   section: {
     backgroundColor: '#010E1E',
-    borderRadius: 10,
+    borderRadius: ms(10),
     borderWidth: 1,
     borderColor: '#1A2D45',
-    padding: 14 * scale,
-    marginBottom: 12,
+    padding: s(14),
+    marginBottom: s(12),
   },
   sectionTitle: {
     color: '#C5D0DC',
-    fontSize: 14 * scale,
+    fontSize: ms(14),
     fontWeight: '700',
-    marginBottom: 12,
+    marginBottom: s(12),
     letterSpacing: 0.3,
   },
 
@@ -548,19 +549,19 @@ const styles = StyleSheet.create({
     width: '24%',
     alignItems: 'center',
     backgroundColor: '#111D2E',
-    borderRadius: 8,
-    paddingVertical: 10 * scale,
-    marginBottom: 6,
+    borderRadius: ms(8),
+    paddingVertical: s(10),
+    marginBottom: s(6),
   },
   overviewValue: {
     color: '#fff',
-    fontSize: 18 * scale,
+    fontSize: ms(18),
     fontWeight: '800',
   },
   overviewLabel: {
     color: '#607D8B',
-    fontSize: 10 * scale,
-    marginTop: 2,
+    fontSize: ms(10),
+    marginTop: s(2),
     textAlign: 'center',
   },
   totalActionsRow: {
@@ -568,19 +569,19 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     backgroundColor: '#111D2E',
-    borderRadius: 8,
-    paddingVertical: 10 * scale,
-    paddingHorizontal: 14 * scale,
-    marginTop: 4,
+    borderRadius: ms(8),
+    paddingVertical: s(10),
+    paddingHorizontal: s(14),
+    marginTop: s(4),
   },
   totalActionsLabel: {
     color: '#607D8B',
-    fontSize: 13 * scale,
+    fontSize: ms(13),
     fontWeight: '600',
   },
   totalActionsValue: {
     color: '#fff',
-    fontSize: 20 * scale,
+    fontSize: ms(20),
     fontWeight: '800',
   },
 
@@ -594,19 +595,19 @@ const styles = StyleSheet.create({
     width: '24%',
     alignItems: 'center',
     backgroundColor: '#111D2E',
-    borderRadius: 8,
-    paddingVertical: 8 * scale,
-    marginBottom: 6,
+    borderRadius: ms(8),
+    paddingVertical: s(8),
+    marginBottom: s(6),
   },
   avgValue: {
     color: '#fff',
-    fontSize: 16 * scale,
+    fontSize: ms(16),
     fontWeight: '700',
   },
   avgLabel: {
     color: '#607D8B',
-    fontSize: 10 * scale,
-    marginTop: 2,
+    fontSize: ms(10),
+    marginTop: s(2),
     textAlign: 'center',
   },
 
@@ -615,36 +616,36 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-around',
     alignItems: 'flex-end',
-    paddingTop: 8,
-    paddingBottom: 4,
+    paddingTop: s(8),
+    paddingBottom: s(4),
   },
   podiumSlot: {
     flex: 1,
     alignItems: 'center',
-    marginHorizontal: 4,
+    marginHorizontal: s(4),
   },
   podiumBadge: {
-    width: 34 * scale,
-    height: 34 * scale,
-    borderRadius: 17 * scale,
+    width: ms(34),
+    height: ms(34),
+    borderRadius: ms(17),
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 6,
+    marginBottom: s(6),
   },
   podiumRank: {
-    fontSize: 16 * scale,
+    fontSize: ms(16),
     fontWeight: '800',
   },
   podiumName: {
-    fontSize: 12 * scale,
+    fontSize: ms(12),
     fontWeight: '700',
     textAlign: 'center',
-    marginBottom: 4,
+    marginBottom: s(4),
   },
   podiumPts: {
     color: '#607D8B',
-    fontSize: 11 * scale,
-    marginBottom: 6,
+    fontSize: ms(11),
+    marginBottom: s(6),
   },
   podiumBar: {
     width: '60%',
@@ -657,12 +658,12 @@ const styles = StyleSheet.create({
   hBarRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 6,
+    marginBottom: s(6),
   },
   hBarLabel: {
     width: '35%',
     color: '#C5D0DC',
-    fontSize: 12 * scale,
+    fontSize: ms(12),
     fontWeight: '600',
   },
   hBarTrack: {
@@ -671,7 +672,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#111D2E',
     borderRadius: 5,
     overflow: 'hidden',
-    marginHorizontal: 8,
+    marginHorizontal: s(8),
   },
   hBarFill: {
     height: '100%',
@@ -679,9 +680,9 @@ const styles = StyleSheet.create({
     opacity: 0.7,
   },
   hBarValue: {
-    width: 30,
+    width: s(30),
     color: '#C5D0DC',
-    fontSize: 12 * scale,
+    fontSize: ms(12),
     fontWeight: '700',
     textAlign: 'right',
   },
@@ -695,30 +696,30 @@ const styles = StyleSheet.create({
   bestCard: {
     width: '48%',
     backgroundColor: '#111D2E',
-    borderRadius: 10,
+    borderRadius: ms(10),
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 12 * scale,
-    marginBottom: 8,
+    paddingVertical: s(12),
+    marginBottom: s(8),
   },
   bestLabel: {
     color: '#607D8B',
-    fontSize: 11 * scale,
-    marginTop: 4,
-    marginBottom: 4,
+    fontSize: ms(11),
+    marginTop: s(4),
+    marginBottom: s(4),
   },
   bestPlayer: {
     color: '#C5D0DC',
-    fontSize: 13 * scale,
+    fontSize: ms(13),
     fontWeight: '600',
     textAlign: 'center',
-    paddingHorizontal: 4,
+    paddingHorizontal: s(4),
   },
   bestValue: {
     color: '#fff',
-    fontSize: 16 * scale,
+    fontSize: ms(16),
     fontWeight: '800',
-    marginTop: 2,
+    marginTop: s(2),
   },
 
   // ── Discipline ──
@@ -730,33 +731,33 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     backgroundColor: '#111D2E',
-    borderRadius: 10,
-    paddingVertical: 12 * scale,
-    marginHorizontal: 3,
+    borderRadius: ms(10),
+    paddingVertical: s(12),
+    marginHorizontal: s(3),
   },
   cardIconWrap: {
-    width: 36 * scale,
-    height: 36 * scale,
-    borderRadius: 18 * scale,
+    width: ms(36),
+    height: ms(36),
+    borderRadius: ms(18),
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 8,
+    marginBottom: s(8),
   },
   disciplineValue: {
     color: '#fff',
-    fontSize: 20 * scale,
+    fontSize: ms(20),
     fontWeight: '800',
   },
   disciplineLabel: {
     color: '#607D8B',
-    fontSize: 10 * scale,
-    marginTop: 4,
+    fontSize: ms(10),
+    marginTop: s(4),
     textAlign: 'center',
   },
 
   // ── Separator ──
   separatorWrap: {
-    marginVertical: 4,
+    marginVertical: s(4),
   },
   separator: {
     height: 1,
@@ -766,65 +767,65 @@ const styles = StyleSheet.create({
   // ── Detail title ──
   detailTitle: {
     color: '#C5D0DC',
-    fontSize: 14 * scale,
+    fontSize: ms(14),
     fontWeight: '700',
-    marginBottom: 10,
-    marginTop: 4,
+    marginBottom: s(10),
+    marginTop: s(4),
     letterSpacing: 0.3,
   },
 
   // ── Player card ──
   playerCard: {
     backgroundColor: '#010E1E',
-    borderRadius: 10,
+    borderRadius: ms(10),
     borderWidth: 1,
     borderColor: '#1A2D45',
-    marginBottom: 8 * scale,
+    marginBottom: s(8),
     overflow: 'hidden',
   },
   playerHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 12 * scale,
+    padding: s(12),
   },
   playerNumBadge: {
-    width: 28 * scale,
-    height: 28 * scale,
-    borderRadius: 14 * scale,
+    width: ms(28),
+    height: ms(28),
+    borderRadius: ms(14),
     backgroundColor: '#111D2E',
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: 10,
+    marginRight: s(10),
   },
   playerNumText: {
     color: '#C5D0DC',
-    fontSize: 12 * scale,
+    fontSize: ms(12),
     fontWeight: '700',
   },
   playerName: {
     flex: 1,
-    fontSize: 15 * scale,
+    fontSize: ms(15),
     fontWeight: '600',
     color: '#C5D0DC',
   },
   playerTotal: {
     color: '#fff',
-    fontSize: 15 * scale,
+    fontSize: ms(15),
     fontWeight: '800',
-    marginRight: 8,
+    marginRight: s(8),
   },
 
   // ── Expanded content ──
   expandedContent: {
-    paddingHorizontal: 12 * scale,
-    paddingBottom: 12 * scale,
+    paddingHorizontal: s(12),
+    paddingBottom: s(12),
     borderTopWidth: 1,
     borderTopColor: '#1A2D45',
   },
   statsRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginTop: 10,
+    marginTop: s(10),
   },
   counterBox: {
     flex: 1,
@@ -832,25 +833,25 @@ const styles = StyleSheet.create({
   },
   statLabel: {
     color: '#607D8B',
-    fontSize: 10 * scale,
-    marginBottom: 4,
+    fontSize: ms(10),
+    marginBottom: s(4),
   },
   counter: {
     alignItems: 'center',
     backgroundColor: '#111D2E',
-    borderRadius: 8,
-    width: 36 * scale,
+    borderRadius: ms(8),
+    width: ms(36),
     paddingVertical: 2,
   },
   counterBtn: {
     alignItems: 'center',
     justifyContent: 'center',
-    width: 36 * scale,
-    height: 26 * scale,
+    width: ms(36),
+    height: ms(26),
   },
   valueText: {
     color: '#fff',
-    fontSize: 14 * scale,
+    fontSize: ms(14),
     fontWeight: '700',
     marginVertical: 1,
   },
@@ -859,37 +860,37 @@ const styles = StyleSheet.create({
   cartonsRow: {
     flexDirection: 'row',
     justifyContent: 'space-around',
-    marginTop: 10,
-    paddingTop: 8,
+    marginTop: s(10),
+    paddingTop: s(8),
     borderTopWidth: 1,
     borderTopColor: 'rgba(255,255,255,0.05)',
   },
   cartonBox: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
+    gap: s(6),
   },
   cartonLabel: {
-    fontSize: 12 * scale,
+    fontSize: ms(12),
     fontWeight: '700',
-    marginRight: 4,
+    marginRight: s(4),
   },
   cartonValue: {
     color: '#fff',
-    fontSize: 15 * scale,
+    fontSize: ms(15),
     fontWeight: '800',
-    marginHorizontal: 4,
+    marginHorizontal: s(4),
   },
 
   // ── Empty ──
   emptyState: {
     alignItems: 'center',
-    paddingVertical: 32,
+    paddingVertical: s(32),
   },
   emptyText: {
     color: '#607D8B',
-    fontSize: 14 * scale,
-    marginTop: 10,
+    fontSize: ms(14),
+    marginTop: s(10),
   },
 });
 

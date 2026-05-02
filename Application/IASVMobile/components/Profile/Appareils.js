@@ -16,8 +16,9 @@ import {
 import Icon from 'react-native-vector-icons/Ionicons';
 import { useDeviceContext } from './../../tools/DeviceContext';
 import { fetchAllCameras } from './../../tools/api';
+import { moderateScale, scale as s } from './../../tools/responsive';
 
-const scale = 0.85;
+const ms = moderateScale;
 
 const Appareils = ({ onBack }) => {
   const {
@@ -195,11 +196,11 @@ const Appareils = ({ onBack }) => {
               {item?.nom}
             </Text>
             <View style={styles.idRow}>
-              <Icon name="hardware-chip-outline" size={12 * scale} color="#607D8B" />
+              <Icon name="hardware-chip-outline" size={ms(12)} color="#607D8B" />
               <Text style={styles.idText} numberOfLines={1}>Device: {item?.deviceId}</Text>
             </View>
             <View style={styles.idRow}>
-              <Icon name="videocam-outline" size={12 * scale} color="#607D8B" />
+              <Icon name="videocam-outline" size={ms(12)} color="#607D8B" />
               <Text style={styles.idText} numberOfLines={1}>Camera: {item?.cameraId}</Text>
             </View>
           </View>
@@ -372,35 +373,35 @@ const Appareils = ({ onBack }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 16 * scale,
+    padding: s(16),
   },
 
   // ── Header ──
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 12,
-    paddingVertical: 8,
+    marginBottom: s(12),
+    paddingVertical: s(8),
   },
   backBtn: {
-    padding: 4,
+    padding: s(4),
   },
   title: {
     flex: 1,
-    fontSize: 18 * scale,
+    fontSize: ms(18),
     fontWeight: '700',
     color: '#fff',
     textAlign: 'center',
   },
   countBadge: {
     backgroundColor: '#111D2E',
-    borderRadius: 12,
-    paddingHorizontal: 10,
-    paddingVertical: 3,
+    borderRadius: ms(12),
+    paddingHorizontal: s(10),
+    paddingVertical: s(3),
   },
   countText: {
     color: '#C5D0DC',
-    fontSize: 13 * scale,
+    fontSize: ms(13),
     fontWeight: '700',
   },
 
@@ -410,30 +411,30 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: '#010E1E',
-    borderRadius: 8,
-    padding: 10 * scale,
-    marginBottom: 10,
-    gap: 8,
+    borderRadius: ms(8),
+    padding: s(10),
+    marginBottom: s(10),
+    gap: s(8),
   },
   importText: {
     color: '#607D8B',
-    fontSize: 13 * scale,
+    fontSize: ms(13),
   },
 
   // ── List ──
   listContent: {
-    paddingBottom: 8,
+    paddingBottom: s(8),
     flexGrow: 1,
   },
 
   // ── Device card ──
   deviceCard: {
     backgroundColor: '#010E1E',
-    borderRadius: 10,
+    borderRadius: ms(10),
     borderWidth: 1,
     borderColor: '#1A2D45',
-    padding: 12 * scale,
-    marginBottom: 8 * scale,
+    padding: s(12),
+    marginBottom: s(8),
   },
   deviceCardSelected: {
     borderColor: '#455A64',
@@ -444,13 +445,13 @@ const styles = StyleSheet.create({
   },
   deviceInfo: {
     flex: 1,
-    marginLeft: 12,
+    marginLeft: s(12),
   },
   deviceName: {
     color: '#C5D0DC',
-    fontSize: 15 * scale,
+    fontSize: ms(15),
     fontWeight: '600',
-    marginBottom: 4,
+    marginBottom: s(4),
   },
   deviceNameSelected: {
     color: '#fff',
@@ -459,59 +460,59 @@ const styles = StyleSheet.create({
   idRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
-    marginTop: 2,
+    gap: s(4),
+    marginTop: s(2),
   },
   idText: {
     color: '#607D8B',
-    fontSize: 11 * scale,
+    fontSize: ms(11),
   },
   deviceActions: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 10,
-    marginLeft: 8,
+    gap: s(10),
+    marginLeft: s(8),
   },
   actionBtn: {
-    padding: 4,
+    padding: s(4),
   },
 
   // ── Empty ──
   emptyState: {
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 60,
+    paddingVertical: s(60),
   },
   emptyTitle: {
     color: '#C5D0DC',
-    fontSize: 16 * scale,
+    fontSize: ms(16),
     fontWeight: '700',
-    marginTop: 12,
+    marginTop: s(12),
   },
   emptyText: {
     color: '#607D8B',
-    fontSize: 13 * scale,
-    marginTop: 4,
+    fontSize: ms(13),
+    marginTop: s(4),
   },
 
   // ── Add card ──
   addCard: {
     backgroundColor: '#010E1E',
-    borderRadius: 10,
+    borderRadius: ms(10),
     borderWidth: 1,
     borderColor: '#1A2D45',
-    padding: 14 * scale,
-    marginTop: 4,
+    padding: s(14),
+    marginTop: s(4),
   },
   addHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 12,
+    marginBottom: s(12),
   },
   addTitle: {
     color: '#C5D0DC',
-    fontSize: 15 * scale,
+    fontSize: ms(15),
     fontWeight: '700',
   },
 
@@ -519,10 +520,10 @@ const styles = StyleSheet.create({
   input: {
     backgroundColor: '#111D2E',
     color: '#fff',
-    borderRadius: 8,
-    padding: 10 * scale,
-    fontSize: 14 * scale,
-    marginBottom: 8,
+    borderRadius: ms(8),
+    padding: s(10),
+    fontSize: ms(14),
+    marginBottom: s(8),
     borderWidth: 1,
     borderColor: '#1A2D45',
   },
@@ -533,32 +534,32 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: '#111D2E',
-    borderRadius: 8,
-    paddingVertical: 12 * scale,
-    marginTop: 4,
-    gap: 6,
+    borderRadius: ms(8),
+    paddingVertical: s(12),
+    marginTop: s(4),
+    gap: s(6),
     borderWidth: 1,
     borderColor: '#1A2D45',
   },
   confirmBtnText: {
     color: '#fff',
-    fontSize: 14 * scale,
+    fontSize: ms(14),
     fontWeight: '700',
   },
 
   // ── Floating add btn ──
   addFloating: {
     alignSelf: 'center',
-    width: 48 * scale,
-    height: 48 * scale,
-    borderRadius: 24 * scale,
+    width: ms(48),
+    height: ms(48),
+    borderRadius: ms(24),
     backgroundColor: '#111D2E',
     borderWidth: 1,
     borderColor: '#1A2D45',
     alignItems: 'center',
     justifyContent: 'center',
-    marginTop: 4,
-    marginBottom: 8,
+    marginTop: s(4),
+    marginBottom: s(8),
   },
 
   // ── Modal ──
@@ -567,37 +568,37 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(1,9,20,0.85)',
     justifyContent: 'center',
     alignItems: 'center',
-    padding: 20,
+    padding: s(20),
   },
   modalCard: {
     width: '100%',
     backgroundColor: '#010E1E',
-    borderRadius: 12,
+    borderRadius: ms(12),
     borderWidth: 1,
     borderColor: '#1A2D45',
-    padding: 16 * scale,
+    padding: s(16),
   },
   modalHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
-    marginBottom: 14,
+    gap: s(8),
+    marginBottom: s(14),
   },
   modalTitle: {
-    fontSize: 16 * scale,
+    fontSize: ms(16),
     color: '#fff',
     fontWeight: '700',
   },
   modalActions: {
     flexDirection: 'row',
     justifyContent: 'flex-end',
-    gap: 10,
-    marginTop: 6,
+    gap: s(10),
+    marginTop: s(6),
   },
   modalBtnCancel: {
-    paddingVertical: 10 * scale,
-    paddingHorizontal: 16 * scale,
-    borderRadius: 8,
+    paddingVertical: s(10),
+    paddingHorizontal: s(16),
+    borderRadius: ms(8),
     backgroundColor: '#111D2E',
     borderWidth: 1,
     borderColor: '#1A2D45',
@@ -605,15 +606,15 @@ const styles = StyleSheet.create({
   modalBtnSave: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
-    paddingVertical: 10 * scale,
-    paddingHorizontal: 16 * scale,
-    borderRadius: 8,
+    gap: s(6),
+    paddingVertical: s(10),
+    paddingHorizontal: s(16),
+    borderRadius: ms(8),
     backgroundColor: '#1A2D45',
   },
   modalBtnText: {
     color: '#fff',
-    fontSize: 14 * scale,
+    fontSize: ms(14),
     fontWeight: '600',
   },
 });

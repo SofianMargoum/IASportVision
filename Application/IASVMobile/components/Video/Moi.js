@@ -10,6 +10,9 @@ import {
 } from 'react-native';
 import Icon from 'react-native-vector-icons/FontAwesome';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { moderateScale, scale as s } from './../../tools/responsive';
+
+const ms = moderateScale;
 
 const getStorageKey = (matchId) => `@moi_stats_${matchId || 'default'}`;
 
@@ -205,35 +208,35 @@ const Moi = React.memo(({ matchId }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    paddingHorizontal: 12,
+    paddingHorizontal: s(12),
   },
   headerCard: {
     alignItems: 'center',
-    paddingVertical: 16,
-    marginBottom: 8,
+    paddingVertical: s(16),
+    marginBottom: s(8),
   },
   headerIconWrapper: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
+    width: ms(44),
+    height: ms(44),
+    borderRadius: ms(22),
     backgroundColor: 'rgba(255, 255, 255, 0.08)',
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 8,
+    marginBottom: s(8),
   },
   headerTitle: {
     color: '#FFFFFF',
-    fontSize: 16,
+    fontSize: ms(15),
     fontWeight: '700',
-    marginBottom: 4,
+    marginBottom: s(4),
   },
   headerSubtitle: {
     color: '#A8B4C0',
-    fontSize: 12,
+    fontSize: ms(11),
   },
   section: {
-    marginBottom: 8,
-    borderRadius: 8,
+    marginBottom: s(8),
+    borderRadius: ms(8),
     overflow: 'hidden',
     backgroundColor: 'rgba(255, 255, 255, 0.03)',
   },
@@ -241,29 +244,29 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingVertical: 10,
-    paddingHorizontal: 12,
+    paddingVertical: s(10),
+    paddingHorizontal: s(12),
     backgroundColor: 'rgba(255, 255, 255, 0.05)',
   },
   sectionLeft: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    gap: s(8),
   },
   sectionTitle: {
     color: '#FFFFFF',
-    fontSize: 13,
+    fontSize: ms(12),
     fontWeight: '700',
   },
   sectionBody: {
-    paddingHorizontal: 4,
+    paddingHorizontal: s(4),
   },
   statRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingVertical: 8,
-    paddingHorizontal: 12,
+    paddingVertical: s(8),
+    paddingHorizontal: s(12),
     borderBottomWidth: 0.5,
     borderBottomColor: 'rgba(255, 255, 255, 0.04)',
   },
@@ -272,41 +275,41 @@ const styles = StyleSheet.create({
   },
   statLabel: {
     color: '#A8B4C0',
-    fontSize: 12,
+    fontSize: ms(11),
     fontWeight: '600',
     flex: 1,
   },
   statInput: {
     color: '#FFFFFF',
-    fontSize: 13,
+    fontSize: ms(12),
     fontWeight: '700',
     textAlign: 'right',
-    minWidth: 80,
-    paddingVertical: 4,
-    paddingHorizontal: 8,
-    borderRadius: 6,
+    minWidth: s(70),
+    paddingVertical: s(4),
+    paddingHorizontal: s(8),
+    borderRadius: ms(6),
     backgroundColor: 'rgba(255, 255, 255, 0.06)',
     borderWidth: 1,
     borderColor: 'rgba(255, 255, 255, 0.08)',
   },
   bottomSpacer: {
-    height: 40,
+    height: s(40),
   },
   resetButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 5,
-    marginTop: 10,
-    paddingVertical: 5,
-    paddingHorizontal: 12,
-    borderRadius: 6,
+    gap: s(5),
+    marginTop: s(10),
+    paddingVertical: s(5),
+    paddingHorizontal: s(12),
+    borderRadius: ms(6),
     borderWidth: 1,
     borderColor: 'rgba(255, 107, 107, 0.4)',
     backgroundColor: 'rgba(255, 107, 107, 0.08)',
   },
   resetText: {
     color: '#FF6B6B',
-    fontSize: 11,
+    fontSize: ms(10),
     fontWeight: '600',
   },
 });

@@ -9,13 +9,40 @@ if (!/^https:\/\//i.test(API_BASE)) {
   throw new Error('API_BASE must use HTTPS');
 }
 
+// --- Bearer token (JWT) en mémoire ---
+// Renseigné par tools/secureToken après chargement du Keychain, ou par
+// LoginForm après un login réussi. Jamais persisté ailleurs qu'en Keychain.
+let CURRENT_AUTH_TOKEN = null;
+
+export function setAuthToken(token) {
+  CURRENT_AUTH_TOKEN = typeof token === 'string' && token ? token : null;
+}
+
+export function clearAuthToken() {
+  CURRENT_AUTH_TOKEN = null;
+}
+
 /**
  * Helper fetch sécurisé :
  *  - impose HTTPS
  *  - applique un timeout via AbortController
  *  - parse JSON en sécurité
  *  - normalise les erreurs (status / details) sans fuite d'infos sensibles
+ *  - injecte automatiquement Authorization: Bearer <jwt> si dispo
  */
+// Le JWT ne doit être envoyé qu'à NOTRE backend, jamais à des APIs tierces
+// (FFF DOFA, Nominatim, etc.) — sinon ces APIs rejettent la requête (401)
+// ou pire, on fuite le token à un tiers.
+function isOwnApiUrl(url) {
+  try {
+    const u = new URL(url);
+    const base = new URL(API_BASE);
+    return u.origin === base.origin;
+  } catch {
+    return false;
+  }
+}
+
 async function secureFetch(url, { method = 'GET', headers, body, timeoutMs = DEFAULT_TIMEOUT_MS, parse = 'json' } = {}) {
   if (typeof url !== 'string' || !/^https:\/\//i.test(url)) {
     throw new Error('Insecure or invalid URL');
@@ -24,12 +51,15 @@ async function secureFetch(url, { method = 'GET', headers, body, timeoutMs = DEF
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
 
+  const sendAuth = CURRENT_AUTH_TOKEN && isOwnApiUrl(url);
+
   try {
     const resp = await fetch(url, {
       method,
       headers: {
         Accept: 'application/ld+json, application/json;q=0.9, */*;q=0.1',
         ...(body ? { 'Content-Type': 'application/json' } : {}),
+        ...(sendAuth ? { Authorization: `Bearer ${CURRENT_AUTH_TOKEN}` } : {}),
         ...(headers || {}),
       },
       body: body ? JSON.stringify(body) : undefined,
@@ -472,6 +502,25 @@ export const searchClubs = async (searchTerm) => {
   }
 };
 
+// Récupère un club par son cl_no (utile pour compléter logo/name quand
+// d'autres endpoints ne les fournissent pas, ex. classement_journees).
+export const fetchClubByClNo = async (cl_no) => {
+  if (cl_no == null || cl_no === '') return null;
+  try {
+    const url = `https://api-dofa.fff.fr/api/clubs/${encPath(cl_no)}`;
+    const data = await secureFetch(url);
+    if (!data || typeof data !== 'object') return null;
+    return {
+      cl_no: data.cl_no || cl_no,
+      name: data.name || '',
+      logo: data.logo || '',
+    };
+  } catch (error) {
+    if (__DEV__) console.error('Error fetching club by cl_no:', error?.message);
+    return null;
+  }
+};
+
 const normalizeCompetitionName = (name) =>
   String(name || '').replace(/\s+/g, ' ').trim();
 
@@ -535,6 +584,9 @@ export const fetchMatchesForClub = async (cp_no, phaseId, pouleId, cl_no) => {
       const phaseNumber = match.phase ? match.phase.number : '';
       const pouleNumber = match.poule ? match.poule.stage_number : '';
 
+      const homeClub = match.home && match.home.club ? match.home.club : null;
+      const awayClub = match.away && match.away.club ? match.away.club : null;
+
       return {
         id: match['@id'] ? match['@id'].split('/').pop() : null,
         date: match.date,
@@ -544,8 +596,12 @@ export const fetchMatchesForClub = async (cp_no, phaseId, pouleId, cl_no) => {
         season: match.competition ? match.competition.season : null,
         homeTeam: match.home ? match.home.short_name : '',
         awayTeam: match.away ? match.away.short_name : '',
-        homeLogo: match.home && match.home.club ? match.home.club.logo : '',
-        awayLogo: match.away && match.away.club ? match.away.club.logo : '',
+        homeLogo: homeClub ? homeClub.logo : '',
+        awayLogo: awayClub ? awayClub.logo : '',
+        homeClNo: homeClub ? homeClub.cl_no : null,
+        awayClNo: awayClub ? awayClub.cl_no : null,
+        homeClubName: homeClub ? (homeClub.name || match.home?.short_name || '') : '',
+        awayClubName: awayClub ? (awayClub.name || match.away?.short_name || '') : '',
         competitionName,
         competitionNumber,
         phaseNumber,
@@ -573,27 +629,34 @@ export const fetchClassementJournees = async (competitionId, phaseId, pouleId) =
       `/classement_journees`;
     const data = await secureFetch(url);
 
-    return extractList(data).map((journee) => ({
-      journeeNumber: journee.cj_no,
-      season: journee.season,
-      date: journee.date,
-      rank: journee.rank,
-      points: journee.point_count,
-      penaltyPoints: journee.penalty_point_count,
-      wonGames: journee.won_games_count,
-      drawGames: journee.draw_games_count,
-      lostGames: journee.lost_games_count,
-      forfeits: journee.forfeits_games_count,
-      goalsFor: journee.goals_for_count,
-      goalsAgainst: journee.goals_against_count,
-      goalDifference: journee.goals_diff,
-      totalGames: journee.total_games_count,
-      teamName: journee.equipe.short_name,
-      teamCategory: journee.equipe.category_label,
-      teamGender: journee.equipe.category_gender,
-      pouleName: journee.poule.name,
-      stageNumber: journee.poule.stage_number,
-    }));
+    return extractList(data).map((journee) => {
+      const equipe = journee.equipe || {};
+      const club = equipe.club || {};
+      return {
+        journeeNumber: journee.cj_no,
+        season: journee.season,
+        date: journee.date,
+        rank: journee.rank,
+        points: journee.point_count,
+        penaltyPoints: journee.penalty_point_count,
+        wonGames: journee.won_games_count,
+        drawGames: journee.draw_games_count,
+        lostGames: journee.lost_games_count,
+        forfeits: journee.forfeits_games_count,
+        goalsFor: journee.goals_for_count,
+        goalsAgainst: journee.goals_against_count,
+        goalDifference: journee.goals_diff,
+        totalGames: journee.total_games_count,
+        teamName: equipe.short_name,
+        teamCategory: equipe.category_label,
+        teamGender: equipe.category_gender,
+        clNo: club.cl_no || null,
+        clubName: club.name || equipe.short_name || '',
+        clubLogo: club.logo || '',
+        pouleName: journee.poule ? journee.poule.name : '',
+        stageNumber: journee.poule ? journee.poule.stage_number : '',
+      };
+    });
   } catch (error) {
     if (__DEV__) console.error('Error fetching classement journées:', error?.message);
     return [];

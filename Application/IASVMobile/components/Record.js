@@ -13,6 +13,7 @@ import Icon from 'react-native-vector-icons/FontAwesome';
 import { useVideoContent } from './Record/VideoContent';
 import styles, { SUCCESS_GREEN } from './Record/VideoStyles';
 import { fetchAllCameras } from '../tools/api';
+import { moderateScale } from '../tools/responsive';
 
 const Record = () => {
   const {
@@ -134,7 +135,7 @@ const Record = () => {
       <View style={styles.notConnectedContainer}>
         <Image
           source={require('../assets/connexionR.png')}
-          style={{ width: '100%', resizeMode: 'contain' }}
+          style={{ width: '100%', height: '100%', resizeMode: 'contain' }}
         />
       </View>
     );
@@ -175,7 +176,7 @@ const Record = () => {
                 isChecking && styles.deviceRefreshDisabled,
               ]}
             >
-              <Icon name="refresh" size={12} color="#fff" />
+              <Icon name="refresh" size={moderateScale(12)} color="#fff" />
             </TouchableOpacity>
           )}
           <Text style={[styles.deviceNameText, deviceNameColorStyle]}>
@@ -186,11 +187,11 @@ const Record = () => {
               {isChecking ? (
                 <ActivityIndicator size="small" color="#f1c40f" />
               ) : isConnected ? (
-                <Icon name="wifi" size={12} color={SUCCESS_GREEN} />
+                <Icon name="wifi" size={moderateScale(12)} color={SUCCESS_GREEN} />
               ) : isDisconnected ? (
-                <Icon name="wifi" size={12} color="#ff6b6b" />
+                <Icon name="wifi" size={moderateScale(12)} color="#ff6b6b" />
               ) : (
-                <Icon name="question-circle" size={12} color="#bbb" />
+                <Icon name="question-circle" size={moderateScale(12)} color="#bbb" />
               )}
             </View>
           )}
@@ -202,7 +203,9 @@ const Record = () => {
           <View style={styles.scoreTeamBlock}>
             {selectedClub ? (
               <>
-                <Image source={{ uri: selectedClub.logo }} style={styles.scoreTeamLogo} />
+                {selectedClub.logo ? (
+                  <Image source={{ uri: selectedClub.logo }} style={styles.scoreTeamLogo} />
+                ) : null}
                 <Text style={styles.scoreTeamName} numberOfLines={2}>
                   {selectedClub.name}
                 </Text>
@@ -218,7 +221,7 @@ const Record = () => {
               {/* Home counter */}
               <View style={{ alignItems: 'center' }}>
                 <TouchableOpacity onPress={incrementCounter} style={styles.scoreCounterButton}>
-                  <Icon name="caret-up" size={22} color="#fff" />
+                  <Icon name="caret-up" size={moderateScale(22)} color="#fff" />
                 </TouchableOpacity>
                 <Text style={styles.scoreText}>{counter}</Text>
                 <TouchableOpacity
@@ -226,7 +229,7 @@ const Record = () => {
                   disabled={counter === 0}
                   style={styles.scoreCounterButton}
                 >
-                  <Icon name="caret-down" size={22} color={counter === 0 ? '#333' : '#fff'} />
+                  <Icon name="caret-down" size={moderateScale(22)} color={counter === 0 ? '#333' : '#fff'} />
                 </TouchableOpacity>
               </View>
 
@@ -235,7 +238,7 @@ const Record = () => {
               {/* Away counter */}
               <View style={{ alignItems: 'center' }}>
                 <TouchableOpacity onPress={incrementSecondCounter} style={styles.scoreCounterButton}>
-                  <Icon name="caret-up" size={22} color="#fff" />
+                  <Icon name="caret-up" size={moderateScale(22)} color="#fff" />
                 </TouchableOpacity>
                 <Text style={styles.scoreText}>{secondCounter}</Text>
                 <TouchableOpacity
@@ -243,7 +246,7 @@ const Record = () => {
                   disabled={secondCounter === 0}
                   style={styles.scoreCounterButton}
                 >
-                  <Icon name="caret-down" size={22} color={secondCounter === 0 ? '#333' : '#fff'} />
+                  <Icon name="caret-down" size={moderateScale(22)} color={secondCounter === 0 ? '#333' : '#fff'} />
                 </TouchableOpacity>
               </View>
             </View>

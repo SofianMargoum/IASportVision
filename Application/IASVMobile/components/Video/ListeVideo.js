@@ -2,7 +2,7 @@
 // Conteneur pour afficher les détails d'une vidéo sélectionnée.
 // Utilise TabView avec 4 onglets : Match Complet, Composition/Effectif, Stats Équipes, Stats Joueurs.
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { View, Text, TouchableOpacity, ScrollView, StyleSheet, Dimensions } from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView, StyleSheet, useWindowDimensions } from 'react-native';
 import { TabView } from 'react-native-tab-view';
 import MatchComplet from './MatchComplet';
 import Effectif from './Effectif';
@@ -11,9 +11,9 @@ import StatsEquipes from './StatsEquipes';
 import StatsJoueurs from './StatsJoueurs';
 import Moi from './Moi';
 import { useEffectifContext } from './../../tools/EffectifContext';
+import { moderateScale, scale as s } from './../../tools/responsive';
 
-const scale = 0.85;
-const { width } = Dimensions.get('window');
+const ms = moderateScale;
 
 const ROUTES = [
   { key: 'effectif', title: 'EFFECTIF' },
@@ -24,6 +24,7 @@ const ROUTES = [
 ];
 
 const ListeVideo = ({ selectedVideo }) => {
+  const { width } = useWindowDimensions();
   const [index, setIndex] = useState(0);
   const { effectif } = useEffectifContext();
 
@@ -137,15 +138,15 @@ const styles = StyleSheet.create({
     paddingHorizontal: 4,
   },
   button: {
-    paddingVertical: 12 * scale,
-    paddingHorizontal: 14 * scale,
+    paddingVertical: s(12),
+    paddingHorizontal: s(14),
     alignItems: 'center',
     justifyContent: 'center',
     position: 'relative',
   },
   buttonText: {
     color: '#666666',
-    fontSize: 13 * scale,
+    fontSize: ms(12),
     fontWeight: '700',
   },
   activeButtonText: {

@@ -1,10 +1,9 @@
-import React from 'react';
+import React, { useContext } from 'react';
 import { View, Text, Image, StyleSheet } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useClubContext } from './../tools/ClubContext';
-import { useContext } from 'react';
 import { UserContext } from './../tools/UserContext';
-
-const scale = 0.85;
+import { moderateScale, scale as s } from './../tools/responsive';
 
 const resolveImageSource = (value) => {
   if (!value) return null;
@@ -27,12 +26,14 @@ const resolveImageSource = (value) => {
 const Header = ({ windowWidth }) => {
   const { selectedClub, competition } = useClubContext();
   const { user } = useContext(UserContext);
+  // Top inset : encoche / barre status (Pixel, Samsung, Xiaomi, Oppo).
+  const insets = useSafeAreaInsets();
 
   const clubLogoSource = resolveImageSource(selectedClub?.logo);
   const userPhotoSource = resolveImageSource(user?.photo);
 
   return (
-    <View style={styles.header}>
+    <View style={[styles.header, { paddingTop: insets.top + s(8) }]}>
       {selectedClub && (
         <View style={styles.selectedClubLabel}>
           {clubLogoSource ? <Image source={clubLogoSource} style={styles.clubLogo} /> : null}
@@ -57,49 +58,57 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     width: '100%',
-    marginBottom: 5,
+    marginBottom: s(5),
     backgroundColor: '#010914',
-    paddingVertical: 15 * scale,
+    paddingBottom: s(12),
+    // paddingHorizontal pour que le bloc "selectedClub" ne passe jamais sous le
+    // bloc "admin" positionné à droite, même sur petits écrans (Redmi 360dp).
+    paddingHorizontal: s(72),
   },
   logoMain: {
     position: 'absolute',
-    right: 10,
-    height: '100%',
+    right: s(10),
+    top: 0,
+    bottom: 0,
     alignItems: 'center',
+    justifyContent: 'center',
   },
   selectedClubLabel: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
+    flexShrink: 1,
   },
   clubLogo: {
-    width: 50 * scale,
-    height: 50 * scale,
-    borderRadius: 25 * scale,
-    marginRight: 15 * scale,
+    width: moderateScale(50),
+    height: moderateScale(50),
+    borderRadius: moderateScale(25),
+    marginRight: s(12),
   },
   adminLogo: {
-    width: 25 * scale,
-    height: 25 * scale,
-    borderRadius: 25 * scale,
-    marginRight: 8 * scale,
+    width: moderateScale(25),
+    height: moderateScale(25),
+    borderRadius: moderateScale(25),
+    marginRight: s(6),
   },
   selectedClubText: {
     flexDirection: 'column',
     alignItems: 'flex-start',
+    flexShrink: 1,
   },
   clubName: {
-    fontSize: 18 * scale,
+    fontSize: moderateScale(16),
     fontWeight: 'bold',
     color: '#fff',
+    flexShrink: 1,
   },
   competitionLabel: {
-    fontSize: 14 * scale,
+    fontSize: moderateScale(12),
     fontStyle: 'italic',
     color: '#ffffff',
   },
   adminLabels: {
-    fontSize: 10 * scale,
+    fontSize: moderateScale(10),
     fontStyle: 'italic',
     color: '#ffffff',
   },

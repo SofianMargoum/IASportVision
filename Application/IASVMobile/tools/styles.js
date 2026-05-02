@@ -1,6 +1,7 @@
 import { StyleSheet } from 'react-native';
+import { moderateScale, scale as s } from './responsive';
 
-const scale = 0.85;
+const ms = moderateScale;
 
 export const styles = StyleSheet.create({
   appContainer: {
@@ -8,11 +9,11 @@ export const styles = StyleSheet.create({
     backgroundColor: '#010914',
   },
   header: {
-    padding: 10,
+    padding: s(10),
     alignItems: 'center',
     justifyContent: 'center',
     width: '100%',
-    marginBottom: 5,
+    marginBottom: s(5),
     shadowColor: '#00A0E9',
     shadowOpacity: 0.1,
     shadowOffset: { width: 0, height: 5 },
@@ -26,40 +27,40 @@ export const styles = StyleSheet.create({
     opacity: 0.2,
   },
   logo: {
-    width: 2500 * scale,
-    height: 50 * scale,
+    width: ms(2500),
+    height: ms(50),
     resizeMode: 'contain',
   },
   selectedClubLabel: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    marginTop: 15 * scale,
+    marginTop: s(15),
   },
   clubLogo: {
-    width: 50 * scale,
-    height: 50 * scale,
-    borderRadius: 25 * scale,
-    marginRight: 15 * scale,
+    width: ms(50),
+    height: ms(50),
+    borderRadius: ms(25),
+    marginRight: s(15),
   },
   selectedClubText: {
     flexDirection: 'column',
     alignItems: 'flex-start',
   },
   clubName: {
-    fontSize: 18 * scale,
+    fontSize: ms(18),
     fontWeight: 'bold',
     color: '#fff',
   },
   competitionLabel: {
-    fontSize: 14 * scale,
+    fontSize: ms(14),
     fontStyle: 'italic',
     color: '#ffffff',
   },
   tabBarStyle: {
     backgroundColor: '#010E1E',
     borderTopWidth: 0,
-    height: 60 * scale,
+    height: ms(60),
     flexDirection: 'row',
     justifyContent: 'space-around',
     alignItems: 'center',
@@ -73,7 +74,7 @@ export const styles = StyleSheet.create({
   },
   iconActive: {
     backgroundColor: '#001F3F', // Exemple de fond actif (modifiable selon vos besoins)
-    borderRadius: 10, // Exemple pour adoucir les angles
+    borderRadius: ms(10), // Exemple pour adoucir les angles
   },
 });
 

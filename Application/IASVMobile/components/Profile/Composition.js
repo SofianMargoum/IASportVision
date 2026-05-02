@@ -13,8 +13,9 @@ import {
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { useEffectifContext } from './../../tools/EffectifContext';
+import { moderateScale, scale as s } from './../../tools/responsive';
 
-const scale = 0.85;
+const ms = moderateScale;
 
 const DEFAULT_PLAYERS = [
   { joueur: 'Gardien' },
@@ -198,36 +199,36 @@ const Composition = ({ onBack }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 16 * scale,
+    padding: s(16),
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 8,
-    paddingVertical: 8,
+    marginBottom: s(8),
+    paddingVertical: s(8),
   },
   backButton: {
-    padding: 4,
+    padding: s(4),
   },
   title: {
     flex: 1,
-    fontSize: 18 * scale,
+    fontSize: ms(18),
     fontWeight: '700',
     color: '#fff',
     textAlign: 'center',
   },
   resetButton: {
-    padding: 4,
+    padding: s(4),
   },
   hint: {
     textAlign: 'center',
     color: '#455A64',
-    fontSize: 12 * scale,
-    marginBottom: 12,
+    fontSize: ms(12),
+    marginBottom: s(12),
   },
   terrainWrapper: {
     flex: 1,
-    borderRadius: 12,
+    borderRadius: ms(12),
     overflow: 'hidden',
   },
   terrain: {
@@ -243,24 +244,24 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   playerImage: {
-    width: 40 * scale,
-    height: 40 * scale,
+    width: ms(40),
+    height: ms(40),
     resizeMode: 'contain',
   },
   playerLabelRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    marginTop: 2,
-    gap: 6 * scale,
+    marginTop: s(2),
+    gap: s(6),
   },
   playerNumero: {
-    fontSize: 10 * scale,
+    fontSize: ms(10),
     color: '#fff',
     fontWeight: '800',
   },
   playerName: {
-    fontSize: 10 * scale,
+    fontSize: ms(10),
     color: '#C5D0DC',
     textAlign: 'center',
     fontWeight: '800',
@@ -268,9 +269,9 @@ const styles = StyleSheet.create({
   playerCount: {
     textAlign: 'center',
     color: '#607D8B',
-    fontSize: 12 * scale,
-    marginTop: 12,
-    marginBottom: 4,
+    fontSize: ms(12),
+    marginTop: s(12),
+    marginBottom: s(4),
   },
 });
 

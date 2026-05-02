@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { View, Text, TouchableOpacity } from 'react-native';
 import Icon from 'react-native-vector-icons/FontAwesome';
 import styles from './VideoStyles';
+import { moderateScale } from '../../tools/responsive';
 
 const Counter = () => {
   const [counter, setCounter] = useState(0);
@@ -12,11 +13,11 @@ const Counter = () => {
   return (
     <View style={styles.counterContainer}>
       <TouchableOpacity onPress={increment} style={styles.counterButton}>
-        <Icon name="plus" size={20} color="#fff" />
+        <Icon name="plus" size={moderateScale(18)} color="#fff" />
       </TouchableOpacity>
       <Text style={styles.counterLabel}>{counter}</Text>
       <TouchableOpacity onPress={decrement} style={styles.counterButton}>
-        <Icon name="minus" size={20} color="#fff" />
+        <Icon name="minus" size={moderateScale(18)} color="#fff" />
       </TouchableOpacity>
     </View>
   );

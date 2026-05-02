@@ -1,8 +1,10 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { View, Dimensions, Text } from 'react-native';
+import { View, Text, useWindowDimensions } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { TabView, SceneMap } from 'react-native-tab-view';
 import { useClubContext } from './../tools/ClubContext';
+import { useUserRole } from './../tools/UserRoleContext';
+import { moderateScale } from './../tools/responsive';
 import { VideoOverlayProvider } from '../tools/VideoOverlayContext';
 import { ActiveTabProvider } from '../tools/ActiveTabContext';
 import Record from './Record';
@@ -15,8 +17,12 @@ import Header from './Header';
 import BottomTabNavigator from './BottomTabNavigator';
 import VideoOverlayHost from './Video/VideoOverlayHost';
 
-const Main = ({ windowWidth }) => {
+const Main = ({ windowWidth, windowHeight }) => {
   const { selectedClub, isLoading } = useClubContext();
+  const { role, isLoading: roleLoading } = useUserRole();
+  // Largeur live de la fenêtre — fallback sur la prop venant de App.js si fournie.
+  const dims = useWindowDimensions();
+  const tabLayoutWidth = windowWidth || dims.width;
 
   const rootRef = useRef(null);
 
@@ -47,15 +53,17 @@ const Main = ({ windowWidth }) => {
   });
 
   // Now we can safely do conditional returns
-  if (isLoading) {
+  if (isLoading || roleLoading) {
     return (
       <View style={{ flex: 1, backgroundColor: '#010914', justifyContent: 'center', alignItems: 'center' }}>
-        <Text style={{ color: '#fff', fontSize: 18 }}>Chargement...</Text>
+        <Text style={{ color: '#fff', fontSize: moderateScale(18) }}>Chargement...</Text>
       </View>
     );
   }
 
-  const isOnboarding = !selectedClub;
+  // Onboarding : pas de rôle OU pas de club sélectionné.
+  // Welcome gère les 2 étapes (choix profil puis choix club).
+  const isOnboarding = !role || !selectedClub;
 
   if (isOnboarding) {
     return <Welcome />;
@@ -72,7 +80,7 @@ const Main = ({ windowWidth }) => {
               navigationState={{ index, routes }}
               renderScene={renderScene}
               onIndexChange={setIndex}
-              initialLayout={{ width: Dimensions.get('window').width }}
+              initialLayout={{ width: tabLayoutWidth }}
               renderTabBar={() => null}
               swipeEnabled={false}
             />

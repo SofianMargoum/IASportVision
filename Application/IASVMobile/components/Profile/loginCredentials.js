@@ -1,26 +1,16 @@
 /**
- * ⚠️ AVERTISSEMENT SÉCURITÉ
+ * ⚠️  Ce fichier n'est plus utilisé par l'application.
  * --------------------------------------------------------------
- * Ce fichier contient les identifiants du mode démo en clair.
- * Tout secret ici est extractible depuis le bundle (RN ne chiffre rien).
+ *  L'authentification passe désormais par POST /auth/login (backend).
+ *  Voir tools/authApi.js et tools/secureToken.js.
  *
- * À FAIRE pour passer en production :
- *   1. Mettre en place une authentification serveur (POST /auth/login)
- *      qui retourne un token signé.
- *   2. Stocker le token via `react-native-keychain`, jamais AsyncStorage.
- *   3. Supprimer ce fichier.
+ *  Conservé temporairement (vide) pour ne pas casser un éventuel import
+ *  résiduel. À supprimer définitivement après vérification.
  *
- * En attendant : ajoutez ce fichier à `.gitignore` et committez à la
- * place un `loginCredentials.example.js` sans secret réel.
+ *  Ce fichier est listé dans .gitignore. S'il apparaît encore dans
+ *  `git status`, exécutez :
+ *      git rm --cached IASVMobile/components/Profile/loginCredentials.js
  */
 
-export const DEMO_CREDENTIALS = [
-  {
-    id: 'local',
-    username: 'Fcmiramas',
-    password: 'Miramas13.',
-    name: 'Fcmiramas',
-    email: 'miramas',
-    photoAsset: 'fcmiramas.jpg',
-  },
-];
+export const DEMO_CREDENTIALS = [];
+

@@ -1,53 +1,42 @@
-import React, { useEffect, useState } from 'react';
-import {
-  View,
-  Image,
-  Text,
-  StyleSheet,
-  Dimensions,
-  TouchableOpacity,
-} from 'react-native';
+import React from 'react';
+import { useWindowDimensions } from 'react-native';
 import MainComponent from './components/Main';
-import { NavigationContainer } from '@react-navigation/native';
-import { TabView } from 'react-native-tab-view';
-import Icon from 'react-native-vector-icons/FontAwesome';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
-import Resultat from './components/Resultat';
-import Video from './components/Video'; // celui qui contient ListeVideoSidebar et ListeVideo
-import Record from './components/Record';
-import Explore from './components/Explore';
-import Profile from './components/Profile';
-import { UserContext, UserProvider } from './tools/UserContext';
-import { ClubProvider, useClubContext } from './tools/ClubContext';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { UserProvider } from './tools/UserContext';
+import { UserRoleProvider } from './tools/UserRoleContext';
+import { ClubProvider } from './tools/ClubContext';
 import { EffectifProvider } from './tools/EffectifContext';
 import { DeviceProvider } from './tools/DeviceContext';
 
-const scale = 0.85;
-
 const App = () => {
-  const [windowWidth, setWindowWidth] = useState(Dimensions.get('window').width);
-
-  useEffect(() => {
-    const handleResize = () => {
-      setWindowWidth(Dimensions.get('window').width);
-    };
-    const subscription = Dimensions.addEventListener('change', handleResize);
-    return () => subscription?.remove();
-  }, []);
+  // useWindowDimensions met à jour width/height automatiquement lors :
+  // - des rotations portrait <-> paysage
+  // - du multi-window / split-screen Android
+  // - des changements de configuration système (font scale, etc.)
+  // -> remplace l'ancien Dimensions.addEventListener manuel et gère mieux
+  //    les écrans à encoche / barres système (Samsung, Xiaomi, Pixel, ...).
+  const { width: windowWidth, height: windowHeight } = useWindowDimensions();
 
   return (
-    <UserProvider>
-      <ClubProvider>
-        <EffectifProvider>
-          <DeviceProvider>
-            <GestureHandlerRootView style={{ flex: 1 }}>
-              <MainComponent windowWidth={windowWidth} />
-            </GestureHandlerRootView>
-          </DeviceProvider>
-        </EffectifProvider>
-      </ClubProvider>
-    </UserProvider>
+    <SafeAreaProvider>
+      <UserProvider>
+        <UserRoleProvider>
+          <ClubProvider>
+            <EffectifProvider>
+              <DeviceProvider>
+                <GestureHandlerRootView style={{ flex: 1 }}>
+                  <MainComponent
+                    windowWidth={windowWidth}
+                    windowHeight={windowHeight}
+                  />
+                </GestureHandlerRootView>
+              </DeviceProvider>
+            </EffectifProvider>
+          </ClubProvider>
+        </UserRoleProvider>
+      </UserProvider>
+    </SafeAreaProvider>
   );
 };
 

@@ -1,15 +1,23 @@
-import { StyleSheet, Dimensions } from 'react-native';
+import { StyleSheet } from 'react-native';
+import { moderateScale, scale, verticalScale } from '../../tools/responsive';
 
-const { width } = Dimensions.get('window');
-const scale = 0.85;
+// Aliases courts pour la lisibilité du fichier (1 fichier de styles uniquement).
+const ms = moderateScale;
+const s = scale;
+const vs = verticalScale;
 
 export const SUCCESS_GREEN = '#7BC47F';
 export const ACCENT_BLUE = '#1a73e8';
 
+// Tailles du bouton record bornées pour rester ergonomiques sur petits écrans
+// (ne tombe jamais sous 80dp = bonne cible tactile) et pas démesuré sur tablette.
+const RECORD_OUTER = Math.max(80, Math.min(120, ms(100)));
+const RECORD_INNER = Math.max(32, Math.min(48, ms(40)));
+
 export default StyleSheet.create({
     container: {
         flexGrow: 1,
-        padding: 10,
+        padding: s(10),
         backgroundColor: '#010914',
         alignItems: 'center',
     },
@@ -22,7 +30,7 @@ export default StyleSheet.create({
         alignItems: 'center',
     },
     notConnectedText: {
-        fontSize: 18,
+        fontSize: ms(18),
         color: 'red',
     },
     content: {
@@ -32,20 +40,20 @@ export default StyleSheet.create({
         alignItems: 'center',
     },
     title: {
-        fontSize: 24 * scale,
+        fontSize: ms(20),
         color: '#ffffff',
-        marginBottom: 20,
+        marginBottom: s(16),
         textAlign: 'center',
         fontWeight: 'bold',
     },
     clearButton: {
-        marginLeft: 10,
-        padding: 5,
+        marginLeft: s(10),
+        padding: s(5),
         justifyContent: 'center',
         alignItems: 'center',
     },
     clearButtonText: {
-        fontSize: 14,
+        fontSize: ms(14),
         color: '#ccc',
     },
 
@@ -53,25 +61,25 @@ export default StyleSheet.create({
     deviceStatusRow: {
         flexDirection: 'row',
         alignItems: 'center',
-        marginTop: 6,
-        marginBottom: 12,
+        marginTop: s(6),
+        marginBottom: s(12),
         flexWrap: 'wrap',
     },
     deviceRefreshButton: {
-        marginRight: 8,
+        marginRight: s(8),
         flexDirection: 'row',
         alignItems: 'center',
-        padding: 4,
-        borderRadius: 6,
+        padding: s(4),
+        borderRadius: ms(6),
     },
     deviceRefreshDisabled: {
         opacity: 0.5,
     },
     deviceNameText: {
-        fontSize: 12,
+        fontSize: ms(12),
         fontWeight: 'bold',
-        marginVertical: 10,
-        marginRight: 8,
+        marginVertical: s(8),
+        marginRight: s(8),
     },
     deviceNameConnected: {
         color: SUCCESS_GREEN,
@@ -86,7 +94,7 @@ export default StyleSheet.create({
         color: 'white',
     },
     deviceStatusIcon: {
-        marginLeft: 4,
+        marginLeft: s(4),
     },
 
     // --- Score / VS section ---
@@ -95,62 +103,64 @@ export default StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'center',
         width: '100%',
-        marginBottom: 16,
+        marginBottom: s(14),
         backgroundColor: '#010E1E',
-        borderRadius: 15,
-        paddingVertical: 14,
-        paddingHorizontal: 8,
+        borderRadius: ms(15),
+        paddingVertical: s(12),
+        paddingHorizontal: s(8),
     },
     scoreTeamBlock: {
         flex: 1,
         alignItems: 'center',
     },
     scoreTeamLogo: {
-        width: 44,
-        height: 44,
-        borderRadius: 8,
-        marginBottom: 6,
+        width: ms(44),
+        height: ms(44),
+        borderRadius: ms(8),
+        marginBottom: s(6),
     },
     scoreTeamName: {
-        fontSize: 11,
+        fontSize: ms(11),
         color: '#999',
         textAlign: 'center',
-        maxWidth: 90,
+        maxWidth: s(90),
     },
     scoreCenterBlock: {
         alignItems: 'center',
-        paddingHorizontal: 10,
-        minWidth: 100,
+        paddingHorizontal: s(10),
+        // minWidth en pourcentage relatif via scale, jamais en valeur fixe
+        // pour ne pas pousser les blocs latéraux hors écran sur Redmi 360dp.
+        minWidth: s(90),
     },
     scoreRow: {
         flexDirection: 'row',
         alignItems: 'center',
     },
     scoreText: {
-        fontSize: 34,
+        fontSize: ms(30),
         fontWeight: 'bold',
         color: '#ffffff',
         fontVariant: ['tabular-nums'],
     },
     scoreDash: {
-        fontSize: 28,
+        fontSize: ms(24),
         fontWeight: 'bold',
         color: '#444',
-        marginHorizontal: 8,
+        marginHorizontal: s(6),
     },
     scoreCounterButton: {
-        padding: 6,
+        padding: s(6),
     },
 
     topSection: {
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
-        marginBottom: 20,
-        paddingVertical: 10,
+        marginBottom: s(16),
+        paddingVertical: s(10),
         width: '100%',
         backgroundColor: '#010E1E',
-        borderRadius: 15,
+        borderRadius: ms(15),
     },
     disabledButton: {
         backgroundColor: '#ccc',
@@ -159,99 +169,99 @@ export default StyleSheet.create({
     selectedClubInfo: {
         flexDirection: 'row',
         alignItems: 'center',
-        borderRadius: 8,
-        padding: 10,
+        borderRadius: ms(8),
+        padding: s(10),
     },
     selectedClubLogo: {
-        width: 30 * scale,
-        height: 30 * scale,
-        marginRight: 10,
-        borderRadius: 5,
+        width: ms(28),
+        height: ms(28),
+        marginRight: s(8),
+        borderRadius: ms(5),
     },
     selectedClubName: {
-        fontSize: 15,
+        fontSize: ms(14),
         color: '#ffffff',
         fontWeight: '500',
     },
     placeholderText: {
         color: '#666',
-        fontSize: 13,
-        paddingLeft: 12,
+        fontSize: ms(12),
+        paddingLeft: s(12),
         fontStyle: 'italic',
     },
     counterContainer: {
         flexDirection: 'column',
         alignItems: 'center',
-        borderRadius: 8,
-        padding: 10,
+        borderRadius: ms(8),
+        padding: s(10),
     },
     counterButton: {
-        padding: 5,
+        padding: s(5),
     },
     counterLabel: {
-        fontSize: 20 * scale,
+        fontSize: ms(18),
         fontWeight: 'bold',
         color: '#ffffff',
-        marginHorizontal: 10,
+        marginHorizontal: s(10),
     },
     inputContainer: {
-        marginTop: 20,
+        marginTop: s(16),
     },
     input: {
         color: '#ccc',
-        padding: 10,
-        fontSize: 16 * scale,
-        borderRadius: 5,
+        padding: s(10),
+        fontSize: ms(14),
+        borderRadius: ms(5),
     },
     searchResults: {
-        maxHeight: 150,
-        borderRadius: 8,
-        padding: 10,
+        maxHeight: vs(150),
+        borderRadius: ms(8),
+        padding: s(10),
     },
     result: {
         flexDirection: 'row',
         alignItems: 'center',
-        padding: 5,
+        padding: s(5),
     },
     resultLogo: {
-        width: 30 * scale,
-        height: 30 * scale,
-        marginRight: 10,
-        borderRadius: 5,
+        width: ms(28),
+        height: ms(28),
+        marginRight: s(8),
+        borderRadius: ms(5),
     },
     resultName: {
         color: '#ffffff',
-        fontSize: 16 * scale,
+        fontSize: ms(14),
     },
 
     // --- Timer ---
     timer: {
-        marginTop: 20,
+        marginTop: s(16),
         alignItems: 'center',
         backgroundColor: '#0d1b2a',
-        paddingVertical: 10,
-        paddingHorizontal: 28,
-        borderRadius: 12,
+        paddingVertical: s(10),
+        paddingHorizontal: s(24),
+        borderRadius: ms(12),
         borderWidth: 1,
         borderColor: '#1a2d45',
     },
     timerText: {
-        fontSize: 30,
+        fontSize: ms(28),
         color: '#ffffff',
         fontWeight: '600',
         fontVariant: ['tabular-nums'],
         letterSpacing: 2,
     },
     timerRecordingDot: {
-        width: 10,
-        height: 10,
-        borderRadius: 5,
+        width: ms(10),
+        height: ms(10),
+        borderRadius: ms(5),
         backgroundColor: '#ff4444',
-        marginTop: 6,
+        marginTop: s(6),
     },
 
     message: {
-        marginTop: 20,
+        marginTop: s(16),
         alignItems: 'center',
     },
     messageText: {
@@ -262,7 +272,7 @@ export default StyleSheet.create({
     },
 
     progressWrapper: {
-        marginTop: 16,
+        marginTop: s(16),
         width: '100%',
         alignSelf: 'stretch',
         paddingHorizontal: 0,
@@ -271,17 +281,17 @@ export default StyleSheet.create({
         width: '100%',
         flexDirection: 'row',
         justifyContent: 'flex-end',
-        marginBottom: 6,
+        marginBottom: s(6),
     },
     progressPercentText: {
-        fontSize: 11,
+        fontSize: ms(11),
         color: '#9aa0a6',
     },
     progressBarBg: {
         width: '100%',
         alignSelf: 'stretch',
-        height: 8,
-        borderRadius: 8,
+        height: ms(8),
+        borderRadius: ms(8),
         backgroundColor: '#010E1E',
         overflow: 'hidden',
         borderWidth: 1,
@@ -292,38 +302,38 @@ export default StyleSheet.create({
         backgroundColor: '#ffffff',
     },
     progressMessages: {
-        marginTop: 8,
+        marginTop: s(8),
     },
     progressMessageText: {
-        fontSize: 11,
+        fontSize: ms(11),
         color: '#9aa0a6',
     },
     pendingListWrapper: {
         width: '100%',
-        marginTop: 12,
-        paddingHorizontal: 4,
+        marginTop: s(12),
+        paddingHorizontal: s(4),
     },
     pendingListTitle: {
-        fontSize: 12,
+        fontSize: ms(12),
         color: '#9aa0a6',
-        marginBottom: 6,
+        marginBottom: s(6),
     },
     pendingItem: {
-        marginBottom: 10,
-        paddingVertical: 6,
-        paddingHorizontal: 8,
+        marginBottom: s(10),
+        paddingVertical: s(6),
+        paddingHorizontal: s(8),
         backgroundColor: '#0b1a33',
-        borderRadius: 6,
+        borderRadius: ms(6),
     },
     pendingItemHeader: {
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
-        marginBottom: 4,
+        marginBottom: s(4),
     },
     pendingItemLabel: {
         flex: 1,
-        fontSize: 12,
+        fontSize: ms(12),
         color: '#ffffff',
     },
     pendingItemLabelDone: {
@@ -333,17 +343,17 @@ export default StyleSheet.create({
         color: '#ff8a8a',
     },
     pendingItemCloseBtn: {
-        marginLeft: 8,
-        paddingHorizontal: 6,
+        marginLeft: s(8),
+        paddingHorizontal: s(6),
     },
     pendingItemCloseTxt: {
         color: '#9aa0a6',
-        fontSize: 16,
+        fontSize: ms(16),
         fontWeight: 'bold',
     },
     pendingItemBarBg: {
-        height: 4,
-        borderRadius: 4,
+        height: ms(4),
+        borderRadius: ms(4),
         backgroundColor: '#010E1E',
         overflow: 'hidden',
     },
@@ -358,8 +368,8 @@ export default StyleSheet.create({
         backgroundColor: '#ff6b6b',
     },
     pendingItemStatus: {
-        marginTop: 4,
-        fontSize: 10,
+        marginTop: s(4),
+        fontSize: ms(10),
         color: '#9aa0a6',
     },
     buttonContainer: {
@@ -367,16 +377,16 @@ export default StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'flex-end',
         flex: 1,
-        marginTop: 20,
+        marginTop: s(16),
     },
 
     outerCircle: {
-        width: 100,
-        height: 100,
-        borderRadius: 50,
+        width: RECORD_OUTER,
+        height: RECORD_OUTER,
+        borderRadius: RECORD_OUTER / 2,
         justifyContent: 'center',
         alignItems: 'center',
-        borderWidth: 5,
+        borderWidth: ms(5),
         borderColor: 'black',
         backgroundColor: 'white',
     },
@@ -387,9 +397,9 @@ export default StyleSheet.create({
         borderColor: 'red',
     },
     innerCircle: {
-        width: 40,
-        height: 40,
-        borderRadius: 25,
+        width: RECORD_INNER,
+        height: RECORD_INNER,
+        borderRadius: RECORD_INNER / 2,
     },
     defaultInner: {
         backgroundColor: 'red',
@@ -401,8 +411,8 @@ export default StyleSheet.create({
     // --- Hint camera offline ---
     hintText: {
         color: '#bbb',
-        marginTop: 10,
+        marginTop: s(10),
         textAlign: 'center',
-        fontSize: 12,
+        fontSize: ms(12),
     },
 });

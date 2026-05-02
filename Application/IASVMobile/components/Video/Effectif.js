@@ -1,6 +1,9 @@
 import React from 'react';
 import { View, Text, StyleSheet, ScrollView, Image } from 'react-native';
 import { useEffectifContext } from './../../tools/EffectifContext';
+import { moderateScale, scale as s } from './../../tools/responsive';
+
+const ms = moderateScale;
 
 const TITULAIRES_COUNT = 11;
 
@@ -61,14 +64,14 @@ const Effectif = React.memo(() => {
 const styles = StyleSheet.create({
   listContainer: {
     flex: 1,
-    paddingHorizontal: 10,
+    paddingHorizontal: s(10),
   },
   sectionHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginTop: 12,
-    marginBottom: 6,
-    paddingHorizontal: 10,
+    marginTop: s(12),
+    marginBottom: s(6),
+    paddingHorizontal: s(10),
   },
   sectionLine: {
     flex: 1,
@@ -78,17 +81,17 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     color: '#A8B4C0',
-    fontSize: 13,
+    fontSize: ms(12),
     fontWeight: '700',
     textAlign: 'center',
-    paddingHorizontal: 12,
+    paddingHorizontal: s(12),
   },
   playerRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 8,
-    paddingHorizontal: 10,
-    marginVertical: 2,
+    paddingVertical: s(8),
+    paddingHorizontal: s(10),
+    marginVertical: s(2),
     width: '100%',
     backgroundColor: 'transparent',
     borderBottomWidth: 1,
@@ -98,17 +101,17 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255, 255, 255, 0.03)',
   },
   numberBadge: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
+    width: ms(26),
+    height: ms(26),
+    borderRadius: ms(13),
     backgroundColor: 'rgba(255, 255, 255, 0.08)',
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: 10,
+    marginRight: s(10),
   },
   number: {
     textAlign: 'center',
-    fontSize: 13,
+    fontSize: ms(12),
     fontWeight: '700',
     color: '#FFFFFF',
   },
@@ -116,7 +119,7 @@ const styles = StyleSheet.create({
     flex: 1,
     textAlign: 'left',
     color: '#FFFFFF',
-    fontSize: 14,
+    fontSize: ms(13),
   },
   icon: {
     width: 18,

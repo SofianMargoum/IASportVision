@@ -5,19 +5,22 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   StyleSheet,
-  Dimensions,
   ScrollView,
   RefreshControl,
   Animated,
-  Image,
+  useWindowDimensions,
 } from 'react-native';
 import { TabView, SceneMap } from 'react-native-tab-view';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { useClubContext } from './../tools/ClubContext'; // 👈 ton contexte
+import { moderateScale, scale as s } from './../tools/responsive';
 
 // Lazy loading components
 const MatchsContent = React.lazy(() =>
   import('./Resultat/MatchsContent')
+);
+const CalendrierContent = React.lazy(() =>
+  import('./Resultat/CalendrierContent')
 );
 const ClassementsContent = React.lazy(() =>
   import('./Resultat/ClassementsContent')
@@ -30,11 +33,9 @@ const ClubContent = React.lazy(() =>
 );
 
 
-const scale = 0.85;
-const { width } = Dimensions.get('window');
-const initialLayout = { width };
-
 const Resultat = ({ isActive }) => {
+  const { width } = useWindowDimensions();
+  const initialLayout = useMemo(() => ({ width }), [width]);
   const [index, setIndex] = useState(0);
   const [refreshing, setRefreshing] = useState(false);
   const [hasContent, setHasContent] = useState(false);
@@ -44,8 +45,9 @@ const Resultat = ({ isActive }) => {
 
   const routes = useMemo(() => [
     { key: 'matchs', title: 'MATCHS' },
+    { key: 'calendrier', title: 'CALENDRIER' },
     { key: 'classements', title: 'CLASSEMENTS' },
-    { key: 'stats', title: 'STATS' },
+    { key: 'stats', title: 'STATS CHAMPIONNAT' },
     ...(selectedClub?.name
       ? [{ key: 'club', title: selectedClub.name.toUpperCase() }]
       : []),
@@ -85,6 +87,17 @@ const Resultat = ({ isActive }) => {
               refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
             >
               <MatchsContent />
+            </ScrollView>
+          </Suspense>
+        ),
+        calendrier: () => (
+          <Suspense fallback={null}>
+            <ScrollView
+              style={{ flex: 1 }}
+              showsVerticalScrollIndicator={false}
+              refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+            >
+              <CalendrierContent />
             </ScrollView>
           </Suspense>
         ),
@@ -166,7 +179,7 @@ const Resultat = ({ isActive }) => {
           ))}
         </ScrollView>
       ),
-    [index, hasContent]
+    [index, hasContent, width]
   );
 
   return (
@@ -208,8 +221,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 4,
   },
   button: {
-    paddingVertical: 12 * scale,
-    paddingHorizontal: 14 * scale,
+    paddingVertical: s(10),
+    paddingHorizontal: s(12),
     alignItems: 'center',
     justifyContent: 'center',
     position: 'relative',
@@ -218,7 +231,7 @@ const styles = StyleSheet.create({
   
   buttonText: {
     color: '#666666',
-    fontSize: 16 * scale,
+    fontSize: moderateScale(14),
   },
   activeButtonText: {
     color: '#ffffff',
@@ -239,24 +252,24 @@ const styles = StyleSheet.create({
     backgroundColor: '#010914',
   },
   emptyIcon: {
-    width: 60,
-    height: 60,
+    width: moderateScale(60),
+    height: moderateScale(60),
     opacity: 0.3,
-    marginBottom: 16,
+    marginBottom: s(16),
   },
   noContentText: {
     color: '#ffffff',
-    fontSize: 18,
+    fontSize: moderateScale(18),
     fontWeight: 'bold',
     textAlign: 'center',
   },
   noContentSub: {
     color: '#aaaaaa',
-    fontSize: 13 * scale,
+    fontSize: moderateScale(12),
     textAlign: 'center',
-    marginTop: 8,
-    paddingHorizontal: 40,
-    lineHeight: 18,
+    marginTop: s(8),
+    paddingHorizontal: s(40),
+    lineHeight: moderateScale(16),
   },
 });
 

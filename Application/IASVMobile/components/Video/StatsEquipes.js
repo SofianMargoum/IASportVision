@@ -1,5 +1,8 @@
 import React from 'react';
 import { View, Text, StyleSheet, ScrollView } from 'react-native';
+import { moderateScale, scale as s } from './../../tools/responsive';
+
+const ms = moderateScale;
 
 const STATS_CONFIG = [
   { key: 'possession', label: 'Possession', suffix: '%' },
@@ -96,7 +99,7 @@ const StatsEquipes = React.memo(() => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    paddingHorizontal: 12,
+    paddingHorizontal: s(12),
     alignItems: 'stretch',
   },
   scrollView: {
@@ -108,18 +111,18 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     borderBottomColor: 'rgba(255, 255, 255, 0.1)',
     borderBottomWidth: 1,
-    marginBottom: 6,
-    paddingBottom: 8,
+    marginBottom: s(6),
+    paddingBottom: s(8),
   },
   headerTeam: {
-    fontSize: 13,
+    fontSize: ms(12),
     fontWeight: '700',
     color: '#FFFFFF',
     flex: 1,
     textAlign: 'center',
   },
   headerTitle: {
-    fontSize: 13,
+    fontSize: ms(12),
     fontWeight: '600',
     color: '#808080',
     flex: 0.3,
@@ -127,13 +130,13 @@ const styles = StyleSheet.create({
   },
   grid: {
     width: '100%',
-    borderRadius: 6,
+    borderRadius: ms(6),
     overflow: 'hidden',
   },
   row: {
     flexDirection: 'row',
-    paddingVertical: 8,
-    paddingHorizontal: 4,
+    paddingVertical: s(8),
+    paddingHorizontal: s(4),
     alignItems: 'center',
     borderBottomColor: 'rgba(255, 255, 255, 0.04)',
     borderBottomWidth: 0.5,
@@ -142,10 +145,10 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255, 255, 255, 0.03)',
   },
   teamStat: {
-    fontSize: 13,
+    fontSize: ms(12),
     fontWeight: '600',
     color: '#FFFFFF',
-    width: 50,
+    width: s(50),
     textAlign: 'center',
   },
   teamStatHighlight: {
@@ -156,29 +159,29 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   statTitle: {
-    fontSize: 11,
+    fontSize: ms(10),
     fontWeight: '600',
     color: '#A8B4C0',
     textAlign: 'center',
-    marginBottom: 4,
+    marginBottom: s(4),
   },
   barContainer: {
     flexDirection: 'row',
     width: '80%',
-    height: 4,
+    height: ms(4),
     borderRadius: 2,
     overflow: 'hidden',
   },
   barLeft: {
-    height: 4,
+    height: ms(4),
     backgroundColor: '#FFFFFF',
     borderRadius: 2,
   },
   barGap: {
-    width: 3,
+    width: s(3),
   },
   barRight: {
-    height: 4,
+    height: ms(4),
     backgroundColor: 'rgba(255, 255, 255, 0.25)',
     borderRadius: 2,
   },

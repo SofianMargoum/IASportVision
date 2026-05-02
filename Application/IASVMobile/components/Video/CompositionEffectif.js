@@ -8,6 +8,9 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import Effectif from './Effectif';
 import Compos from './Compos';
 import { useEffectifContext } from './../../tools/EffectifContext';
+import { moderateScale, scale as s } from './../../tools/responsive';
+
+const ms = moderateScale;
 
 const TABS = [
   { key: 'EFFECTIF', label: 'EFFECTIF' },
@@ -85,19 +88,19 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-around',
     backgroundColor: 'transparent',
-    paddingVertical: 10,
+    paddingVertical: s(10),
   },
   tabButton: {
-    paddingVertical: 10,
-    paddingHorizontal: 20,
-    borderRadius: 5,
+    paddingVertical: s(10),
+    paddingHorizontal: s(20),
+    borderRadius: ms(5),
     alignItems: 'center',
   },
   activeTab: {
     backgroundColor: 'transparent',
   },
   tabText: {
-    fontSize: 16,
+    fontSize: ms(15),
   },
   activeTabText: {
     color: '#FFFFFF',
@@ -106,7 +109,7 @@ const styles = StyleSheet.create({
     color: '#808080',
   },
   activeIndicator: {
-    marginTop: 4,
+    marginTop: s(4),
     width: '100%',
     height: 2,
     backgroundColor: '#FFFFFF',

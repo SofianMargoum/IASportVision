@@ -6,12 +6,12 @@ import {
   FlatList,
   TouchableOpacity,
   Image,
-  Dimensions,
+  useWindowDimensions,
 } from 'react-native';
 import PagerView from 'react-native-pager-view';
+import { moderateScale, scale as s } from './../../tools/responsive';
 
-const { width } = Dimensions.get('window');
-const scale = 0.85;
+const ms = moderateScale;
 
 const TABS = [
   { key: 'clubs', label: 'Clubs', icon: 'shield-outline' },
@@ -123,11 +123,11 @@ const PRODUCTS = [
 
 // ─── Product Card ───
 
-const ProductCard = ({ item, onPress }) => (
+const ProductCard = ({ item, onPress, imageHeight }) => (
   <View style={styles.card}>
     {/* Image + badge */}
     <View style={styles.imageWrap}>
-      <Image source={item.image} style={styles.image} resizeMode="cover" />
+      <Image source={item.image} style={[styles.image, imageHeight && { height: imageHeight }]} resizeMode="cover" />
       {item.badge && (
         <View style={styles.badge}>
           <Text style={styles.badgeText}>{item.badge}</Text>
@@ -157,7 +157,7 @@ const ProductCard = ({ item, onPress }) => (
 
 // ─── Main ───
 
-const ProductList = ({ target, onPress }) => {
+const ProductList = ({ target, onPress, imageHeight }) => {
   const filtered = useMemo(
     () => PRODUCTS.filter((p) => p.target === target),
     [target],
@@ -167,7 +167,7 @@ const ProductList = ({ target, onPress }) => {
       data={filtered}
       keyExtractor={(item) => item.id}
       renderItem={({ item }) => (
-        <ProductCard item={item} onPress={onPress} />
+        <ProductCard item={item} onPress={onPress} imageHeight={imageHeight} />
       )}
       contentContainerStyle={styles.listContent}
       showsVerticalScrollIndicator={false}
@@ -176,6 +176,7 @@ const ProductList = ({ target, onPress }) => {
 };
 
 const Boutique = () => {
+  const { width } = useWindowDimensions();
   const [activeIndex, setActiveIndex] = useState(0);
   const pagerRef = useRef(null);
 
@@ -222,7 +223,7 @@ const Boutique = () => {
       >
         {TABS.map((tab) => (
           <View key={tab.key} style={styles.page}>
-            <ProductList target={tab.key} onPress={handleProductPress} />
+            <ProductList target={tab.key} onPress={handleProductPress} imageHeight={width * 0.35} />
           </View>
         ))}
       </PagerView>
@@ -251,20 +252,20 @@ const styles = StyleSheet.create({
   tabBar: {
     flexDirection: 'row',
     backgroundColor: '#010E1E',
-    borderRadius: 10,
+    borderRadius: ms(10),
     borderWidth: 1,
     borderColor: '#1A2D45',
-    padding: 4,
-    marginBottom: 14,
+    padding: s(4),
+    marginBottom: s(14),
   },
   tab: {
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 10 * scale,
-    borderRadius: 8,
-    gap: 5,
+    paddingVertical: s(10),
+    borderRadius: ms(8),
+    gap: s(5),
   },
   tabActive: {
     backgroundColor: '#1A2D45',
@@ -272,7 +273,7 @@ const styles = StyleSheet.create({
   tabText: {
     color: '#607D8B',
     fontWeight: '700',
-    fontSize: 13 * scale,
+    fontSize: ms(12),
   },
   tabTextActive: {
     color: '#fff',
@@ -280,68 +281,67 @@ const styles = StyleSheet.create({
 
   // ── List ──
   listContent: {
-    paddingBottom: 30,
+    paddingBottom: s(30),
   },
 
   // ── Card ──
   card: {
     backgroundColor: '#010E1E',
-    borderRadius: 12,
+    borderRadius: ms(12),
     borderWidth: 1,
     borderColor: '#1A2D45',
     overflow: 'hidden',
-    marginBottom: 12,
+    marginBottom: s(12),
   },
   imageWrap: {
     position: 'relative',
   },
   image: {
     width: '100%',
-    height: width * 0.35,
   },
   badge: {
     position: 'absolute',
-    top: 10,
-    right: 10,
+    top: s(10),
+    right: s(10),
     backgroundColor: 'rgba(26,45,69,0.9)',
-    borderRadius: 6,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
+    borderRadius: ms(6),
+    paddingHorizontal: s(8),
+    paddingVertical: s(4),
   },
   badgeText: {
     color: '#fff',
-    fontSize: 11 * scale,
+    fontSize: ms(10),
     fontWeight: '700',
   },
 
   cardContent: {
-    padding: 14 * scale,
+    padding: s(14),
   },
   productName: {
-    fontSize: 16 * scale,
+    fontSize: ms(15),
     fontWeight: '700',
     color: '#fff',
-    marginBottom: 4,
+    marginBottom: s(4),
   },
   productDescription: {
-    fontSize: 13 * scale,
+    fontSize: ms(12),
     color: '#607D8B',
-    marginBottom: 10,
-    lineHeight: 18 * scale,
+    marginBottom: s(10),
+    lineHeight: ms(17),
   },
 
   priceRow: {
     flexDirection: 'row',
     alignItems: 'baseline',
-    marginBottom: 12,
-    gap: 4,
+    marginBottom: s(12),
+    gap: s(4),
   },
   priceNote: {
     color: '#607D8B',
-    fontSize: 11 * scale,
+    fontSize: ms(10),
   },
   productPrice: {
-    fontSize: 18 * scale,
+    fontSize: ms(17),
     fontWeight: '800',
     color: '#fff',
   },
@@ -351,13 +351,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: '#1A2D45',
-    paddingVertical: 11 * scale,
-    borderRadius: 8,
-    gap: 6,
+    paddingVertical: s(11),
+    borderRadius: ms(8),
+    gap: s(6),
   },
   ctaText: {
     color: '#fff',
     fontWeight: '700',
-    fontSize: 14 * scale,
+    fontSize: ms(13),
   },
 });

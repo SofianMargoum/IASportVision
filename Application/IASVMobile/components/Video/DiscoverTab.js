@@ -5,18 +5,19 @@ import {
   FlatList,
   TouchableOpacity,
   StyleSheet,
-  Dimensions,
+  useWindowDimensions,
   Linking,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/FontAwesome';
 import Video from 'react-native-video';
 import { fetchVideosByClub } from '../../tools/api';
+import { moderateScale, scale as s } from './../../tools/responsive';
 
-const { height } = Dimensions.get('window');
-const scale = 0.85;
+const ms = moderateScale;
 const discoverClubName = 'Promotion';
 
 const DiscoverTab = () => {
+  const { height } = useWindowDimensions();
   const [discoverVideos, setDiscoverVideos] = useState([]);
   const [discoverLoading, setDiscoverLoading] = useState(false);
   const [discoverError, setDiscoverError] = useState(null);
@@ -45,6 +46,57 @@ const DiscoverTab = () => {
 
     loadDiscoverVideos();
   }, []);
+
+  const styles = StyleSheet.create({
+    discoverContainer: {
+      flex: 1,
+      alignItems: 'center',
+      width: '100%',
+    },
+    discoverList: {
+      flex: 1,
+      width: '100%',
+    },
+    discoverListContent: {
+      paddingBottom: s(70),
+      width: '100%',
+    },
+    discoverItem: {
+      width: '100%',
+      height: height,
+      justifyContent: 'flex-start',
+      alignItems: 'center',
+      paddingTop: s(12),
+      paddingHorizontal: 0,
+    },
+    discoverVideo: {
+      width: '100%',
+      height: undefined,
+      aspectRatio: 9 / 16,
+      borderRadius: 0,
+      backgroundColor: '#010914',
+    },
+    discoverCta: {
+      position: 'absolute',
+      left: s(16),
+      right: s(16),
+      bottom: s(12),
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: s(8),
+      backgroundColor: '#010914',
+      paddingVertical: s(10),
+      borderRadius: ms(12),
+      borderWidth: 1,
+      borderColor: '#ffffff',
+    },
+    discoverCtaText: {
+      color: '#ffffff',
+      fontWeight: '700',
+      fontSize: ms(13),
+    },
+  });
 
   return (
     <>
@@ -86,56 +138,5 @@ const DiscoverTab = () => {
     </>
   );
 };
-
-const styles = StyleSheet.create({
-  discoverContainer: {
-    flex: 1,
-    alignItems: 'center',
-    width: '100%',
-  },
-  discoverList: {
-    flex: 1,
-    width: '100%',
-  },
-  discoverListContent: {
-    paddingBottom: 70,
-    width: '100%',
-  },
-  discoverItem: {
-    width: '100%',
-    height: height,
-    justifyContent: 'flex-start',
-    alignItems: 'center',
-    paddingTop: 12,
-    paddingHorizontal: 0,
-  },
-  discoverVideo: {
-    width: '100%',
-    height: undefined,
-    aspectRatio: 9 / 16,
-    borderRadius: 0,
-    backgroundColor: '#010914',
-  },
-  discoverCta: {
-    position: 'absolute',
-    left: 16,
-    right: 16,
-    bottom: 12,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-    backgroundColor: '#010914',
-    paddingVertical: 10,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: '#ffffff',
-  },
-  discoverCtaText: {
-    color: '#ffffff',
-    fontWeight: '700',
-    fontSize: 14 * scale,
-  },
-});
 
 export default DiscoverTab;

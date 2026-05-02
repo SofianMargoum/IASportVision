@@ -12,36 +12,9 @@ rootProject.name = 'IASVMobile'
 include ':app'
 includeBuild('../node_modules/@react-native/gradle-plugin')
 
-// Include each required React Native library manually
-include ':react-native-async-storage'
-project(':react-native-async-storage').projectDir = new File(rootProject.projectDir, '../node_modules/@react-native-async-storage/async-storage/android')
-
-include ':react-native-community_masked-view'
-project(':react-native-community_masked-view').projectDir = new File(rootProject.projectDir, '../node_modules/@react-native-community/masked-view/android')
-
-include ':react-native-google-signin'
-project(':react-native-google-signin').projectDir = new File(rootProject.projectDir, '../node_modules/@react-native-google-signin/google-signin/android')
-
-include ':react-native-gesture-handler'
-project(':react-native-gesture-handler').projectDir = new File(rootProject.projectDir, '../node_modules/react-native-gesture-handler/android')
-
-include ':react-native-pager-view'
-project(':react-native-pager-view').projectDir = new File(rootProject.projectDir, '../node_modules/react-native-pager-view/android')
-
-include ':react-native-reanimated'
-project(':react-native-reanimated').projectDir = new File(rootProject.projectDir, '../node_modules/react-native-reanimated/android')
-
-include ':react-native-safe-area-context'
-project(':react-native-safe-area-context').projectDir = new File(rootProject.projectDir, '../node_modules/react-native-safe-area-context/android')
-
-include ':react-native-screens'
-project(':react-native-screens').projectDir = new File(rootProject.projectDir, '../node_modules/react-native-screens/android')
-
-include ':react-native-svg'
-project(':react-native-svg').projectDir = new File(rootProject.projectDir, '../node_modules/react-native-svg/android')
-
-include ':react-native-vector-icons'
-project(':react-native-vector-icons').projectDir = new File(rootProject.projectDir, '../node_modules/react-native-vector-icons/android')
-
-include ':react-native-video'
-project(':react-native-video').projectDir = new File(rootProject.projectDir, '../node_modules/react-native-video/android')
+// NOTE : Les librairies natives RN sont incluses automatiquement par
+// `ex.autolinkLibrariesFromCommand()` ci-dessus (sous des noms comme
+// :react-native-async-storage_async-storage, :react-native-community_masked-view, etc.).
+// NE PAS les redéclarer manuellement avec `include ':react-native-xxx'` car cela
+// crée des projets Gradle dupliqués pointant vers le même répertoire et provoque
+// l'erreur "uses this output ... without declaring an explicit or implicit dependency".

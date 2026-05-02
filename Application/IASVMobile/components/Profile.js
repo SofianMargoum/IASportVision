@@ -4,8 +4,12 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import LoginForm from './Profile/LoginForm';
 import UserProfile from './Profile/UserProfile';
 import { UserContext } from './../tools/UserContext';
+import { loadToken, clearToken } from './../tools/secureToken';
+import { meRequest } from './../tools/authApi';
+import { setAuthToken, clearAuthToken } from './../tools/api';
 
-// Sécurité : on ne persiste JAMAIS de tokens. Whitelist stricte des champs.
+// Sécurité : on ne persiste JAMAIS de tokens dans AsyncStorage.
+// Whitelist stricte des champs (cache d'affichage uniquement).
 const sanitizeUserForStorage = (user) => {
   if (!user || typeof user !== 'object') return null;
   const {
@@ -13,6 +17,7 @@ const sanitizeUserForStorage = (user) => {
     name,
     email,
     photo,
+    role,
     givenName,
     familyName,
     nom,
@@ -20,22 +25,48 @@ const sanitizeUserForStorage = (user) => {
     age,
     poste,
   } = user;
-  return { id, name, email, photo, givenName, familyName, nom, prenom, age, poste };
+  return { id, name, email, photo, role, givenName, familyName, nom, prenom, age, poste };
 };
 
 const Profile = ({ navigation }) => {
   const { user, setUser } = useContext(UserContext);
   const [loading, setLoading] = useState(true);
+  // Permet de basculer vers l'écran de connexion depuis UserProfile
+  // (bouton "Se connecter" en bas) tout en restant non authentifié.
+  const [showLogin, setShowLogin] = useState(false);
 
   useEffect(() => {
     const initializeUser = async () => {
       try {
+        // 1) Source de vérité : token JWT stocké dans Keychain.
+        const token = await loadToken();
+        if (!token) {
+          // Pas de token : on s'assure qu'aucun cache utilisateur ne reste.
+          await AsyncStorage.removeItem('user');
+          clearAuthToken();
+          setUser(null);
+          return;
+        }
+
+        // 2) Vérifier la validité du token côté serveur.
+        try {
+          await meRequest(token);
+        } catch (e) {
+          // Token expiré / invalide : nettoyage et retour anonyme.
+          if (__DEV__) console.warn('[Profile] token invalide :', e?.status);
+          await clearToken();
+          await AsyncStorage.removeItem('user');
+          clearAuthToken();
+          setUser(null);
+          return;
+        }
+
+        // 3) Token valide : injecter dans api.js + charger le cache d'affichage.
+        setAuthToken(token);
         const storedUser = await AsyncStorage.getItem('user');
         if (storedUser) {
           try {
             const parsed = JSON.parse(storedUser);
-            // On re-sanitize au chargement, au cas où un ancien build aurait
-            // pu persister des tokens.
             setUser(sanitizeUserForStorage(parsed));
           } catch {
             await AsyncStorage.removeItem('user');
@@ -76,13 +107,18 @@ const Profile = ({ navigation }) => {
     }
     setUser(userData);
     await saveUserToStorage(userData);
+    setShowLogin(false);
   };
 
   const handleLogout = async () => {
     try {
       setLoading(true);
       setUser(null);
+      // Supprimer le JWT du Keychain ET le cache utilisateur.
+      await clearToken();
+      clearAuthToken();
       await clearUserFromStorage();
+      setShowLogin(false);
     } catch (error) {
       if (__DEV__) console.error('Erreur déconnexion:', error?.message);
     } finally {
@@ -106,8 +142,18 @@ const Profile = ({ navigation }) => {
           onLogout={handleLogout}
           navigation={navigation}
         />
+      ) : showLogin ? (
+        <LoginForm
+          onLocalLogin={handleLocalLogin}
+          onCancel={() => setShowLogin(false)}
+        />
       ) : (
-        <LoginForm onLocalLogin={handleLocalLogin} />
+        <UserProfile
+          user={null}
+          onLogout={handleLogout}
+          navigation={navigation}
+          onShowLogin={() => setShowLogin(true)}
+        />
       )}
     </View>
   );

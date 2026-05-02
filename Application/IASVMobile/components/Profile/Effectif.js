@@ -14,10 +14,11 @@ import {
 } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { useEffectifContext } from './../../tools/EffectifContext';
+import { moderateScale, scale as s } from './../../tools/responsive';
 
-const scale = 0.85;
+const ms = moderateScale;
 
-const Effectif = ({ onBack }) => {
+const Effectif = ({ onBack, readOnly = false }) => {
   const { effectif, addPlayer, removePlayer } = useEffectifContext();
   const [newPlayer, setNewPlayer] = useState('');
   const [newNumero, setNewNumero] = useState('');
@@ -60,13 +61,15 @@ const Effectif = ({ onBack }) => {
         style={styles.icon}
       />
       <Text style={styles.listText} numberOfLines={1}>{item.joueur}</Text>
-      <TouchableOpacity
-        style={styles.deleteButton}
-        onPress={() => handleDeletePlayer(index)}
-        hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-      >
-        <Icon name="trash-outline" size={18} color="#607D8B" />
-      </TouchableOpacity>
+      {!readOnly && (
+        <TouchableOpacity
+          style={styles.deleteButton}
+          onPress={() => handleDeletePlayer(index)}
+          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+        >
+          <Icon name="trash-outline" size={18} color="#607D8B" />
+        </TouchableOpacity>
+      )}
     </View>
   );
 
@@ -86,35 +89,41 @@ const Effectif = ({ onBack }) => {
         </View>
       </View>
 
-      {/* Formulaire d'ajout */}
-      <View style={styles.addPlayerContainer}>
-        <TextInput
-          style={[styles.input, styles.inputName]}
-          placeholder="Nom du joueur"
-          placeholderTextColor="#455A64"
-          value={newPlayer}
-          onChangeText={setNewPlayer}
-        />
-        <TextInput
-          style={[styles.input, styles.inputNumero]}
-          placeholder="N°"
-          placeholderTextColor="#455A64"
-          keyboardType="numeric"
-          value={newNumero}
-          onChangeText={setNewNumero}
-          maxLength={3}
-        />
-        <TouchableOpacity style={styles.addButton} onPress={handleAddPlayer} activeOpacity={0.7}>
-          <Icon name="add" size={22} color="#fff" />
-        </TouchableOpacity>
-      </View>
+      {/* Formulaire d'ajout (masqué en lecture seule) */}
+      {!readOnly && (
+        <View style={styles.addPlayerContainer}>
+          <TextInput
+            style={[styles.input, styles.inputName]}
+            placeholder="Nom du joueur"
+            placeholderTextColor="#455A64"
+            value={newPlayer}
+            onChangeText={setNewPlayer}
+          />
+          <TextInput
+            style={[styles.input, styles.inputNumero]}
+            placeholder="N°"
+            placeholderTextColor="#455A64"
+            keyboardType="numeric"
+            value={newNumero}
+            onChangeText={setNewNumero}
+            maxLength={3}
+          />
+          <TouchableOpacity style={styles.addButton} onPress={handleAddPlayer} activeOpacity={0.7}>
+            <Icon name="add" size={22} color="#fff" />
+          </TouchableOpacity>
+        </View>
+      )}
 
       {/* Liste des joueurs */}
       {effectif.length === 0 ? (
         <View style={styles.emptyState}>
           <Icon name="people-outline" size={40} color="#1A2D45" />
           <Text style={styles.emptyText}>Aucun joueur dans l'effectif</Text>
-          <Text style={styles.emptySubtext}>Ajoutez des joueurs avec le formulaire ci-dessus</Text>
+          <Text style={styles.emptySubtext}>
+            {readOnly
+              ? "L'effectif n'a pas encore été publié par le club"
+              : 'Ajoutez des joueurs avec le formulaire ci-dessus'}
+          </Text>
         </View>
       ) : (
         <FlatList
@@ -132,106 +141,106 @@ const Effectif = ({ onBack }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 16 * scale,
+    padding: s(16),
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 20,
-    paddingVertical: 8,
+    marginBottom: s(20),
+    paddingVertical: s(8),
   },
   backButton: {
-    padding: 4,
+    padding: s(4),
   },
   title: {
     flex: 1,
-    fontSize: 18 * scale,
+    fontSize: ms(18),
     fontWeight: '700',
     color: '#fff',
     textAlign: 'center',
   },
   headerRight: {
-    width: 30,
+    width: s(30),
     alignItems: 'center',
   },
   countBadge: {
     color: '#607D8B',
-    fontSize: 13 * scale,
+    fontSize: ms(13),
     fontWeight: '600',
   },
   addPlayerContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 16,
-    gap: 8,
+    marginBottom: s(16),
+    gap: s(8),
   },
   input: {
     backgroundColor: '#010E1E',
-    borderRadius: 10,
+    borderRadius: ms(10),
     borderWidth: 1,
     borderColor: '#1A2D45',
-    padding: 12 * scale,
-    fontSize: 15 * scale,
+    padding: s(12),
+    fontSize: ms(15),
     color: '#fff',
   },
   inputName: {
     flex: 1,
   },
   inputNumero: {
-    width: 56 * scale,
+    width: ms(56),
     textAlign: 'center',
   },
   addButton: {
     backgroundColor: '#010E1E',
-    borderRadius: 10,
+    borderRadius: ms(10),
     borderWidth: 1,
     borderColor: '#1A2D45',
-    width: 46 * scale,
-    height: 46 * scale,
+    width: ms(46),
+    height: ms(46),
     alignItems: 'center',
     justifyContent: 'center',
   },
   list: {
-    paddingBottom: 16,
+    paddingBottom: s(16),
   },
   listItem: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#010E1E',
-    borderRadius: 10,
+    borderRadius: ms(10),
     borderWidth: 1,
     borderColor: '#1A2D45',
-    padding: 12 * scale,
-    marginBottom: 6 * scale,
+    padding: s(12),
+    marginBottom: s(6),
   },
   numeroContainer: {
-    width: 32 * scale,
-    height: 32 * scale,
-    borderRadius: 16 * scale,
+    width: ms(32),
+    height: ms(32),
+    borderRadius: ms(16),
     backgroundColor: '#111D2E',
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: 10,
+    marginRight: s(10),
   },
   numeroText: {
     color: '#C5D0DC',
-    fontSize: 13 * scale,
+    fontSize: ms(13),
     fontWeight: '700',
   },
   icon: {
-    width: 28 * scale,
-    height: 28 * scale,
-    marginRight: 10,
+    width: ms(28),
+    height: ms(28),
+    marginRight: s(10),
   },
   listText: {
     flex: 1,
-    fontSize: 15 * scale,
+    fontSize: ms(15),
     color: '#C5D0DC',
     fontWeight: '500',
   },
   deleteButton: {
-    padding: 6,
-    marginLeft: 8,
+    padding: s(6),
+    marginLeft: s(8),
   },
   emptyState: {
     flex: 1,
@@ -240,14 +249,14 @@ const styles = StyleSheet.create({
   },
   emptyText: {
     color: '#607D8B',
-    fontSize: 15 * scale,
-    marginTop: 12,
+    fontSize: ms(15),
+    marginTop: s(12),
     fontWeight: '500',
   },
   emptySubtext: {
     color: '#455A64',
-    fontSize: 13 * scale,
-    marginTop: 4,
+    fontSize: ms(13),
+    marginTop: s(4),
   },
 });
 

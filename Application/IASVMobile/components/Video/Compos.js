@@ -5,12 +5,12 @@ import {
   Image,
   StyleSheet,
   ImageBackground,
-  Dimensions,
+  useWindowDimensions,
   ScrollView,
 } from 'react-native';
+import { moderateScale, scale as s } from './../../tools/responsive';
 
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
-const FIELD_HEIGHT = SCREEN_WIDTH * 1.5;
+const ms = moderateScale;
 
 // Positions en pourcentage du terrain (top%, left%)
 const POSITIONS = [
@@ -30,9 +30,11 @@ const POSITIONS = [
   { top: 30, left: 78 },  // 11 - Ailier droit
 ];
 
-const PLAYER_SIZE = 44;
+const PLAYER_SIZE = ms(40);
 
 const Compos = React.memo(({ players }) => {
+  const { width: SCREEN_WIDTH } = useWindowDimensions();
+  const FIELD_HEIGHT = SCREEN_WIDTH * 1.5;
   return (
     <ScrollView
       style={styles.scroll}
@@ -42,7 +44,7 @@ const Compos = React.memo(({ players }) => {
       <View style={styles.wrapper}>
         <ImageBackground
           source={require('../../assets/terrain.jpg')}
-          style={styles.field}
+          style={[styles.field, { width: SCREEN_WIDTH, height: FIELD_HEIGHT }]}
           imageStyle={styles.image}
         >
           {players.slice(0, 11).map((player, index) => {
@@ -83,13 +85,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   field: {
-    width: SCREEN_WIDTH,
-    height: FIELD_HEIGHT,
     position: 'relative',
   },
   image: {
     resizeMode: 'cover',
-    borderRadius: 8,
+    borderRadius: ms(8),
   },
   playerContainer: {
     position: 'absolute',
@@ -106,20 +106,20 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    marginTop: 2,
-    gap: 8,
+    marginTop: s(2),
+    gap: s(8),
   },
   playerNumber: {
-    fontSize: 9,
+    fontSize: ms(9),
     color: '#FFFFFF',
     fontWeight: 'bold',
   },
   playerName: {
-    fontSize: 9,
+    fontSize: ms(9),
     color: '#FFFFFF',
     fontWeight: 'bold',
     textAlign: 'center',
-    maxWidth: 70,
+    maxWidth: s(70),
     textShadowColor: 'rgba(0, 0, 0, 0.8)',
     textShadowOffset: { width: 0, height: 1 },
     textShadowRadius: 3,

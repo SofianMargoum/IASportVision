@@ -1,10 +1,12 @@
-﻿import React, { useState, useEffect, useMemo } from 'react';
-import { View, Text, StyleSheet, ActivityIndicator, ScrollView } from 'react-native';
-import { fetchClassementJournees } from './../../tools/api';
+﻿import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import { View, Text, StyleSheet, ActivityIndicator, ScrollView, TouchableOpacity } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { fetchClassementJournees, fetchClubByClNo } from './../../tools/api';
 import { useClubContext } from './../../tools/ClubContext';
 import LinearGradient from 'react-native-linear-gradient';
+import { moderateScale, scale as s } from './../../tools/responsive';
 
-const scale = 0.85;
+const ms = moderateScale;
 
 // â”€â”€â”€ Couleurs podium â”€â”€â”€
 const rankColors = {
@@ -41,7 +43,50 @@ function ClassementsContent() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  const { selectedClub, competition, phase, poule, cp_no } = useClubContext();
+  const { selectedClub, competition, phase, poule, cp_no, setSelectedClub, setClNo } = useClubContext();
+
+  // Sélectionne un club du classement : même comportement que
+  // SearchClub.handleClubClick. La compétition persistée n'est pas effacée
+  // pour qu'elle soit réappliquée si elle existe pour le nouveau club.
+  const handleOpponentClick = useCallback(
+    async (clNo, name, logo) => {
+      if (!clNo || clNo === selectedClub?.cl_no) return;
+
+      // Complète le logo / nom via l'API si manquant
+      // (l'endpoint classement_journees ne renvoie pas le logo).
+      let resolvedName = name || '';
+      let resolvedLogo = logo || '';
+      if (!resolvedLogo) {
+        const fetched = await fetchClubByClNo(clNo);
+        if (fetched) {
+          resolvedLogo = fetched.logo || resolvedLogo;
+          resolvedName = resolvedName || fetched.name || '';
+        }
+      }
+
+      const club = { cl_no: clNo, name: resolvedName, logo: resolvedLogo };
+
+      setSelectedClub(club);
+      setClNo(clNo);
+
+      try {
+        await AsyncStorage.setItem('selectedClub', JSON.stringify(club));
+        const stored = await AsyncStorage.getItem('recentClubs');
+        let recent = [];
+        if (stored) {
+          try {
+            const parsed = JSON.parse(stored);
+            if (Array.isArray(parsed)) recent = parsed;
+          } catch { /* ignore */ }
+        }
+        const updated = [club, ...recent.filter((c) => c?.cl_no !== clNo)].slice(0, 3);
+        await AsyncStorage.setItem('recentClubs', JSON.stringify(updated));
+      } catch (e) {
+        if (__DEV__) console.error('Erreur sélection club classement:', e?.message);
+      }
+    },
+    [selectedClub, setSelectedClub, setClNo]
+  );
 
   useEffect(() => {
     let isMounted = true;
@@ -152,20 +197,35 @@ function ClassementsContent() {
           />
         );
 
+        const onPress = () => handleOpponentClick(item.clNo, item.clubName || item.teamName, item.clubLogo);
+        const disabled = !item.clNo || item.clNo === selectedClub?.cl_no;
+
         return isMyClub ? (
-          <LinearGradient
+          <TouchableOpacity
             key={item.teamName ?? idx}
-            colors={['rgba(0,160,233,0.15)', 'rgba(0,160,233,0.03)']}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 0 }}
-            style={[styles.row, styles.myClubRow]}
+            activeOpacity={0.7}
+            disabled={disabled}
+            onPress={onPress}
+          >
+            <LinearGradient
+              colors={['rgba(0,160,233,0.15)', 'rgba(0,160,233,0.03)']}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 0 }}
+              style={[styles.row, styles.myClubRow]}
+            >
+              {content}
+            </LinearGradient>
+          </TouchableOpacity>
+        ) : (
+          <TouchableOpacity
+            key={item.teamName ?? idx}
+            activeOpacity={0.7}
+            disabled={disabled}
+            onPress={onPress}
+            style={styles.row}
           >
             {content}
-          </LinearGradient>
-        ) : (
-          <View key={item.teamName ?? idx} style={styles.row}>
-            {content}
-          </View>
+          </TouchableOpacity>
         );
       })}
 
@@ -188,7 +248,7 @@ function ClassementsContent() {
         </View>
       </View>
 
-      <View style={{ height: 20 }} />
+      <View style={{ height: s(20) }} />
     </ScrollView>
   );
 }
@@ -259,21 +319,21 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    padding: 16,
+    padding: s(16),
   },
   loadingText: {
     color: '#aaaaaa',
-    fontSize: 14 * scale,
-    marginTop: 10,
+    fontSize: ms(13),
+    marginTop: s(10),
   },
   infoText: {
     color: '#aaaaaa',
-    fontSize: 14 * scale,
+    fontSize: ms(13),
     textAlign: 'center',
   },
   errorText: {
     color: '#FF4444',
-    fontSize: 14 * scale,
+    fontSize: ms(13),
     textAlign: 'center',
   },
 
@@ -281,26 +341,26 @@ const styles = StyleSheet.create({
   tableHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 10,
-    paddingHorizontal: 8,
+    paddingVertical: s(10),
+    paddingHorizontal: s(8),
     borderBottomWidth: 1,
     borderBottomColor: 'rgba(255,255,255,0.15)',
   },
   thRank: {
-    width: 30,
+    width: s(28),
     textAlign: 'center',
   },
   thClub: {
     flex: 1,
-    paddingLeft: 6,
+    paddingLeft: s(6),
   },
   thStat: {
-    width: 32,
+    width: s(30),
     textAlign: 'center',
   },
   thText: {
     color: '#aaaaaa',
-    fontSize: 12 * scale,
+    fontSize: ms(11),
     fontWeight: 'bold',
     letterSpacing: 0.5,
   },
@@ -309,8 +369,8 @@ const styles = StyleSheet.create({
   row: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 10,
-    paddingHorizontal: 8,
+    paddingVertical: s(10),
+    paddingHorizontal: s(8),
     borderBottomWidth: 1,
     borderBottomColor: 'rgba(255,255,255,0.04)',
   },
@@ -322,32 +382,32 @@ const styles = StyleSheet.create({
 
   /* Rank cell */
   rankCell: {
-    width: 30,
+    width: s(28),
     alignItems: 'center',
     justifyContent: 'center',
   },
   rankBadge: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
+    width: ms(24),
+    height: ms(24),
+    borderRadius: ms(12),
     alignItems: 'center',
     justifyContent: 'center',
   },
   rankText: {
     color: '#ffffff',
-    fontSize: 13 * scale,
+    fontSize: ms(12),
     fontWeight: 'bold',
   },
 
   /* Club cell */
   clubCell: {
     flex: 1,
-    paddingHorizontal: 6,
+    paddingHorizontal: s(6),
     justifyContent: 'center',
   },
   clubName: {
     color: '#ffffff',
-    fontSize: 13 * scale,
+    fontSize: ms(12),
     fontWeight: '500',
   },
   myClubName: {
@@ -357,16 +417,16 @@ const styles = StyleSheet.create({
 
   /* Stat cells */
   statCell: {
-    width: 32,
+    width: s(30),
     color: '#ffffff',
-    fontSize: 13 * scale,
+    fontSize: ms(12),
     textAlign: 'center',
     fontWeight: '600',
   },
   pointsText: {
     color: '#ffffff',
     fontWeight: 'bold',
-    fontSize: 14 * scale,
+    fontSize: ms(13),
   },
 
   /* Legend */
@@ -374,23 +434,23 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     justifyContent: 'center',
-    paddingVertical: 14,
-    paddingHorizontal: 16,
-    gap: 12,
+    paddingVertical: s(14),
+    paddingHorizontal: s(16),
+    gap: s(12),
   },
   legendItem: {
     flexDirection: 'row',
     alignItems: 'center',
   },
   legendDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    marginRight: 4,
+    width: ms(8),
+    height: ms(8),
+    borderRadius: ms(4),
+    marginRight: s(4),
   },
   legendText: {
     color: '#aaaaaa',
-    fontSize: 10 * scale,
+    fontSize: ms(10),
   },
 });
 

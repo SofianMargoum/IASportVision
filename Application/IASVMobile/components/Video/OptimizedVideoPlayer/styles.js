@@ -1,5 +1,8 @@
 // components/styles.js
 import { StyleSheet } from 'react-native';
+import { moderateScale, scale as s } from './../../../tools/responsive';
+
+const ms = moderateScale;
 
 const styles = StyleSheet.create({
   wrapper: {
@@ -51,35 +54,35 @@ const styles = StyleSheet.create({
   },
   centerPlayButton: {
     backgroundColor: 'transparent',
-    padding: 20,
-    borderRadius: 50,
+    padding: s(20),
+    borderRadius: ms(50),
   },
   bottomBar: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 10,
-    paddingBottom: 24,
-    gap: 10,
+    paddingHorizontal: s(10),
+    paddingBottom: s(24),
+    gap: s(10),
   },
   timeText: {
     color: 'white',
-    fontSize: 14,
+    fontSize: ms(13),
   },
   slider: {
     flex: 1,
-    height: 40,
+    height: ms(40),
   },
   fullScreenButton: {
-    padding: 8,
+    padding: s(8),
   },
   switchContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
+    gap: s(6),
   },
   switchLabel: {
     color: 'white',
-    fontSize: 12,
+    fontSize: ms(11),
   },
 });
 

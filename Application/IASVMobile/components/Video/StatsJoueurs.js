@@ -1,8 +1,9 @@
 import React, { useState, useCallback } from 'react';
 import { View, Image, Text, StyleSheet, FlatList, ScrollView, TouchableOpacity } from 'react-native';
 import { joueurStats } from './data/mockData';
+import { moderateScale, scale as s } from './../../tools/responsive';
 
-const scale = 0.85;
+const ms = moderateScale;
 
 const PLAYER_IMAGES = {
   '1': require('../../assets/joueur-1.png'),
@@ -122,7 +123,7 @@ const StatsJoueurs = React.memo(() => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    paddingHorizontal: 12,
+    paddingHorizontal: s(12),
     alignItems: 'stretch',
   },
   hrContainer: {
@@ -136,18 +137,18 @@ const styles = StyleSheet.create({
   },
   playerListContainer: {
     width: '100%',
-    height: 56 * scale,
+    height: ms(48),
     justifyContent: 'center',
-    marginBottom: 8,
+    marginBottom: s(8),
   },
   statsImage: {
-    height: 52 * scale,
-    width: 52 * scale,
+    height: ms(44),
+    width: ms(44),
     resizeMode: 'contain',
-    borderRadius: 10 * scale,
+    borderRadius: ms(8),
   },
   joueurItem: {
-    width: 70 * scale,
+    width: s(60),
     justifyContent: 'center',
     alignItems: 'center',
     opacity: 0.45,
@@ -160,7 +161,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   statCard: {
-    paddingVertical: 8,
+    paddingVertical: s(8),
     paddingHorizontal: 0,
   },
   table: {
@@ -169,31 +170,31 @@ const styles = StyleSheet.create({
   headerRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 8,
-    paddingHorizontal: 4,
+    paddingVertical: s(8),
+    paddingHorizontal: s(4),
     borderBottomColor: 'rgba(255, 255, 255, 0.1)',
     borderBottomWidth: 1,
     marginBottom: 2,
   },
   tableHeader: {
     fontWeight: '700',
-    fontSize: 13,
+    fontSize: ms(12),
     color: '#FFFFFF',
     flex: 1,
     textAlign: 'center',
   },
   tableHeaderSep: {
     fontWeight: '600',
-    fontSize: 13,
+    fontSize: ms(12),
     color: '#808080',
-    width: 20,
+    width: s(20),
     textAlign: 'center',
   },
   tableRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 7,
-    paddingHorizontal: 4,
+    paddingVertical: s(7),
+    paddingHorizontal: s(4),
     borderBottomColor: 'rgba(255, 255, 255, 0.04)',
     borderBottomWidth: 0.5,
   },
@@ -201,7 +202,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255, 255, 255, 0.03)',
   },
   tableCell: {
-    fontSize: 12,
+    fontSize: ms(11),
     fontWeight: '600',
     color: '#fff',
     flex: 1,
@@ -211,16 +212,16 @@ const styles = StyleSheet.create({
     fontWeight: '800',
   },
   tableCellLabel: {
-    fontSize: 11,
+    fontSize: ms(10),
     fontWeight: '600',
     color: '#A8B4C0',
     flex: 1.2,
     textAlign: 'center',
   },
   statText: {
-    fontSize: 13,
+    fontSize: ms(12),
     color: '#fff',
-    paddingTop: 10,
+    paddingTop: s(10),
   },
 });
 

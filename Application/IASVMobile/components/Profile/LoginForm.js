@@ -1,57 +1,45 @@
 import React, { useRef, useState } from 'react';
-import { View, Image, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from 'react-native';
-import { DEMO_CREDENTIALS } from './loginCredentials';
+import {
+  View,
+  Image,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  StyleSheet,
+  Alert,
+  ActivityIndicator,
+} from 'react-native';
+import { moderateScale, scale as s } from './../../tools/responsive';
+import { loginRequest } from './../../tools/authApi';
+import { saveToken } from './../../tools/secureToken';
+import { setAuthToken } from './../../tools/api';
 
-const scale = 0.85;
+const ms = moderateScale;
 
-// Comparaison à temps constant pour éviter les attaques par timing.
-const constantTimeEqual = (a, b) => {
-  if (typeof a !== 'string' || typeof b !== 'string') return false;
-  if (a.length !== b.length) return false;
-  let result = 0;
-  for (let i = 0; i < a.length; i++) {
-    result |= a.charCodeAt(i) ^ b.charCodeAt(i);
-  }
-  return result === 0;
-};
-
-// Rate-limit en mémoire (réinitialisé à chaque relance de l'app).
+// Rate-limit local : protection UX en plus du rate-limit serveur.
 const MAX_ATTEMPTS = 5;
 const LOCKOUT_MS = 30 * 1000;
+
+const resolvePhotoUri = (asset) => {
+  try {
+    if (asset === 'fcmiramas.jpg') {
+      const { uri } = Image.resolveAssetSource(require('../../assets/fcmiramas.jpg'));
+      return uri;
+    }
+    return undefined;
+  } catch {
+    return undefined;
+  }
+};
 
 const LoginForm = ({ onLocalLogin }) => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
+  const [loading, setLoading] = useState(false);
   const attemptsRef = useRef(0);
   const lockUntilRef = useRef(0);
 
-  const findCredential = (u, p) => {
-    if (typeof u !== 'string' || typeof p !== 'string') return null;
-    if (!u || !p) return null;
-    // Boucle complète : on évite de court-circuiter pour ne pas révéler
-    // par timing l'existence d'un identifiant.
-    let match = null;
-    for (const cred of DEMO_CREDENTIALS) {
-      const userOk = constantTimeEqual(u, cred.username);
-      const passOk = constantTimeEqual(p, cred.password);
-      if (userOk && passOk) match = cred;
-    }
-    return match;
-  };
-
-  const resolvePhotoUri = (asset) => {
-    try {
-      if (asset === 'fcmiramas.jpg') {
-        const { uri } = Image.resolveAssetSource(require('../../assets/fcmiramas.jpg'));
-        return uri;
-      }
-      return undefined;
-    } catch {
-      return undefined;
-    }
-  };
-
-  const handleLogin = () => {
+  const handleLogin = async () => {
     const now = Date.now();
     if (lockUntilRef.current > now) {
       const remaining = Math.ceil((lockUntilRef.current - now) / 1000);
@@ -62,30 +50,64 @@ const LoginForm = ({ onLocalLogin }) => {
       return;
     }
 
-    const cred = findCredential(username, password);
-    if (!cred) {
-      attemptsRef.current += 1;
-      if (attemptsRef.current >= MAX_ATTEMPTS) {
-        lockUntilRef.current = now + LOCKOUT_MS;
-        attemptsRef.current = 0;
-        Alert.alert(
-          'Compte temporairement bloqué',
-          `Trop de tentatives. Réessayez dans ${LOCKOUT_MS / 1000}s.`
-        );
-      } else {
-        // Message générique : ne pas révéler si l'identifiant existe.
-        Alert.alert('Erreur', 'Identifiant ou mot de passe incorrect.');
-      }
+    if (!username || !password) {
+      Alert.alert('Erreur', 'Veuillez saisir un identifiant et un mot de passe.');
       return;
     }
 
-    attemptsRef.current = 0;
-    onLocalLogin?.({
-      id: cred.id,
-      name: cred.name,
-      email: cred.email,
-      photo: resolvePhotoUri(cred.photoAsset),
-    });
+    setLoading(true);
+    try {
+      const { token, user } = await loginRequest(username.trim(), password);
+
+      // Stockage sécurisé du token (Keychain). Si Keychain n'est pas dispo,
+      // saveToken renvoie false : l'utilisateur devra se reconnecter au
+      // prochain démarrage (mais reste connecté pour la session).
+      await saveToken(token);
+      // Cache mémoire pour que les futures requêtes envoient Authorization.
+      setAuthToken(token);
+
+      attemptsRef.current = 0;
+      // Effacer le mot de passe de la mémoire React.
+      setPassword('');
+
+      onLocalLogin?.({
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+        photo: resolvePhotoUri(user.photoAsset),
+      });
+    } catch (e) {
+      attemptsRef.current += 1;
+      if (e?.status === 429) {
+        lockUntilRef.current = Date.now() + LOCKOUT_MS;
+        attemptsRef.current = 0;
+        Alert.alert(
+          'Compte temporairement bloqué',
+          e.message || 'Trop de tentatives. Réessayez plus tard.'
+        );
+      } else if (e?.status === 401 || e?.status === 400) {
+        if (attemptsRef.current >= MAX_ATTEMPTS) {
+          lockUntilRef.current = Date.now() + LOCKOUT_MS;
+          attemptsRef.current = 0;
+          Alert.alert(
+            'Compte temporairement bloqué',
+            `Trop de tentatives. Réessayez dans ${LOCKOUT_MS / 1000}s.`
+          );
+        } else {
+          Alert.alert('Erreur', 'Identifiant ou mot de passe incorrect.');
+        }
+      } else if (e?.status === 408) {
+        Alert.alert('Erreur réseau', e.message || 'Délai dépassé.');
+      } else {
+        Alert.alert(
+          'Erreur',
+          'Connexion impossible. Vérifiez votre réseau et réessayez.'
+        );
+      }
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -104,6 +126,7 @@ const LoginForm = ({ onLocalLogin }) => {
           autoCorrect={false}
           textContentType="username"
           maxLength={64}
+          editable={!loading}
         />
       </View>
 
@@ -120,11 +143,20 @@ const LoginForm = ({ onLocalLogin }) => {
           autoCorrect={false}
           textContentType="password"
           maxLength={128}
+          editable={!loading}
         />
       </View>
 
-      <TouchableOpacity style={styles.loginBtn} onPress={handleLogin}>
-        <Text style={styles.loginBtnText}>Se connecter</Text>
+      <TouchableOpacity
+        style={[styles.loginBtn, loading && styles.loginBtnDisabled]}
+        onPress={handleLogin}
+        disabled={loading}
+      >
+        {loading ? (
+          <ActivityIndicator color="#fff" />
+        ) : (
+          <Text style={styles.loginBtnText}>Se connecter</Text>
+        )}
       </TouchableOpacity>
     </View>
   );
@@ -132,16 +164,16 @@ const LoginForm = ({ onLocalLogin }) => {
 
 const styles = StyleSheet.create({
   title: {
-    fontSize: 30 * scale,
+    fontSize: ms(30),
     fontWeight: 'bold',
-    marginBottom: 20 * scale,
+    marginBottom: s(20),
     color: '#fff',
     textAlign: 'center',
   },
   profileContainer: {
     width: '80%',
-    padding: 20 * scale,
-    borderRadius: 10,
+    padding: s(20),
+    borderRadius: ms(10),
     shadowColor: '#00A0E9',
     shadowOpacity: 0.1,
     shadowOffset: { width: 0, height: 2 },
@@ -150,35 +182,38 @@ const styles = StyleSheet.create({
     backgroundColor: '#010914',
   },
   inputGroup: {
-    marginBottom: 20 * scale,
+    marginBottom: s(20),
   },
   label: {
     color: '#fff',
-    fontSize: 16 * scale,
-    marginBottom: 5,
+    fontSize: ms(16),
+    marginBottom: s(5),
   },
   input: {
     borderWidth: 3,
     borderColor: '#001A31',
-    borderRadius: 5,
+    borderRadius: ms(5),
     color: '#fff',
-    padding: 10 * scale,
-    fontSize: 16 * scale,
+    padding: s(10),
+    fontSize: ms(16),
   },
   loginBtn: {
-    padding: 15 * scale,
+    padding: s(15),
     borderWidth: 1,
     borderColor: '#001A31',
     alignItems: 'center',
-    borderRadius: 10,
+    borderRadius: ms(10),
     shadowColor: '#00A0E9',
     shadowOpacity: 1,
     elevation: 3,
     backgroundColor: '#010914',
   },
+  loginBtnDisabled: {
+    opacity: 0.6,
+  },
   loginBtnText: {
     color: '#fff',
-    fontSize: 16 * scale,
+    fontSize: ms(16),
     fontWeight: 'bold',
   },
 });

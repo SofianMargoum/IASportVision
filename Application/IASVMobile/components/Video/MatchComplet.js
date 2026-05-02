@@ -5,6 +5,9 @@
 import React, { useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, Dimensions } from 'react-native';
 import { useVideoOverlay } from '../../tools/VideoOverlayContext';
+import { moderateScale, scale as s } from './../../tools/responsive';
+
+const ms = moderateScale;
 
 const MatchComplet = ({ selectedVideo }) => {
   const anchorRef = useRef(null);
@@ -116,9 +119,9 @@ const styles = StyleSheet.create({
   noContentText: {
     color: '#FFF',
     textAlign: 'center',
-    fontSize: 18,
-    lineHeight: 24,
-    paddingHorizontal: 20,
+    fontSize: ms(16),
+    lineHeight: ms(22),
+    paddingHorizontal: s(20),
   },
 });
 
