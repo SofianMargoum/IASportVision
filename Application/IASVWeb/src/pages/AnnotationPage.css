@@ -1,0 +1,171 @@
+/* AnnotationPage — thème IA Sport Vision (bleu très foncé) */
+.annot-root {
+  --annot-bg: #010914;
+  --annot-panel: #0a1628;
+  --annot-panel-2: #0f1f36;
+  --annot-border: #1c2a44;
+  --annot-text: #e8ecf3;
+  --annot-muted: #7a8ba6;
+  --annot-accent: #2196f3;
+  --annot-ok: #4caf50;
+  --annot-warn: #ff9800;
+  --annot-danger: #f44336;
+
+  background: var(--annot-bg);
+  color: var(--annot-text);
+  border-radius: 12px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-height: calc(100vh - 120px);
+}
+
+.annot-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+  background: var(--annot-panel);
+  border: 1px solid var(--annot-border);
+  border-radius: 10px;
+  padding: 10px 14px;
+}
+.annot-toolbar label {
+  font-size: 12px;
+  color: var(--annot-muted);
+  display: inline-flex;
+  gap: 6px;
+  align-items: center;
+}
+.annot-toolbar select,
+.annot-toolbar input,
+.annot-toolbar button {
+  background: var(--annot-bg);
+  color: var(--annot-text);
+  border: 1px solid var(--annot-border);
+  border-radius: 6px;
+  padding: 6px 10px;
+  font-size: 13px;
+}
+.annot-toolbar button { cursor: pointer; }
+.annot-toolbar button:hover { border-color: var(--annot-accent); }
+.annot-progress { margin-left: auto; color: var(--annot-muted); font-size: 13px; }
+
+.annot-main {
+  display: grid;
+  grid-template-columns: 1fr 340px;
+  gap: 12px;
+  align-items: start;
+}
+@media (max-width: 1100px) {
+  .annot-main { grid-template-columns: 1fr; }
+}
+
+.annot-viewer {
+  background: var(--annot-panel);
+  border: 1px solid var(--annot-border);
+  border-radius: 10px;
+  padding: 10px;
+}
+.annot-canvas-wrap {
+  background: #000;
+  border-radius: 8px;
+  overflow: hidden;
+  width: 100%;
+  display: flex;
+  justify-content: center;
+}
+.annot-canvas-wrap canvas {
+  display: block;
+  width: 100%;
+  height: auto;
+  cursor: crosshair;
+  max-height: 70vh;
+  object-fit: contain;
+}
+.annot-meta {
+  margin-top: 8px;
+  font-family: ui-monospace, Menlo, Consolas, monospace;
+  font-size: 11px;
+  color: var(--annot-muted);
+  white-space: pre-wrap;
+  line-height: 1.5;
+}
+
+.annot-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.annot-card {
+  background: var(--annot-panel);
+  border: 1px solid var(--annot-border);
+  border-radius: 10px;
+  padding: 12px;
+}
+.annot-card h3 {
+  margin: 0 0 10px;
+  font-size: 13px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--annot-muted);
+}
+.annot-row { display: flex; gap: 8px; flex-wrap: wrap; }
+.annot-btn {
+  flex: 1;
+  min-width: 110px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--annot-border);
+  background: var(--annot-panel-2);
+  color: var(--annot-text);
+  cursor: pointer;
+  font-size: 13px;
+  transition: background .15s, border-color .15s;
+}
+.annot-btn:hover:not(:disabled) { background: #14223b; border-color: var(--annot-accent); }
+.annot-btn:disabled { opacity: .45; cursor: not-allowed; }
+.annot-btn-yes  { border-color: var(--annot-ok);     background: rgba(76,175,80,0.15); }
+.annot-btn-no   { border-color: var(--annot-danger); background: rgba(244,67,54,0.15); }
+.annot-btn-abs  { border-color: var(--annot-muted);  background: rgba(122,139,166,0.10); }
+.annot-btn.active { background: rgba(33,150,243,0.25); border-color: var(--annot-accent); }
+.annot-btn-train {
+  background: linear-gradient(135deg, #1565c0, #0d47a1);
+  border-color: #0d47a1;
+  color: #fff;
+  font-weight: 600;
+}
+
+.annot-help { font-size: 11px; color: var(--annot-muted); margin-top: 6px; }
+.annot-help kbd {
+  background: var(--annot-bg);
+  border: 1px solid var(--annot-border);
+  border-radius: 4px;
+  padding: 1px 5px;
+  font-size: 10px;
+}
+
+.annot-readiness { font-size: 12px; padding: 6px 8px; border-radius: 6px; }
+.annot-readiness.ok  { background: rgba(76,175,80,0.15);  color: var(--annot-ok); }
+.annot-readiness.nok { background: rgba(255,152,0,0.15);  color: var(--annot-warn); }
+
+.annot-train-status,
+.annot-registry {
+  font-family: ui-monospace, Menlo, Consolas, monospace;
+  font-size: 11px;
+  color: var(--annot-muted);
+  white-space: pre-wrap;
+  margin-top: 8px;
+}
+.annot-registry .active { color: var(--annot-ok); font-weight: 600; }
+.annot-registry a { color: var(--annot-accent); cursor: pointer; }
+
+.annot-error {
+  background: rgba(244,67,54,0.15);
+  color: #ff8a80;
+  border: 1px solid var(--annot-danger);
+  padding: 8px 12px;
+  border-radius: 6px;
+  font-size: 13px;
+}

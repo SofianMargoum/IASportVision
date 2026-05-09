@@ -1,0 +1,9 @@
+# Fichiers exclus de l'upload App Engine
+.git
+.gitignore
+.gcloudignore
+node_modules/
+npm-debug.log
+.DS_Store
+*.log
+README.md

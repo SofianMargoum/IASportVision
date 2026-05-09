@@ -1,0 +1,15 @@
+{
+  "name": "iasvweb-gae",
+  "version": "1.0.0",
+  "private": true,
+  "description": "App Engine static SPA server for IASVWeb (service: iasvweb)",
+  "engines": {
+    "node": "22"
+  },
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.21.2"
+  }
+}

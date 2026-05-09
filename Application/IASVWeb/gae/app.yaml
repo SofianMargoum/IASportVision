@@ -1,0 +1,22 @@
+# IASVWeb — frontend SaaS (Create React App)
+# Service App Engine séparé du backend (`default`).
+# Ne touche pas à : default (API), Cloud SQL, Cloud Run, Cloud Storage.
+
+runtime: nodejs22
+service: iasvweb
+
+# Mise à l'échelle économique : scale-to-zero quand pas de trafic
+instance_class: F1
+
+automatic_scaling:
+  min_instances: 0
+  max_instances: 2
+  min_idle_instances: 0
+  max_idle_instances: 1
+  target_cpu_utilization: 0.8
+
+# App Engine Node.js exécute `npm start` par défaut ; on force notre serveur Express.
+entrypoint: node server.js
+
+env_variables:
+  NODE_ENV: 'production'
