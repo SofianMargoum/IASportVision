@@ -15,7 +15,6 @@ import {
 } from 'react-native';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { useDeviceContext } from './../../tools/DeviceContext';
-import { fetchAllCameras } from './../../tools/api';
 import { moderateScale, scale as s } from './../../tools/responsive';
 
 const ms = moderateScale;
@@ -28,6 +27,9 @@ const Appareils = ({ onBack }) => {
     updateDevice,
     selectedIndex,
     setSelectedIndex,
+    isLoading,
+    loadError,
+    reloadDevices,
   } = useDeviceContext();
 
   // Ajout manuel
@@ -35,9 +37,6 @@ const Appareils = ({ onBack }) => {
   const [newDeviceId, setNewDeviceId] = useState('');
   const [newCameraId, setNewCameraId] = useState('');
   const [showAddForm, setShowAddForm] = useState(false);
-
-  // Import Hik-Connect
-  const [isImporting, setIsImporting] = useState(false);
 
   const flatListRef = useRef(null);
   const [shouldScrollToEnd, setShouldScrollToEnd] = useState(false);
@@ -64,60 +63,9 @@ const Appareils = ({ onBack }) => {
     }
   }, [devices, shouldScrollToEnd]);
 
-  // Auto-sélection
-  useEffect(() => {
-    if (!devices || devices.length === 0) return;
-    const invalid =
-      selectedIndex === null ||
-      selectedIndex === undefined ||
-      selectedIndex < 0 ||
-      selectedIndex >= devices.length;
-    if (invalid) setSelectedIndex(0);
-  }, [devices, selectedIndex, setSelectedIndex]);
-
-  // ─── Hik-Connect helpers ───
-
-  const extractCamerasFromResponse = (res) => {
-    const payload = res?.data ?? res;
-    const cameras =
-      payload?.data?.camera ??
-      payload?.data?.cameras ??
-      payload?.camera ??
-      payload?.cameras ??
-      [];
-    return Array.isArray(cameras) ? cameras : [];
-  };
-
-  const mapCameraToDevice = (cam) => ({
-    nom: cam?.name ?? 'Caméra',
-    deviceId: cam?.device?.devInfo?.id,
-    cameraId: cam?.id,
-  });
-
-  const importFirstCameraIfNeeded = async () => {
-    if (isImporting) return;
-    if (devices && devices.length > 0) return;
-    try {
-      setIsImporting(true);
-      const res = await fetchAllCameras();
-      const cams = extractCamerasFromResponse(res);
-      if (!cams.length) return;
-      const dev = mapCameraToDevice(cams[0]);
-      if (!dev.deviceId || !dev.cameraId) return;
-      addDevice(dev);
-      setSelectedIndex(0);
-      setShouldScrollToEnd(true);
-    } catch (e) {
-      // silencieux
-    } finally {
-      setIsImporting(false);
-    }
-  };
-
-  useEffect(() => {
-    importFirstCameraIfNeeded();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  // NOTE : le chargement initial des devices et l'auto-sélection sont
+  // désormais gérés dans DeviceContext, dès la connexion de l'utilisateur.
+  // Ce composant n'est plus qu'une vue / un éditeur local.
 
   // ─── Actions ───
 
@@ -195,6 +143,14 @@ const Appareils = ({ onBack }) => {
             <Text style={[styles.deviceName, isSelected && styles.deviceNameSelected]} numberOfLines={1}>
               {item?.nom}
             </Text>
+            {item?.club?.name ? (
+              <View style={styles.idRow}>
+                <Icon name="shield-outline" size={ms(12)} color="#90A4AE" />
+                <Text style={[styles.idText, styles.clubText]} numberOfLines={1}>
+                  Club : {item.club.name}
+                </Text>
+              </View>
+            ) : null}
             <View style={styles.idRow}>
               <Icon name="hardware-chip-outline" size={ms(12)} color="#607D8B" />
               <Text style={styles.idText} numberOfLines={1}>Device: {item?.deviceId}</Text>
@@ -245,13 +201,19 @@ const Appareils = ({ onBack }) => {
         )}
       </View>
 
-      {/* Import indicator */}
-      {isImporting && (
+      {/* Loading indicator (chargement serveur) */}
+      {isLoading && (
         <View style={styles.importBar}>
           <ActivityIndicator size="small" color="#C5D0DC" />
-          <Text style={styles.importText}>Import Hik-Connect…</Text>
+          <Text style={styles.importText}>Chargement des caméras…</Text>
         </View>
       )}
+      {!isLoading && loadError ? (
+        <TouchableOpacity style={styles.importBar} onPress={() => reloadDevices?.()}>
+          <Icon name="refresh" size={14} color="#C5D0DC" />
+          <Text style={styles.importText}>Erreur — appuyez pour réessayer</Text>
+        </TouchableOpacity>
+      ) : null}
 
       {/* Device list */}
       <FlatList
@@ -262,11 +224,13 @@ const Appareils = ({ onBack }) => {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.listContent}
         ListEmptyComponent={
-          !isImporting ? (
+          !isLoading ? (
             <View style={styles.emptyState}>
               <Icon name="videocam-off-outline" size={42} color="#1A2D45" />
               <Text style={styles.emptyTitle}>Aucun appareil</Text>
-              <Text style={styles.emptyText}>Ajoutez une caméra pour commencer</Text>
+              <Text style={styles.emptyText}>
+                Aucune caméra n'est associée à votre club
+              </Text>
             </View>
           ) : null
         }
@@ -466,6 +430,10 @@ const styles = StyleSheet.create({
   idText: {
     color: '#607D8B',
     fontSize: ms(11),
+  },
+  clubText: {
+    color: '#90A4AE',
+    fontWeight: '600',
   },
   deviceActions: {
     flexDirection: 'row',

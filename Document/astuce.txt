@@ -21,6 +21,12 @@ color: #00BFFF; /* Couleur bleu de texte / icon selectioner */
 		gradlew assembleRelease
 		gradlew app:assembleRelease
 		/android/app/build/outputs/apk/release/
+react 
+	cd C:\perso\IA_Sport_Vision\Application\IASVWeb
+	npm run build
+	Remove-Item -Recurse -Force gae\build -ErrorAction SilentlyContinue
+	Copy-Item -Recurse build gae\build
+	gcloud app deploy gae\app.yaml --project ia-sport --quiet
 
 --deployer sur app engine
 		gcloud app deploy

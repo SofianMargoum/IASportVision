@@ -1,0 +1,45 @@
+# Build context optimization for Cloud Run / Cloud Build.
+# Empêche d'envoyer datasets, modèles, venvs, builds locaux à GCS.
+
+# Python / venvs
+.venv/
+venv/
+env/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.egg-info/
+
+# Editor / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Models / datasets / runs locaux (peuvent peser plusieurs GB)
+*.pt
+*.onnx
+*.pkl
+runs/
+datasets/
+weights/
+models/
+checkpoints/
+
+# Vidéos / images de test
+*.mp4
+*.mov
+*.avi
+*.mkv
+*.webm
+
+# Logs et artefacts
+*.log
+logs/
+tmp/
+temp/
+
+# Git (déjà ignoré par .gcloudignore par défaut, mais explicite)
+.git/
+.gitignore

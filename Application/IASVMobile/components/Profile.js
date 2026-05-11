@@ -18,6 +18,8 @@ const sanitizeUserForStorage = (user) => {
     email,
     photo,
     role,
+    clubId,
+    photoAsset,
     givenName,
     familyName,
     nom,
@@ -25,7 +27,7 @@ const sanitizeUserForStorage = (user) => {
     age,
     poste,
   } = user;
-  return { id, name, email, photo, role, givenName, familyName, nom, prenom, age, poste };
+  return { id, name, email, photo, role, clubId, photoAsset, givenName, familyName, nom, prenom, age, poste };
 };
 
 const Profile = ({ navigation }) => {

@@ -51,10 +51,13 @@ const routes = {
   isapiRecordStatusRoute: safeRequire('./api/isapiRecordStatus'),
   authRoute: safeRequire('./api/auth'),
   adminUsersRoute: safeRequire('./api/adminUsers'),
+  adminClubsRoute: safeRequire('./api/adminClubs'),
+  adminDevicesRoute: safeRequire('./api/adminDevices'),
+  devicesRoute: safeRequire('./api/devices'),
 };
 
 // Routes montées à la racine "/" plutôt que sous "/api"
-const ROOT_MOUNTED = new Set(['authRoute', 'adminUsersRoute']);
+const ROOT_MOUNTED = new Set(['authRoute', 'adminUsersRoute', 'adminClubsRoute', 'adminDevicesRoute', 'devicesRoute']);
 
 // Attacher les routes sans faire planter l'API
 Object.entries(routes).forEach(([name, route]) => {

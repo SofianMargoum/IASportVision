@@ -35,7 +35,7 @@ const menuItems = [
   { key: 'Composition', label: 'Composition', icon: 'football-outline', image: require('../../assets/stade.png') },
   { key: 'Statistiques', label: 'Statistiques', icon: 'stats-chart-outline', image: require('../../assets/stat.png') },
   { key: 'Appareils', label: 'Appareils', icon: 'videocam-outline', image: require('../../assets/cam.png') },
-  { key: 'Boutique', label: 'Boutique', icon: 'cart-outline', image: require('../../assets/boutique.png') },
+  { key: 'Boutique', label: 'Découvrir', icon: 'globe-outline', image: require('../../assets/certifier.png') },
   { key: 'Profile', label: 'Profil', icon: 'person-outline', image: require('../../assets/player.png') },
   { key: 'Admin', label: 'Utilisateurs', icon: 'shield-checkmark-outline', image: require('../../assets/player.png') },
 ];

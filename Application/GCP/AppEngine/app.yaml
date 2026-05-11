@@ -1,6 +1,15 @@
 runtime: nodejs22
-instance_class: F4_1G
+service: default
+instance_class: F1
 
+automatic_scaling:
+  min_instances: 0
+  max_instances: 1
+  min_idle_instances: 0
+  max_idle_instances: 0
+  target_cpu_utilization: 0.8
+  
+ 
 # Variables d'environnement pour la configuration de la base de données
 env_variables:
 

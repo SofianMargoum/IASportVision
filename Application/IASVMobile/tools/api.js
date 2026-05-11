@@ -22,6 +22,10 @@ export function clearAuthToken() {
   CURRENT_AUTH_TOKEN = null;
 }
 
+export function getAuthToken() {
+  return CURRENT_AUTH_TOKEN;
+}
+
 /**
  * Helper fetch sécurisé :
  *  - impose HTTPS
@@ -33,14 +37,17 @@ export function clearAuthToken() {
 // Le JWT ne doit être envoyé qu'à NOTRE backend, jamais à des APIs tierces
 // (FFF DOFA, Nominatim, etc.) — sinon ces APIs rejettent la requête (401)
 // ou pire, on fuite le token à un tiers.
+//
+// On évite volontairement le constructeur `URL` : sur React Native/Hermes
+// sans `react-native-url-polyfill`, `new URL()` peut échouer ou renvoyer
+// un `.origin` vide. Un simple check de préfixe HTTPS sur l'origin de
+// notre API est suffisant et fiable.
+const API_ORIGIN = API_BASE.replace(/\/api\/?$/, '');
 function isOwnApiUrl(url) {
-  try {
-    const u = new URL(url);
-    const base = new URL(API_BASE);
-    return u.origin === base.origin;
-  } catch {
-    return false;
-  }
+  if (typeof url !== 'string') return false;
+  return url === API_ORIGIN
+    || url.startsWith(API_ORIGIN + '/')
+    || url.startsWith(API_ORIGIN + '?');
 }
 
 async function secureFetch(url, { method = 'GET', headers, body, timeoutMs = DEFAULT_TIMEOUT_MS, parse = 'json' } = {}) {
@@ -51,8 +58,7 @@ async function secureFetch(url, { method = 'GET', headers, body, timeoutMs = DEF
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
 
-  const sendAuth = CURRENT_AUTH_TOKEN && isOwnApiUrl(url);
-
+  const sendAuth = !!CURRENT_AUTH_TOKEN && isOwnApiUrl(url);
   try {
     const resp = await fetch(url, {
       method,
@@ -135,6 +141,25 @@ function assertHttpsUrl(value, fieldName = 'url') {
  */
 export const fetchAllCameras = async () => {
   return secureFetch(`${API_BASE}/hikconnect/cameras`);
+};
+
+/**
+ * Liste des caméras visibles par le user connecté (filtrage serveur).
+ *  - admin            : toutes les caméras
+ *  - autre rôle       : caméras du club du user uniquement
+ * Le JWT doit avoir été injecté via setAuthToken().
+ *
+ * Renvoie un tableau de devices (format backend, snake_case + champ club).
+ */
+export const fetchDevices = async () => {
+  // /devices est monté à la racine (pas sous /api), comme /auth/*.
+  const ROOT_BASE = API_BASE.replace(/\/api\/?$/, '');
+  if (__DEV__) {
+    // eslint-disable-next-line no-console
+    console.log('[fetchDevices] token before secureFetch', !!getAuthToken());
+  }
+  const data = await secureFetch(`${ROOT_BASE}/devices`);
+  return Array.isArray(data?.devices) ? data.devices : [];
 };
 
 export async function saveLastRecording({

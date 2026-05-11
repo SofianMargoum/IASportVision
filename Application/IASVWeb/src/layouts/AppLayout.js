@@ -11,6 +11,7 @@ import {
   FaRunning,
   FaHeart,
   FaPenNib,
+  FaCloud,
   FaSignOutAlt,
   FaBars,
 } from 'react-icons/fa';
@@ -29,6 +30,7 @@ const NAV = [
   { to: '/player', label: 'Espace joueur', icon: FaRunning, page: PAGES.PLAYER },
   { to: '/supporter', label: 'Espace supporter', icon: FaHeart, page: PAGES.SUPPORTER },
   { to: '/annotation', label: 'Annotation', icon: FaPenNib, page: PAGES.ANNOTATION },
+  { to: '/gcp', label: 'GCP', icon: FaCloud, page: PAGES.GCP },
   { to: '/admin', label: 'Admin', icon: FaUserShield, page: PAGES.ADMIN },
 ];
 

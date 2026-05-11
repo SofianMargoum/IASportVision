@@ -32,7 +32,7 @@ const resolvePhotoUri = (asset) => {
   }
 };
 
-const LoginForm = ({ onLocalLogin }) => {
+const LoginForm = ({ onLocalLogin, onCancel }) => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -75,6 +75,8 @@ const LoginForm = ({ onLocalLogin }) => {
         name: user.name,
         email: user.email,
         role: user.role,
+        clubId: user.clubId || null,
+        photoAsset: user.photoAsset || null,
         photo: resolvePhotoUri(user.photoAsset),
       });
     } catch (e) {
@@ -158,6 +160,14 @@ const LoginForm = ({ onLocalLogin }) => {
           <Text style={styles.loginBtnText}>Se connecter</Text>
         )}
       </TouchableOpacity>
+
+      <TouchableOpacity
+        style={styles.guestBtn}
+        onPress={onCancel}
+        disabled={loading}
+      >
+        <Text style={styles.guestBtnText}>Continuer en mode invité</Text>
+      </TouchableOpacity>
     </View>
   );
 };
@@ -215,6 +225,16 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: ms(16),
     fontWeight: 'bold',
+  },
+  guestBtn: {
+    marginTop: s(12),
+    alignItems: 'center',
+    paddingVertical: s(10),
+  },
+  guestBtnText: {
+    color: 'rgba(255,255,255,0.5)',
+    fontSize: ms(14),
+    textDecorationLine: 'underline',
   },
 });
 

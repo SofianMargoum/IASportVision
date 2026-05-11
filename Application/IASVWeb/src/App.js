@@ -16,6 +16,7 @@ import PlayerPage from './pages/PlayerPage';
 import SupporterPage from './pages/SupporterPage';
 import AdminPage from './pages/AdminPage';
 import AnnotationPage from './pages/AnnotationPage';
+import GCPPage from './pages/GCPPage';
 import NotFoundPage from './pages/NotFoundPage';
 import { PAGES } from './utils/permissions';
 
@@ -25,7 +26,7 @@ export default function App() {
       {/* Site vitrine public */}
       <Route path="/" element={<LandingPage />} />
       <Route path="/login" element={<LoginPage />} />
-      <Route path="/confidentialite" element={<PrivacyPage />} />
+      <Route path="/index.php/politique-de-confidentialite-ia-sport-vision/" element={<PrivacyPage />} />
 
       <Route
         element={
@@ -45,6 +46,7 @@ export default function App() {
         <Route path="/supporter" element={<ProtectedRoute page={PAGES.SUPPORTER}><SupporterPage /></ProtectedRoute>} />
         <Route path="/admin" element={<ProtectedRoute page={PAGES.ADMIN}><AdminPage /></ProtectedRoute>} />
         <Route path="/annotation" element={<ProtectedRoute page={PAGES.ANNOTATION}><AnnotationPage /></ProtectedRoute>} />
+        <Route path="/gcp" element={<ProtectedRoute page={PAGES.GCP}><GCPPage /></ProtectedRoute>} />
         <Route path="*" element={<NotFoundPage />} />
       </Route>
     </Routes>

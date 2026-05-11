@@ -341,7 +341,7 @@ export default function LandingPage() {
         <div className="iasv-footer__bottom">
           © {new Date().getFullYear()} IA Sport Vision — Le football amateur français, en vidéo.
           {' · '}
-          <Link to="/confidentialite">Politique de confidentialité</Link>
+          <Link to="/index.php/politique-de-confidentialite-ia-sport-vision/">Politique de confidentialité</Link>
         </div>
       </footer>
     </div>

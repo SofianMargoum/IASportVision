@@ -23,8 +23,9 @@ const {
   softDelete,
 } = require('../auth/userStore');
 
-// Middleware appliqué à toutes les routes du routeur.
-router.use(requireAuth, requireRole('admin'));
+// Middleware scopé à /admin/users uniquement (sans path, il bloquerait
+// aussi des routes non-admin déclarées dans d'autres fichiers).
+router.use('/admin/users', requireAuth, requireRole('admin'));
 
 // Validation UUID simple — refuse les ids fantaisistes avant de toucher la DB.
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
