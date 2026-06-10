@@ -244,20 +244,34 @@ async function getSignedReadUrl(gcsPath) {
 // Network / file helpers
 // ---------------------------------------------------------------------------
 
-async function downloadToFile(url, destPath) {
-  const resp = await fetch(url);
-  if (!resp.ok) {
-    const err = new Error(`Failed to download segment: HTTP ${resp.status}`);
-    err.status = resp.status;
-    // Ne pas inclure le corps de la réponse dans err.details (fuite d'info interne).
-    throw err;
+async function downloadToFile(url, destPath, { timeoutMs = 5 * 60 * 1000 } = {}) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    const resp = await fetch(url, { signal: controller.signal });
+    if (!resp.ok) {
+      const err = new Error(`Failed to download segment: HTTP ${resp.status}`);
+      err.status = resp.status;
+      // Ne pas inclure le corps de la réponse dans err.details (fuite d'info interne).
+      throw err;
+    }
+    if (!resp.body) {
+      const err = new Error('Download returned no body stream');
+      err.status = 502;
+      throw err;
+    }
+    await pipeline(resp.body, fs.createWriteStream(destPath));
+  } catch (e) {
+    if (e?.name === 'AbortError' || controller.signal.aborted) {
+      const err = new Error(`Download timed out after ${timeoutMs}ms`);
+      err.status = 504;
+      err.details = { timeoutMs };
+      throw err;
+    }
+    throw e;
+  } finally {
+    clearTimeout(timer);
   }
-  if (!resp.body) {
-    const err = new Error('Download returned no body stream');
-    err.status = 502;
-    throw err;
-  }
-  await pipeline(resp.body, fs.createWriteStream(destPath));
 }
 
 async function uploadMergedToGcs(cameraId, localFilePath) {

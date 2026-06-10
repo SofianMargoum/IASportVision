@@ -307,9 +307,9 @@ router.post('/hikconnect/video/rolling/auto-tick', async (req, res) => {
         .json({ errorCode: '0', data: { rollingId: String(rollingId), stopped: true } });
     }
 
-    // Safety: auto-expire after 30 minutes from session start (recordings are max ~10 min).
+    // Safety: auto-expire after 4 hours from session start (supports recordings up to ~3h).
     const sessionAgeMs = Date.now() - Number(meta?.beginMs || 0);
-    const MAX_SESSION_AGE_MS = 30 * 60 * 1000;
+    const MAX_SESSION_AGE_MS = 4 * 60 * 60 * 1000;
     if (Number.isFinite(sessionAgeMs) && sessionAgeMs > MAX_SESSION_AGE_MS) {
       await patchRollingMeta(rollingId, {
         autoTickStoppedAt: Date.now(),
@@ -800,7 +800,7 @@ router.post('/hikconnect/video/rolling/finalize', async (req, res) => {
       Number.isFinite(beginMs) &&
       beginMs > 0
     ) {
-      const budgetMs = requireAll ? 7 * 60_000 : 2 * 60_000; // 7 min max (must be < GAE 10-min timeout)
+      const budgetMs = requireAll ? 8 * 60_000 : 3 * 60_000; // 8 min max (must be < GAE 10-min timeout)
       const allowTail = Number(tailTryCount) > 0;
 
       const maxIdx = targetMaxIdx;

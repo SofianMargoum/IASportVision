@@ -201,7 +201,7 @@ async function swapDeviceRollingTail({
   deviceId,
   cameraId,
   rollingId,
-  staleMs = 30 * 60 * 1000,
+  staleMs = 4 * 60 * 60 * 1000, // 4h — supports sessions up to ~3h
 }) {
   const lockPath = getDeviceRollingActivePath(deviceId, cameraId);
   const lockFile = bucket.file(lockPath);

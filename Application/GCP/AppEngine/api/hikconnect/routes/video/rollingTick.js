@@ -17,7 +17,7 @@ const { mergeRollingChunkIntoMerged, batchMergeChunksFromGcs } = require('./roll
 
 // Heuristic: if a predecessor is older than this and still hasn't finalized,
 // consider it crashed and stop waiting on it.
-const QUEUE_PREDECESSOR_MAX_AGE_MS = 30 * 60 * 1000;
+const QUEUE_PREDECESSOR_MAX_AGE_MS = 4 * 60 * 60 * 1000; // 4h — supports sessions up to ~3h
 
 /**
  * Returns true if this rolling should wait (predecessor still active).

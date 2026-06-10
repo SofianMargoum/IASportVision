@@ -30,4 +30,7 @@ react
 
 --deployer sur app engine
 		gcloud app deploy
+		
+		
+		ffmpeg -ss 00:12:00 -i test2.mp4 -t 60 -c copy test3.mp4
 
