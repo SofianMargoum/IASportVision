@@ -8,11 +8,96 @@ const {
   signRecordingStateToken,
   recordElementSearch,
   deleteRecordsByTimeRange,
+  getManualRecordingState,
+  setManualRecordingState,
 } = require('../recording');
+
+const { engineHls } = require('../../../db/recordingStore');
 
 const { logRecording, logSofian } = require('../recordingGcsLog');
 
 const router = express.Router();
+
+// Limite de capture — doit refléter RECORDING_MAX_DURATION_SEC (worker HLS).
+const RECORDING_MAX_DURATION_SEC = Math.max(
+  60,
+  Number(process.env.RECORDING_MAX_DURATION_SEC || 7200)
+);
+
+function formatMmSs(totalSeconds) {
+  const s = Math.max(0, Math.floor(Number(totalSeconds) || 0));
+  const m = Math.floor(s / 60);
+  return `${m}:${String(s % 60).padStart(2, '0')}`;
+}
+
+/**
+ * Statut d'enregistrement basé sur la session HLS (Cloud SQL = source de vérité).
+ *
+ * En mode HLS, « l'enregistrement » est la capture Cloud Run (la vidéo du match),
+ * pas l'enregistrement SD de la caméra. Le bouton Stop côté mobile doit donc
+ * refléter la SESSION, pas l'état caméra. Conséquence : à 2 h (limite atteinte)
+ * ou après un STOP, la session devient terminale -> isRecording=false -> le bouton
+ * Stop disparaît, exactement comme pour un STOP manuel.
+ *
+ * Renvoie null si aucune session HLS récente pour ce device (=> fallback caméra).
+ * Réconciliation idempotente : si la limite est atteinte alors que la session est
+ * encore active, demande l'arrêt (le worker finalise) ; coupe l'enregistrement
+ * manuel résiduel de la caméra une seule fois.
+ */
+async function resolveHlsSessionStatus({ deviceId, cameraId }) {
+  let session = null;
+  try {
+    session = await engineHls.getActiveForDevice({ deviceId, cameraId });
+  } catch {
+    return null;
+  }
+  if (!session) return null;
+
+  const state = session.state;
+  const isTerminal = state === 'COMPLETED' || state === 'FAILED';
+  const startMs = session.capture_started_at
+    ? new Date(session.capture_started_at).getTime()
+    : session.date_debut
+    ? new Date(session.date_debut).getTime()
+    : null;
+  const elapsedSec = Number.isFinite(startMs) ? Math.max(0, (Date.now() - startMs) / 1000) : 0;
+  const pastDue = elapsedSec >= RECORDING_MAX_DURATION_SEC;
+
+  const active = !isTerminal && session.stop_requested !== true && !pastDue;
+
+  // Réconciliation : limite atteinte mais session encore active -> demande l'arrêt
+  // (le worker finalisera comme pour un STOP manuel). Idempotent.
+  if (!isTerminal && session.stop_requested !== true && pastDue) {
+    await engineHls.autoStop({ rollingId: session.rolling_id }).catch(() => {});
+    await logRecording('HLS_AUTO_STOP_RECONCILED', {
+      rollingId: session.rolling_id,
+      deviceId,
+      cameraId: cameraId ?? null,
+      elapsedSec: Math.round(elapsedSec),
+    }).catch(() => {});
+  }
+
+  // Dès que l'enregistrement n'est plus actif, couper l'enregistrement manuel
+  // résiduel de la caméra (best-effort, une seule fois via le cache manuel).
+  if (!active) {
+    try {
+      const manual = getManualRecordingState(deviceId);
+      if (manual?.isRecording === true) {
+        setManualRecordingState(deviceId, false);
+        proxypassRecord(deviceId, 'stop').catch(() => {});
+      }
+    } catch {}
+  }
+
+  return {
+    isRecording: active,
+    recordingTime: active ? formatMmSs(elapsedSec) : null,
+    recordingSource: 'session',
+    sessionActive: active,
+    sessionState: state || null,
+    statusSource: 'hls-session',
+  };
+}
 
 const STATUS_LOG_INTERVAL_MS = Number(process.env.RECORDING_STATUS_LOG_INTERVAL_MS || 60_000);
 const lastStatusLogByKey = new Map();
@@ -109,6 +194,43 @@ router.post('/hikconnect/recording-status', async (req, res) => {
       });
     }
 
+    // ===== Source de vérité = session HLS (Cloud SQL) quand elle existe =====
+    // Couvre le mode HLS par défaut : le statut suit la capture (la vidéo du
+    // match), de sorte que l'arrêt à 2 h ou le STOP manuel coupent le bouton.
+    const sessionStatus = await resolveHlsSessionStatus({ deviceId, cameraId: cameraId ?? null });
+    if (sessionStatus) {
+      const doLog =
+        isDebug ||
+        shouldLogStatusResult({
+          deviceId,
+          cameraId: cameraId ?? null,
+          isRecording: sessionStatus.isRecording,
+          statusNotSupported: false,
+          statusSource: sessionStatus.statusSource,
+        });
+      if (doLog) {
+        await logRecording('RECORDING_STATUS_RESULT', {
+          deviceId,
+          cameraId: cameraId ?? null,
+          isRecording: sessionStatus.isRecording,
+          statusSource: sessionStatus.statusSource,
+          sessionState: sessionStatus.sessionState,
+          throttled: !isDebug,
+        });
+      }
+      return res.status(200).json(
+        isDebug
+          ? { ...sessionStatus }
+          : {
+              isRecording: sessionStatus.isRecording,
+              recordingTime: sessionStatus.recordingTime,
+              recordingSource: sessionStatus.recordingSource,
+              sessionActive: sessionStatus.sessionActive,
+            }
+      );
+    }
+
+    // ===== Fallback : statut basé caméra (V1/V2/legacy, ou device sans HLS) =====
     const data = await getRecordingStatus(deviceId, {
       cameraId: cameraId ?? null,
       debug: isDebug,

@@ -15,6 +15,9 @@ const {
 } = require('./rollingExport');
 const { mergeRollingChunkIntoMerged, batchMergeChunksFromGcs } = require('./rollingMerge');
 
+// Cloud SQL dual-write (best-effort, ne jette jamais).
+const { mirror: recordingMirror } = require('../../../../db/recordingStore');
+
 // Heuristic: if a predecessor is older than this and still hasn't finalized,
 // consider it crashed and stop waiting on it.
 const QUEUE_PREDECESSOR_MAX_AGE_MS = 4 * 60 * 60 * 1000; // 4h — supports sessions up to ~3h
@@ -273,6 +276,19 @@ async function rollingTickImpl({ rollingId, index, source = null }) {
         }
       }
     }
+  }
+
+  // Dual-write Cloud SQL (best-effort) : enregistre en base les segments qui
+  // viennent d'être fusionnés (+ log SEGMENT_CREATED). N'impacte pas le rolling.
+  if (mergedIdx > mergedThroughIndex) {
+    await recordingMirror.recordSegmentsMerged({
+      rollingId,
+      meta,
+      fromIndex: mergedThroughIndex + 1,
+      toIndex: mergedIdx,
+      deviceId: meta?.deviceId,
+      cameraId: meta?.cameraId,
+    });
   }
 
   const tickT4 = Date.now();

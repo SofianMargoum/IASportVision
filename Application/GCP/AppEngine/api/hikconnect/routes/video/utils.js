@@ -274,6 +274,65 @@ async function downloadToFile(url, destPath, { timeoutMs = 5 * 60 * 1000 } = {})
   }
 }
 
+// ---------------------------------------------------------------------------
+// Moteur V2 : streaming HTTP -> GCS direct (mémoire plate, pas de /tmp).
+// L'instance App Engine F1 (256 Mo) ne peut pas bufferiser une vidéo entière :
+// on relaie le flux HTTP de Hik-Connect directement vers un writeStream GCS,
+// avec backpressure. La conso mémoire reste de l'ordre de quelques Mo quelle
+// que soit la taille du fichier.
+// ---------------------------------------------------------------------------
+async function streamUrlToGcs(
+  url,
+  gcsPath,
+  { contentType = 'video/mp4', timeoutMs = 9 * 60 * 1000 } = {}
+) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    const resp = await fetch(url, { signal: controller.signal });
+    if (!resp.ok) {
+      const err = new Error(`Stream download failed: HTTP ${resp.status}`);
+      err.status = resp.status;
+      throw err;
+    }
+    if (!resp.body) {
+      const err = new Error('Stream download returned no body');
+      err.status = 502;
+      throw err;
+    }
+
+    const gcsFile = bucket.file(gcsPath);
+    const writeStream = gcsFile.createWriteStream({
+      resumable: true,
+      contentType,
+      metadata: { cacheControl: 'public, max-age=3600' },
+    });
+
+    // pipeline gère la backpressure ET propage les erreurs des deux côtés.
+    await pipeline(resp.body, writeStream);
+
+    const [meta] = await gcsFile.getMetadata().catch(() => [null]);
+    const size = meta?.size ? Number(meta.size) : null;
+    if (!size || size <= 0) {
+      const err = new Error('Streamed file is empty');
+      err.status = 502;
+      err.details = { gcsPath, size };
+      throw err;
+    }
+    return { gcsPath, size };
+  } catch (e) {
+    if (e?.name === 'AbortError' || controller.signal.aborted) {
+      const err = new Error(`Stream to GCS timed out after ${timeoutMs}ms`);
+      err.status = 504;
+      err.details = { timeoutMs, gcsPath };
+      throw err;
+    }
+    throw e;
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
 async function uploadMergedToGcs(cameraId, localFilePath) {
   const tmpName = `tmp/hikconnect/merged/${String(cameraId)}/${Date.now()}_${crypto
     .randomBytes(6)
@@ -405,6 +464,7 @@ module.exports = {
   // gcs / network
   getSignedReadUrl,
   downloadToFile,
+  streamUrlToGcs,
   uploadMergedToGcs,
   listRecordElementsInWindow,
   // timeouts

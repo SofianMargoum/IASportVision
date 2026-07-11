@@ -15,6 +15,7 @@ const {
   ROLLING_AUTOTICK_INTERVAL_SEC,
   normalizeVoiceSwitch,
   safeJoinGcsPath,
+  toFixedOffsetIsoFromMs,
   getRollingPrefix,
   getRollingChunkPath,
   getRollingMergedPath,
@@ -26,6 +27,7 @@ const {
   requireAutoTickSecret,
   enqueueRollingAutoTick,
   enqueueRollingFinalize,
+  enqueueExportStep,
 } = require('./autotick');
 
 const {
@@ -44,6 +46,27 @@ const {
 const { exportRollingChunkByIndex } = require('./rollingExport');
 const { mergeRollingChunkIntoMerged } = require('./rollingMerge');
 const { rollingTickImpl } = require('./rollingTick');
+
+// Cloud SQL dual-write (best-effort, ne jette jamais : protège le rolling).
+const { mirror: recordingMirror, engineV2, engineHls } = require('../../../../db/recordingStore');
+
+// Moteur V2 (export unique, FSM Cloud SQL).
+const { runV2Step, resolveFinalGcsPath, MAX_DURATION_SEC } = require('./exportEngine');
+
+// Moteur HLS Live (capture FFmpeg dans un Cloud Run Job).
+const { startHls } = require('./hlsEngine');
+
+// Sélection du moteur d'enregistrement : 'hls' (défaut) | 'v2' | 'v1'.
+//   hls = capture FFmpeg du flux HLS Live (Cloud Run Job)
+//   v2  = export unique Hik-Connect (save/download-url)
+//   v1  = ancien rolling chunké
+const RECORDING_ENGINE = String(process.env.RECORDING_ENGINE || 'hls').toLowerCase();
+const ENGINE_IS_HLS = RECORDING_ENGINE === 'hls';
+const ENGINE_IS_V2 = RECORDING_ENGINE === 'v2';
+// Moteurs pilotés par Cloud SQL (file & tick gérés via la base, pas via GCS).
+const ENGINE_DB_DRIVEN = ENGINE_IS_HLS || ENGINE_IS_V2;
+// Conserve l'ancien nom pour les branches V2 existantes.
+const RECORDING_ENGINE_V2 = ENGINE_IS_V2;
 
 // Thumbnail (cover + 2 logos) generator. Loaded lazily so this module still
 // works in environments where canvas is unavailable.
@@ -74,6 +97,105 @@ function sanitizeThumbMeta(input) {
     return null;
   }
   return out;
+}
+
+// Génère la miniature (cover + 2 logos) en best-effort, sans bloquer la vidéo.
+function fireThumbnail(rollingId, thumbCombined, onOk) {
+  const canMakeThumb =
+    _runMergeImages &&
+    thumbCombined &&
+    thumbCombined.directory &&
+    thumbCombined.combinedFilename &&
+    thumbCombined.homeLogoUrl &&
+    thumbCombined.awayLogoUrl;
+  if (!canMakeThumb) return;
+  const thumbName = thumbCombined.combinedFilename.endsWith('.png')
+    ? thumbCombined.combinedFilename
+    : `${thumbCombined.combinedFilename}.png`;
+  const thumbFinalName = thumbName.startsWith(`${thumbCombined.directory} `)
+    ? thumbName
+    : `${thumbCombined.directory} ${thumbName}`;
+  Promise.resolve()
+    .then(() =>
+      _runMergeImages({
+        logo1Url: thumbCombined.homeLogoUrl,
+        logo2Url: thumbCombined.awayLogoUrl,
+        finalFolder: thumbCombined.directory,
+        finalName: thumbFinalName,
+      })
+    )
+    .then(async () => {
+      if (typeof onOk === 'function') await onOk();
+      await logRecording('ROLLING_THUMBNAIL_OK', { rollingId }).catch(() => {});
+    })
+    .catch(async (e) => {
+      await logRecording('ROLLING_THUMBNAIL_ERR', { rollingId, message: e?.message }).catch(() => {});
+    });
+}
+
+// STOP HLS partagé par /finalize-async et /finalize. Renvoie un objet réponse
+// ou null si ce n'est pas une session HLS (laisser passer vers V1/V2).
+async function doHlsStop({
+  rollingId,
+  directory,
+  filename,
+  stopTime,
+  combinedFilename,
+  homeLogoUrl,
+  awayLogoUrl,
+  label,
+}) {
+  const row = await engineHls.get(rollingId);
+  if (!row || row.engine !== 'hls') return null;
+
+  if (row.state === 'COMPLETED') {
+    return {
+      status: 200,
+      body: {
+        errorCode: '0',
+        data: {
+          rollingId,
+          alreadyFinalized: true,
+          gcsPath: row.final_gcs_path,
+          publicUrl: row.final_public_url || null,
+        },
+      },
+    };
+  }
+
+  const finalName = String(filename).toLowerCase().endsWith('.mp4')
+    ? String(filename)
+    : `${String(filename)}.mp4`;
+  const finalGcsPath = safeJoinGcsPath(directory, finalName);
+  const thumb = sanitizeThumbMeta({ directory, combinedFilename, homeLogoUrl, awayLogoUrl, label });
+
+  await engineHls.requestStop({
+    rollingId,
+    finalGcsPath,
+    nomVideo: finalName,
+    dateFin: stopTime ? new Date(stopTime) : new Date(),
+    thumb,
+  });
+
+  // Coupe l'enregistrement manuel résiduel côté caméra (best-effort).
+  try {
+    setManualRecordingState(row.device_id, false);
+  } catch {}
+
+  // Miniature : indépendante de la vidéo, peut démarrer tout de suite.
+  fireThumbnail(rollingId, thumb, () => engineHls.markThumbnail(rollingId).catch(() => {}));
+
+  await logRecording('HLS_STOP_REQUEST', {
+    rollingId,
+    deviceId: row.device_id,
+    cameraId: row.camera_id,
+    finalGcsPath,
+  }).catch(() => {});
+
+  return {
+    status: 202,
+    body: { errorCode: '0', data: { rollingId, accepted: true, engine: 'hls', finalGcsPath } },
+  };
 }
 
 const router = express.Router();
@@ -109,6 +231,130 @@ router.post('/hikconnect/video/rolling/start', async (req, res) => {
   const rollingId = crypto.randomBytes(10).toString('hex');
   const autoTickReport = getAutoTickConfigReport();
   const autoTickConfigured = isAutoTickConfigured();
+
+  // ===== Moteur HLS Live : capture FFmpeg directe (Cloud Run Job) =====
+  // START résout la caméra, obtient l'URL HLS, crée la session Cloud SQL
+  // (RECORDING) et déclenche le worker de capture. La caméra n'a pas besoin
+  // d'enregistrer sur SD : le flux live est capturé directement.
+  if (ENGINE_IS_HLS) {
+    try {
+      const thumb = sanitizeThumbMeta({
+        directory,
+        combinedFilename,
+        homeLogoUrl,
+        awayLogoUrl,
+        label,
+      });
+      const out = await startHls({
+        rollingId,
+        deviceId: String(deviceId),
+        cameraId: String(cameraId),
+        beginTimeIso: String(beginTime),
+        offset: off,
+        directory,
+        combinedFilename,
+        thumb,
+      });
+      await logRecording('ROLLING_START_OK', {
+        deviceId,
+        cameraId,
+        rollingId,
+        engine: 'hls',
+        executionName: out?.executionName || null,
+        maxDurationSec: MAX_DURATION_SEC,
+      }).catch(() => {});
+      return res.status(200).json({
+        errorCode: '0',
+        data: {
+          rollingId,
+          engine: 'hls',
+          // autoTickEnabled=true => l'app mobile reste passive (pas de /tick).
+          autoTickEnabled: true,
+          autoTickConfigured: !!autoTickConfigured,
+          maxDurationSec: MAX_DURATION_SEC,
+        },
+      });
+    } catch (err) {
+      await logRecording('HLS_START_ERR', {
+        deviceId,
+        cameraId,
+        rollingId,
+        message: err?.message,
+        status: err?.status,
+      }).catch(() => {});
+      return res
+        .status(err?.status || 500)
+        .json({ message: err?.message || 'Failed to start HLS recording' });
+    }
+  }
+
+  // ===== Moteur V2 : export unique au STOP (ni chunks, ni merge ffmpeg) =====
+  // Pendant l'enregistrement on ne fait RIEN côté serveur (la caméra filme sur
+  // sa SD). Au STOP, finalize-async déclenche un seul export. Une sonde de
+  // limite de durée (Cloud Tasks) garantit l'arrêt auto à MAX_DURATION_SEC.
+  if (RECORDING_ENGINE_V2) {
+    try {
+      const thumb = sanitizeThumbMeta({
+        directory,
+        combinedFilename,
+        homeLogoUrl,
+        awayLogoUrl,
+        label,
+      });
+      await engineV2.start({
+        rollingId,
+        deviceId: String(deviceId),
+        cameraId: String(cameraId),
+        directory,
+        combinedFilename,
+        beginTimeIso: String(beginTime),
+        offset: off,
+        voiceSwitch,
+        thumb,
+      });
+
+      let deadlineEnq = null;
+      try {
+        deadlineEnq = await enqueueExportStep({ rollingId, delaySec: MAX_DURATION_SEC });
+      } catch (e) {
+        await logRecording('V2_DEADLINE_ENQUEUE_ERR', {
+          rollingId,
+          message: e?.message,
+        }).catch(() => {});
+      }
+
+      await logRecording('ROLLING_START_OK', {
+        deviceId,
+        cameraId,
+        rollingId,
+        engine: 'v2',
+        maxDurationSec: MAX_DURATION_SEC,
+        autoTickConfigured,
+        deadlineEnq,
+      });
+
+      return res.status(200).json({
+        errorCode: '0',
+        data: {
+          rollingId,
+          engine: 'v2',
+          // autoTickEnabled=true => l'app mobile reste passive (pas de /tick) et
+          // se contente de poller /rolling/queue.
+          autoTickEnabled: true,
+          autoTickConfigured: !!autoTickConfigured,
+          maxDurationSec: MAX_DURATION_SEC,
+        },
+      });
+    } catch (err) {
+      await logRecording('V2_START_ERR', {
+        deviceId,
+        cameraId,
+        rollingId,
+        message: err?.message,
+      }).catch(() => {});
+      return res.status(500).json({ message: 'Failed to start recording (v2)' });
+    }
+  }
 
   // ── Per-device FIFO queue: append to tail. If another rolling is already
   //    active on the same (deviceId, cameraId), this one will wait for it
@@ -174,6 +420,18 @@ router.post('/hikconnect/video/rolling/start', async (req, res) => {
 
   try {
     await writeRollingMeta(rollingId, meta);
+
+    // Dual-write Cloud SQL (best-effort) : crée la ligne current_recording
+    // (statut EN_COURS) + log RECORDING_STARTED. N'impacte jamais le rolling.
+    await recordingMirror.startRecording({
+      rollingId,
+      deviceId: String(deviceId),
+      cameraId: String(cameraId),
+      directory,
+      combinedFilename,
+      beginMs: bt.getTime(),
+      dateDebut: beginTime,
+    });
 
     // Register this rolling in the per-device download index so the UI
     // can list it (and keep listing it after finalize, until the user
@@ -254,6 +512,12 @@ router.post('/hikconnect/video/rolling/tick', async (req, res) => {
   const { rollingId, index } = req.body || {};
   if (!rollingId && rollingId !== 0) return res.status(400).json({ message: 'Missing rollingId' });
 
+  // En V2/HLS le moteur est piloté côté serveur : un tick client est un no-op
+  // inoffensif (l'app mobile ne devrait de toute façon pas en envoyer).
+  if (ENGINE_DB_DRIVEN) {
+    return res.status(200).json({ errorCode: '0', data: { rollingId, engine: RECORDING_ENGINE, noop: true } });
+  }
+
   try {
     const out = await rollingTickImpl({ rollingId, index, source: 'client' });
     return res.status(200).json({ errorCode: '0', data: out.payload });
@@ -290,6 +554,43 @@ router.post('/hikconnect/video/rolling/tick', async (req, res) => {
   }
 });
 
+// ===========================================================================
+// Moteur V2 : une transition de la machine d'état, appelée par Cloud Tasks.
+// Protégé par le secret auto-tick. Re-enfile la transition suivante si la
+// session n'est pas terminale (queue concurrency=1 => strictement séquentiel).
+// ===========================================================================
+router.post('/hikconnect/video/rolling/v2-step', async (req, res) => {
+  if (!requireAutoTickSecret(req)) return res.status(403).json({ message: 'Forbidden' });
+  const { rollingId } = req.body || {};
+  if (!rollingId) return res.status(400).json({ message: 'Missing rollingId' });
+
+  try {
+    const out = await runV2Step({ rollingId });
+
+    if (!out.terminal && Number.isFinite(Number(out.nextDelaySec))) {
+      try {
+        await enqueueExportStep({ rollingId, delaySec: Math.max(1, Number(out.nextDelaySec)) });
+      } catch (e) {
+        await logRecording('V2_STEP_REENQUEUE_ERR', {
+          rollingId,
+          message: e?.message,
+        }).catch(() => {});
+      }
+    }
+
+    return res.status(200).json({ errorCode: '0', data: { rollingId, ...out } });
+  } catch (err) {
+    // runV2Step gère déjà ses erreurs (persistées en FAILED). Une erreur ici
+    // est inattendue (ex: blip DB) : 500 => Cloud Tasks retentera avec backoff.
+    await logRecording('V2_STEP_UNEXPECTED_ERR', {
+      rollingId,
+      message: err?.message,
+      status: err?.status,
+    }).catch(() => {});
+    return res.status(500).json({ message: 'v2-step error' });
+  }
+});
+
 // Internal auto-tick called by Cloud Tasks (backend scheduler)
 router.post('/hikconnect/video/rolling/auto-tick', async (req, res) => {
   if (!requireAutoTickSecret(req)) return res.status(403).json({ message: 'Forbidden' });
@@ -319,6 +620,20 @@ router.post('/hikconnect/video/rolling/auto-tick', async (req, res) => {
         rollingId: String(rollingId),
         sessionAgeMs,
         beginMs: meta?.beginMs,
+      });
+
+      // Dual-write Cloud SQL (best-effort) : statut TIMEOUT + log dédié.
+      await recordingMirror.finishRecording({
+        rollingId,
+        status: 'TIMEOUT',
+        dateFin: new Date(),
+      });
+      await recordingMirror.addLog({
+        rollingId,
+        level: 'WARNING',
+        eventType: 'RECORDING_TIMEOUT',
+        message: 'Enregistrement arrêté automatiquement (durée maximale atteinte)',
+        detailsJson: { sessionAgeMs, maxSessionAgeMs: MAX_SESSION_AGE_MS },
       });
       if (meta?.deviceId && meta?.cameraId) {
         await clearDeviceRollingTailIfHead({
@@ -434,6 +749,60 @@ router.get('/hikconnect/video/rolling/queue', async (req, res) => {
     return res.status(400).json({ message: 'Missing deviceId or cameraId' });
   }
 
+  // ===== Moteurs V2/HLS : la file vient de Cloud SQL (source de vérité) =====
+  if (ENGINE_DB_DRIVEN) {
+    try {
+      const rows = await engineV2.listForCamera({ cameraId });
+      const items = rows.map((r) => {
+        const thumb = r.thumb_json || {};
+        const stateProgress = {
+          RECORDING: 0.1,
+          EXPORTING: 0.3,
+          WAITING_DOWNLOAD_URL: 0.5,
+          DOWNLOADING: 0.85,
+          FINALIZING: 0.9,
+          COMPLETED: 1,
+          FAILED: null,
+        };
+        const statusMap = {
+          RECORDING: 'recording',
+          EXPORTING: 'finalizing',
+          WAITING_DOWNLOAD_URL: 'finalizing',
+          DOWNLOADING: 'finalizing',
+          FINALIZING: 'finalizing',
+          COMPLETED: 'done',
+          FAILED: 'failed',
+        };
+        return {
+          rollingId: r.rolling_id,
+          engine: r.engine || RECORDING_ENGINE,
+          deviceId: r.device_id || null,
+          cameraId: r.camera_id || null,
+          beginTime: r.export_begin_iso || (r.date_debut ? new Date(r.date_debut).toISOString() : null),
+          status: statusMap[r.state] || 'recording',
+          state: r.state || null,
+          progress: r.state ? stateProgress[r.state] ?? null : null,
+          label: thumb.label || (thumb.directory && thumb.combinedFilename ? `${thumb.directory} ${thumb.combinedFilename}` : r.nom_video) || null,
+          directory: thumb.directory || r.club_domicile || null,
+          combinedFilename: thumb.combinedFilename || null,
+          thumbnailGenerated: !!r.thumbnail_generated,
+          finalGcsPath: r.final_gcs_path || null,
+          finalPublicUrl: r.final_public_url || null,
+          finalizedAt: r.state === 'COMPLETED' && r.date_fin ? new Date(r.date_fin).getTime() : null,
+          pendingFinalize: ['EXPORTING', 'WAITING_DOWNLOAD_URL', 'DOWNLOADING', 'FINALIZING'].includes(r.state),
+          errorMessage: r.state === 'FAILED' ? r.error_message || null : null,
+          addedAt: r.created_at ? new Date(r.created_at).getTime() : null,
+        };
+      });
+      return res.status(200).json({ errorCode: '0', data: { items } });
+    } catch (err) {
+      await logRecording('V2_QUEUE_ERR', { deviceId, cameraId, message: err?.message }).catch(
+        () => {}
+      );
+      return res.status(200).json({ errorCode: '0', data: { items: [] } });
+    }
+  }
+
   try {
     // Source of truth = per-device download index (oldest first).
     const indexEntries = await readDeviceDownloadIndex({ deviceId, cameraId });
@@ -540,6 +909,24 @@ router.post('/hikconnect/video/rolling/dismiss', async (req, res) => {
       .status(400)
       .json({ message: 'Missing deviceId, cameraId or rollingId' });
   }
+
+  if (ENGINE_DB_DRIVEN) {
+    try {
+      const removed = await engineV2.dismiss({ rollingId: String(rollingId) });
+      // Best-effort : purge aussi l'éventuelle entrée GCS legacy.
+      await removeFromDeviceDownloadIndex({
+        deviceId: String(deviceId),
+        cameraId: String(cameraId),
+        rollingId: String(rollingId),
+      }).catch(() => {});
+      return res.status(200).json({ errorCode: '0', data: { removed } });
+    } catch (err) {
+      return res
+        .status(err?.status || 500)
+        .json({ message: err?.message || 'Failed to dismiss' });
+    }
+  }
+
   try {
     const removed = await removeFromDeviceDownloadIndex({
       deviceId: String(deviceId),
@@ -573,6 +960,116 @@ router.post('/hikconnect/video/rolling/finalize-async', async (req, res) => {
   if (!rollingId) return res.status(400).json({ message: 'Missing rollingId' });
   if (!directory || !filename) {
     return res.status(400).json({ message: 'Missing directory or filename' });
+  }
+
+  // ===== Moteur HLS : demande l'arrêt de la capture (le worker finalise) =====
+  if (ENGINE_IS_HLS) {
+    try {
+      const out = await doHlsStop({
+        rollingId,
+        directory,
+        filename,
+        stopTime,
+        combinedFilename,
+        homeLogoUrl,
+        awayLogoUrl,
+        label,
+      });
+      if (out) return res.status(out.status).json(out.body);
+    } catch (err) {
+      await logRecording('HLS_STOP_ERR', {
+        rollingId,
+        message: err?.message,
+        status: err?.status,
+      }).catch(() => {});
+      return res
+        .status(err?.status || 500)
+        .json({ message: err?.message || 'Failed to stop HLS recording' });
+    }
+  }
+
+  // ===== Moteur V2 : déclenche l'export unique au STOP =====
+  if (RECORDING_ENGINE_V2) {
+    try {
+      const row = await engineV2.get(rollingId);
+      if (!row || row.engine !== 'v2') {
+        // Pas une session V2 (ex: legacy) → on laisse passer vers le code V1.
+      } else {
+        if (row.state === 'COMPLETED') {
+          return res.status(200).json({
+            errorCode: '0',
+            data: {
+              rollingId,
+              alreadyFinalized: true,
+              gcsPath: row.final_gcs_path,
+              publicUrl: row.final_public_url || null,
+            },
+          });
+        }
+
+        const finalName = String(filename).toLowerCase().endsWith('.mp4')
+          ? String(filename)
+          : `${String(filename)}.mp4`;
+        const finalGcsPath = safeJoinGcsPath(directory, finalName);
+        const thumb = sanitizeThumbMeta({
+          directory,
+          combinedFilename,
+          homeLogoUrl,
+          awayLogoUrl,
+          label,
+        });
+        const stopIso = stopTime
+          ? String(stopTime)
+          : toFixedOffsetIsoFromMs(Date.now(), row.cam_offset || getDefaultOffset());
+
+        await engineV2.beginExport({
+          rollingId,
+          exportEndIso: stopIso,
+          dateFin: stopTime ? new Date(stopTime) : new Date(),
+          finalGcsPath,
+          thumb,
+          reason: 'stop',
+        });
+
+        // Coupe l'enregistrement Hik-Connect côté caméra + reset état manuel.
+        try {
+          setManualRecordingState(row.device_id, false);
+        } catch {}
+
+        let enq = null;
+        try {
+          enq = await enqueueExportStep({ rollingId, delaySec: 2 });
+        } catch (e) {
+          await logRecording('V2_FINALIZE_ENQUEUE_ERR', {
+            rollingId,
+            message: e?.message,
+          }).catch(() => {});
+        }
+
+        await logRecording('V2_FINALIZE_REQUEST', {
+          rollingId,
+          deviceId: row.device_id,
+          cameraId: row.camera_id,
+          finalGcsPath,
+          stopIso,
+          enq,
+        }).catch(() => {});
+
+        return res.status(202).json({
+          errorCode: '0',
+          data: { rollingId, accepted: true, engine: 'v2', finalGcsPath, enq },
+        });
+      }
+    } catch (err) {
+      await logRecording('V2_FINALIZE_ERR', {
+        rollingId,
+        message: err?.message,
+        status: err?.status,
+      }).catch(() => {});
+      return res
+        .status(err?.status || 500)
+        .json({ message: err?.message || 'Failed to schedule export (v2)' });
+    }
   }
 
   try {
@@ -629,6 +1126,15 @@ router.post('/hikconnect/video/rolling/finalize-async', async (req, res) => {
       ...(Number.isFinite(stopMaxIdx) ? { stopMaxIdx } : {}),
     }).catch(() => {});
 
+    // Dual-write Cloud SQL (best-effort) : trace l'arrêt manuel.
+    await recordingMirror.addLog({
+      rollingId,
+      level: 'INFO',
+      eventType: 'RECORDING_STOPPED',
+      message: 'Enregistrement arrêté (finalisation demandée)',
+      detailsJson: { stopTime: stopTime || null },
+    });
+
     // Enqueue a Cloud Task that calls /rolling/finalize-internal with these
     // args. Cloud Tasks retries 5xx automatically with backoff.
     let enq = null;
@@ -683,6 +1189,78 @@ router.post('/hikconnect/video/rolling/finalize', async (req, res) => {
   if (!rollingId) return res.status(400).json({ message: 'Missing rollingId' });
   if (!directory || !filename)
     return res.status(400).json({ message: 'Missing directory or filename' });
+
+  // ===== Moteur HLS : demande l'arrêt (le worker Cloud Run finalise) =====
+  if (ENGINE_IS_HLS) {
+    try {
+      const out = await doHlsStop({
+        rollingId,
+        directory,
+        filename,
+        stopTime,
+        combinedFilename,
+        homeLogoUrl,
+        awayLogoUrl,
+        label,
+      });
+      if (out) return res.status(out.status).json(out.body);
+    } catch (err) {
+      return res
+        .status(err?.status || 500)
+        .json({ message: err?.message || 'Failed to stop HLS recording' });
+    }
+  }
+
+  // ===== Moteur V2 : finalize synchrone => déclenche l'export async et renvoie
+  // l'état courant (le client poll /rolling/queue). Pas de merge bloquant. =====
+  if (RECORDING_ENGINE_V2) {
+    try {
+      const row = await engineV2.get(rollingId);
+      if (row && row.engine === 'v2') {
+        if (row.state === 'COMPLETED') {
+          return res.status(200).json({
+            errorCode: '0',
+            data: {
+              rollingId,
+              bucket: bucket.name,
+              gcsPath: row.final_gcs_path,
+              publicUrl:
+                row.final_public_url ||
+                `https://storage.googleapis.com/${bucket.name}/${encodeURI(row.final_gcs_path)}`,
+              alreadyFinalized: true,
+            },
+          });
+        }
+        const finalName = String(filename).toLowerCase().endsWith('.mp4')
+          ? String(filename)
+          : `${String(filename)}.mp4`;
+        const finalGcsPath = safeJoinGcsPath(directory, finalName);
+        const thumb = sanitizeThumbMeta({ directory, combinedFilename, homeLogoUrl, awayLogoUrl, label });
+        const stopIso = stopTime
+          ? String(stopTime)
+          : toFixedOffsetIsoFromMs(Date.now(), row.cam_offset || getDefaultOffset());
+        await engineV2.beginExport({
+          rollingId,
+          exportEndIso: stopIso,
+          dateFin: stopTime ? new Date(stopTime) : new Date(),
+          finalGcsPath,
+          thumb,
+          reason: 'stop',
+        });
+        try { setManualRecordingState(row.device_id, false); } catch {}
+        let enq = null;
+        try { enq = await enqueueExportStep({ rollingId, delaySec: 2 }); } catch {}
+        return res.status(202).json({
+          errorCode: '0',
+          data: { rollingId, accepted: true, engine: 'v2', gcsPath: finalGcsPath, enq },
+        });
+      }
+    } catch (err) {
+      return res
+        .status(err?.status || 500)
+        .json({ message: err?.message || 'Failed to finalize (v2)' });
+    }
+  }
 
   try {
     const finalizeT0 = Date.now();
@@ -1122,6 +1700,31 @@ router.post('/hikconnect/video/rolling/finalize', async (req, res) => {
       pendingFinalize: false,
       finalizingAt: null,
     }).catch(() => {});
+
+    // ── Dual-write Cloud SQL (best-effort) : segments + clôture COMPLET ──
+    await recordingMirror.recordSegmentsMerged({
+      rollingId,
+      meta: metaPostRepair,
+      fromIndex: 0,
+      toIndex: mergedThroughIndexPostRepair,
+      deviceId: metaPostRepair?.deviceId,
+      cameraId: metaPostRepair?.cameraId,
+    });
+    await recordingMirror.finishRecording({
+      rollingId,
+      status: 'COMPLET',
+      dateFin: stopTime ? new Date(stopTime) : new Date(),
+      finalGcsPath: gcsPath,
+      finalPublicUrl: publicUrl,
+      nomVideo: finalName,
+    });
+    await recordingMirror.addLog({
+      rollingId,
+      level: 'INFO',
+      eventType: 'VIDEO_FINALIZED',
+      message: 'Vidéo finale générée',
+      detailsJson: { gcsPath, mergedThroughIndex: mergedThroughIndexPostRepair },
+    });
 
     // Cleanup: delete the entire tmp rolling folder from GCS (non-blocking).
     const rollingPrefix = getRollingPrefix(rollingId) + '/';

@@ -1,0 +1,14 @@
+{
+  "name": "iasv-recorder",
+  "version": "1.0.0",
+  "description": "Cloud Run Job: capture HLS Live (FFmpeg) -> stream MP4 to GCS. Driven by Cloud SQL.",
+  "main": "worker.js",
+  "private": true,
+  "engines": {
+    "node": "22.x"
+  },
+  "dependencies": {
+    "@google-cloud/storage": "^7.15.1",
+    "pg": "^8.13.1"
+  }
+}

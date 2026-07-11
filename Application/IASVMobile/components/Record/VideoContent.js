@@ -378,6 +378,59 @@ export const useVideoContent = () => {
     };
   }, [isRecording]);
 
+  // Arrêt automatique piloté par le backend : la session HLS (Cloud SQL) est
+  // devenue terminale (STOP manuel répercuté, OU limite 2 h atteinte). On
+  // reproduit le MÊME comportement qu'un STOP manuel côté UI, sans rappeler le
+  // backend (la session est déjà arrêtée / en finalisation côté serveur).
+  // syncQueue prend ensuite le relais pour afficher la vidéo (finalisation -> prête).
+  const finishRecordingFromAutoStop = () => {
+    const rollingId = rollingIdRef.current;
+    debugLog(TAG, nowIso(), 'AUTO-STOP (session terminée côté serveur)', { rollingId });
+
+    // Évite un re-clignotement le temps que la file backend reflète l'arrêt.
+    ignoreStatusUntilMsRef.current = Date.now() + 15000;
+
+    const clubSnap = selectedClub;
+    const opponentSnap = selectedClubInfo;
+    const deviceId = selectedDevice?.deviceId || null;
+    const cameraId = selectedDevice?.cameraId || null;
+
+    // 1) Libère l'avant-plan : le bouton Stop disparaît, le timer se remet à zéro.
+    setIsRecording(false);
+    setFilename('');
+    setSelectedClubInfo(null);
+    setTimeElapsed(0);
+
+    // 2) Entrée "en traitement" pour la continuité d'affichage (comme le STOP
+    //    manuel). syncQueue la remplacera par l'état backend (finalisation -> prêt).
+    if (rollingId) {
+      const _entryDir = clubSnap ? clubSnap.name : 'Unknown Club';
+      const _entryFile = opponentSnap
+        ? `${counter} - ${secondCounter} ${opponentSnap.name}`
+        : `${counter} - ${secondCounter} Unknown Club`;
+      addPending({
+        id: rollingId,
+        rollingId,
+        deviceId,
+        cameraId,
+        label: `${_entryDir} ${_entryFile}`,
+        status: 'processing',
+        progress: 0.5,
+        statusText: 'Traitement serveur…',
+      });
+    }
+
+    // 3) Réinitialise les refs de session pour permettre un nouvel enregistrement.
+    recordStartMsRef.current = null;
+    rollingIdRef.current = null;
+    rollingAutoTickActiveRef.current = false;
+    rollingNextIndexRef.current = 0;
+    rollingTickInFlightRef.current = false;
+    rollingInFlightIndicesRef.current = new Set();
+    rollingRetryQueueRef.current = [];
+    AsyncStorage.removeItem(ROLLING_STORAGE_KEY).catch(() => {});
+  };
+
   // Sync recording status from backend (device truth) + keep timer aligned
   useEffect(() => {
     let cancelled = false;
@@ -401,6 +454,9 @@ export const useVideoContent = () => {
 
         const serverIsRecording = !!status?.isRecording;
         const serverSeconds = parseMmSsToSeconds(status?.recordingTime);
+        // Statut faisant autorité : émis par la session Cloud SQL (HLS), il est
+        // DÉFINITIF (le statut caméra, lui, est parfois bruité).
+        const sessionAuthoritative = status?.recordingSource === 'session';
 
         if (serverIsRecording) {
           setIsRecording(true);
@@ -418,11 +474,18 @@ export const useVideoContent = () => {
             recordStartMsRef.current = Date.now();
             setTimeElapsed(0);
           }
+        } else if (isRecordingRef.current) {
+          // Le serveur dit "pas d'enregistrement" alors qu'on enregistrait.
+          if (sessionAuthoritative) {
+            // Source de vérité Cloud SQL : la capture est terminée (STOP manuel
+            // OU limite 2 h atteinte). On arrête l'UI exactement comme un STOP
+            // -> le bouton Stop disparaît automatiquement.
+            finishRecordingFromAutoStop();
+          }
+          // Sinon (statut caméra) : on ignore un "false" ponctuel (faux négatif
+          // de l'API maintenance pendant un changement de segment).
+          return;
         } else {
-          // Simplification robuste: si l'utilisateur est en train d'enregistrer,
-          // on ignore les faux "false" ponctuels (observé dans les logs).
-          if (isRecordingRef.current) return;
-
           setIsRecording(false);
           setTimeElapsed(0);
           recordStartMsRef.current = null;

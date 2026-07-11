@@ -34,3 +34,6 @@ react
 		
 		ffmpeg -ss 00:12:00 -i test2.mp4 -t 60 -c copy test3.mp4
 
+SELECT * FROM recording_log order by created_at DESC;
+
+SELECT * FROM current_recording order by created_at DESC;

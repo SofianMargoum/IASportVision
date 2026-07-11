@@ -41,6 +41,29 @@ env_variables:
   CLOUD_TASKS_QUEUE: "hikconnect-rolling"
   ROLLING_AUTOTICK_SECRET: "9f3c7a8b1d4e6f2a9c0b5e7d3a1f8c6e2d9a4b7c1e6f3d8a0b2c5e9f7a4d1c3"
 
+  # Dual-write Cloud SQL des enregistrements (current_recording / recording_segments
+  # / recording_log). Mettre "0" pour couper instantanément l'écriture en base
+  # sans redéployer de code (le rolling GCS continue de fonctionner normalement).
+  RECORDING_DB_MIRROR_ENABLED: "1"
+
+  # ===== Moteur d'enregistrement =====
+  # 'hls' (défaut) = capture FFmpeg du flux HLS Live dans un Cloud Run Job
+  #                  (un seul process, MP4 streamé vers GCS, dispo au STOP).
+  # 'v2'           = export unique Hik-Connect (save/download-url).
+  # 'v1'           = ancien rolling chunké + merge.
+  RECORDING_ENGINE: "hls"
+  # Cloud Run Job qui exécute la capture FFmpeg.
+  CLOUD_RUN_RECORDER_JOB: "iasv-recorder"
+  CLOUD_RUN_RECORDER_REGION: "europe-west9"
+  # Durée maximale d'un enregistrement avant arrêt + finalisation automatiques.
+  RECORDING_MAX_DURATION_SEC: "7200"
+
+  # ===== (Legacy moteur V2 save/download-url — conservé pour repli) =====
+  # Cadence de poll download-url (secondes) et budget max d'attente.
+  RECORDING_EXPORT_POLL_SEC: "30"
+  RECORDING_EXPORT_MAX_POLLS: "80"
+  RECORDING_DOWNLOAD_MAX_ATTEMPTS: "5"
+
   # ===== Authentification (POST /auth/login) =====
   # JWT_SECRET : OBLIGATOIRE. Doit être généré aléatoirement (>= 32 caractères).
   # En production, préférez Google Secret Manager plutôt qu'app.yaml.

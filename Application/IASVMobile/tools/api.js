@@ -409,6 +409,9 @@ export async function hikGetRecordingStatus({ deviceId, cameraId, recordingState
   return {
     isRecording: !!data?.isRecording,
     recordingTime: typeof data?.recordingTime === 'string' ? data.recordingTime : null,
+    // Source de vérité du statut : 'session' = Cloud SQL (HLS), DÉFINITIF.
+    recordingSource: typeof data?.recordingSource === 'string' ? data.recordingSource : null,
+    sessionActive: typeof data?.sessionActive === 'boolean' ? data.sessionActive : null,
   };
 }
 

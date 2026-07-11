@@ -186,10 +186,61 @@ async function enqueueRollingFinalize({
   }
 }
 
+// ============================================================================
+// Moteur V2 : enfile une transition de la machine d'état (queue partagée,
+// concurrency=1 => strictement séquentiel). Cible /rolling/v2-step.
+// ============================================================================
+async function enqueueExportStep({ rollingId, delaySec = 2 }) {
+  if (!isAutoTickConfigured()) return { enqueued: false, reason: 'not_configured' };
+
+  const client = getTasksClient();
+  const parent = client.queuePath(CLOUD_TASKS_PROJECT, CLOUD_TASKS_LOCATION, CLOUD_TASKS_QUEUE);
+
+  const nextRunAtMs = Date.now() + Math.max(0, Number(delaySec) || 0) * 1000;
+  const nextRunSec = Math.floor(nextRunAtMs / 1000);
+  // L'identifiant inclut le créneau (seconde) => idempotent par créneau.
+  const taskId = `v2step_${String(rollingId)}_${String(nextRunSec)}`;
+
+  const payload = { rollingId: String(rollingId) };
+
+  const appEngineRouting = {
+    ...(process.env.GAE_SERVICE ? { service: String(process.env.GAE_SERVICE) } : {}),
+    ...(process.env.GAE_VERSION ? { version: String(process.env.GAE_VERSION) } : {}),
+  };
+
+  const task = {
+    name: `${parent}/tasks/${taskId}`,
+    scheduleTime: { seconds: nextRunSec },
+    // Le step DOWNLOADING peut streamer un gros fichier : 9 min (sous la limite GAE 10 min).
+    dispatchDeadline: { seconds: 9 * 60 },
+    appEngineHttpRequest: {
+      httpMethod: 'POST',
+      relativeUri: '/api/hikconnect/video/rolling/v2-step',
+      ...(Object.keys(appEngineRouting).length > 0 ? { appEngineRouting } : {}),
+      headers: {
+        'Content-Type': 'application/json',
+        ...(ROLLING_AUTOTICK_SECRET
+          ? { 'x-rolling-autotick-secret': ROLLING_AUTOTICK_SECRET }
+          : {}),
+      },
+      body: Buffer.from(JSON.stringify(payload)).toString('base64'),
+    },
+  };
+
+  try {
+    await client.createTask({ parent, task });
+    return { enqueued: true, taskId, nextRunSec };
+  } catch (e) {
+    if (e?.code === 6) return { enqueued: false, already: true, taskId, nextRunSec };
+    throw e;
+  }
+}
+
 module.exports = {
   getAutoTickConfigReport,
   isAutoTickConfigured,
   requireAutoTickSecret,
   enqueueRollingAutoTick,
   enqueueRollingFinalize,
+  enqueueExportStep,
 };
