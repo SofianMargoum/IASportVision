@@ -37,42 +37,80 @@ try {
   }
 }
 
-const SERVICE = 'iasv-auth-jwt';
+const SERVICE = 'iasv-auth-session';
 
-export async function saveToken(token) {
-  if (typeof token !== 'string' || !token) return false;
+function normalizeToken(value) {
+  return typeof value === 'string' && value ? value : null;
+}
+
+function serializeSession({ accessToken, refreshToken }) {
+  return JSON.stringify({
+    accessToken: normalizeToken(accessToken),
+    refreshToken: normalizeToken(refreshToken),
+  });
+}
+
+function deserializeSession(raw) {
+  if (typeof raw !== 'string' || !raw) return null;
+  try {
+    const parsed = JSON.parse(raw);
+    const accessToken = normalizeToken(parsed?.accessToken);
+    const refreshToken = normalizeToken(parsed?.refreshToken);
+    if (!accessToken && !refreshToken) return null;
+    return { accessToken, refreshToken };
+  } catch {
+    // Migration douce : ancien format = access token brut seul.
+    return { accessToken: raw, refreshToken: null };
+  }
+}
+
+export async function saveAuthTokens({ accessToken, refreshToken }) {
+  if (!normalizeToken(accessToken) && !normalizeToken(refreshToken)) return false;
   if (!Keychain) return false;
   try {
-    await Keychain.setGenericPassword('jwt', token, {
+    await Keychain.setGenericPassword('auth', serializeSession({ accessToken, refreshToken }), {
       service: SERVICE,
       accessible: Keychain.ACCESSIBLE?.AFTER_FIRST_UNLOCK ?? undefined,
     });
     return true;
   } catch (e) {
-    if (__DEV__) console.warn('[secureToken] saveToken error:', e?.message);
+    if (__DEV__) console.warn('[secureToken] saveAuthTokens error:', e?.message);
     return false;
   }
 }
 
-export async function loadToken() {
+export async function loadAuthTokens() {
   if (!Keychain) return null;
   try {
     const creds = await Keychain.getGenericPassword({ service: SERVICE });
-    if (creds && creds.password) return creds.password;
+    if (creds && creds.password) return deserializeSession(creds.password);
     return null;
   } catch (e) {
-    if (__DEV__) console.warn('[secureToken] loadToken error:', e?.message);
+    if (__DEV__) console.warn('[secureToken] loadAuthTokens error:', e?.message);
     return null;
   }
 }
 
-export async function clearToken() {
+export async function clearAuthTokens() {
   if (!Keychain) return false;
   try {
     await Keychain.resetGenericPassword({ service: SERVICE });
     return true;
   } catch (e) {
-    if (__DEV__) console.warn('[secureToken] clearToken error:', e?.message);
+    if (__DEV__) console.warn('[secureToken] clearAuthTokens error:', e?.message);
     return false;
   }
+}
+
+export async function saveToken(token) {
+  return saveAuthTokens({ accessToken: token, refreshToken: null });
+}
+
+export async function loadToken() {
+  const session = await loadAuthTokens();
+  return session?.accessToken || null;
+}
+
+export async function clearToken() {
+  return clearAuthTokens();
 }

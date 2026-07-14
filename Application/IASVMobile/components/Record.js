@@ -8,6 +8,8 @@ import {
   ScrollView,
   ActivityIndicator,
   Animated,
+  Modal,
+  Switch,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/FontAwesome';
 import { useVideoContent } from './Record/VideoContent';
@@ -89,6 +91,13 @@ const Record = () => {
   // --- Device status ---
   const [deviceStatus, setDeviceStatus] = useState('');
   const [isChecking, setIsChecking] = useState(false);
+  const [settingsVisible, setSettingsVisible] = useState(false);
+  const [settings, setSettings] = useState({
+    tracking: false,
+    youtube: false,
+    instagram: false,
+    tiktok: false,
+  });
 
   const checkDeviceStatus = async (device) => {
     if (!device?.cameraId) {
@@ -157,6 +166,13 @@ const Record = () => {
     : isDisconnected
     ? styles.deviceNameDisconnected
     : styles.deviceNameDefault;
+
+  const toggleSetting = (key) => {
+    setSettings((current) => ({
+      ...current,
+      [key]: !current[key],
+    }));
+  };
 
   return (
     <ScrollView contentContainerStyle={styles.container} showsVerticalScrollIndicator={false}>
@@ -418,27 +434,48 @@ const Record = () => {
           </View>
         )}
 
-        {/* === Record button === */}
-        <View style={styles.buttonContainer}>
-          <TouchableOpacity
-            onPress={handleButtonClick}
-            disabled={buttonDisabled}
-            style={[
-              styles.outerCircle,
-              isRecording
-                ? styles.recordingOuter
-                : !canStartRecording
-                ? styles.disabledButton
-                : styles.defaultOuter,
-            ]}
-          >
-            <View
+        <View style={styles.bottomActionsWrapper}>
+          {/* === Record button === */}
+          <View style={styles.buttonContainer}>
+            <View style={styles.sideActionSlotLeft}>
+              <TouchableOpacity style={styles.sideActionButton} activeOpacity={0.85}>
+                <Text style={styles.sideActionButtonText}>PUB</Text>
+              </TouchableOpacity>
+            </View>
+
+            <TouchableOpacity
+              onPress={handleButtonClick}
+              disabled={buttonDisabled}
               style={[
-                styles.innerCircle,
-                isRecording ? styles.recordingInner : styles.defaultInner,
+                styles.outerCircle,
+                isRecording
+                  ? styles.recordingOuter
+                  : !canStartRecording
+                  ? styles.disabledButton
+                  : styles.defaultOuter,
               ]}
-            />
-          </TouchableOpacity>
+            >
+              <View
+                style={[
+                  styles.innerCircle,
+                  isRecording ? styles.recordingInner : styles.defaultInner,
+                ]}
+              />
+            </TouchableOpacity>
+
+            <View style={styles.sideActionSlotRight}>
+              <TouchableOpacity
+                style={styles.sideActionButton}
+                activeOpacity={0.85}
+                onPress={() => setSettingsVisible(true)}
+              >
+                <View style={styles.sideActionButtonStack}>
+                  <Icon name="cog" size={moderateScale(16)} color="#b5c2d2" />
+                  <Text style={styles.sideActionButtonLabel}>Paramètres</Text>
+                </View>
+              </TouchableOpacity>
+            </View>
+          </View>
 
           {!isRecording && !isConnected && selectedDevice ? (
             <Text style={styles.hintText}>
@@ -447,6 +484,51 @@ const Record = () => {
           ) : null}
         </View>
       </View>
+
+      <Modal
+        visible={settingsVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setSettingsVisible(false)}
+      >
+        <TouchableOpacity
+          style={styles.settingsOverlay}
+          activeOpacity={1}
+          onPress={() => setSettingsVisible(false)}
+        >
+          <TouchableOpacity style={styles.settingsCard} activeOpacity={1} onPress={() => {}}>
+            <View style={styles.settingsHeader}>
+              <Text style={styles.settingsTitle}>Paramètres</Text>
+              <TouchableOpacity
+                style={styles.settingsCloseButton}
+                onPress={() => setSettingsVisible(false)}
+              >
+                <Text style={styles.settingsCloseText}>×</Text>
+              </TouchableOpacity>
+            </View>
+
+            <View style={styles.settingsList}>
+              {[
+                { key: 'tracking', label: 'Tracking' },
+                { key: 'youtube', label: 'YouTube' },
+                { key: 'instagram', label: 'Instagram' },
+                { key: 'tiktok', label: 'TikTok' },
+              ].map((item) => (
+                <View key={item.key} style={styles.settingsRow}>
+                  <Text style={styles.settingsRowLabel}>{item.label}</Text>
+                  <Switch
+                    value={settings[item.key]}
+                    onValueChange={() => toggleSetting(item.key)}
+                    trackColor={{ false: '#1a2d45', true: '#1a73e8' }}
+                    thumbColor={settings[item.key] ? '#ffffff' : '#cbd5e1'}
+                    ios_backgroundColor="#1a2d45"
+                  />
+                </View>
+              ))}
+            </View>
+          </TouchableOpacity>
+        </TouchableOpacity>
+      </Modal>
     </ScrollView>
   );
 };

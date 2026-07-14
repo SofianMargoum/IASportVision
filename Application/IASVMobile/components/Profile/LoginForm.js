@@ -11,8 +11,8 @@ import {
 } from 'react-native';
 import { moderateScale, scale as s } from './../../tools/responsive';
 import { loginRequest } from './../../tools/authApi';
-import { saveToken } from './../../tools/secureToken';
-import { setAuthToken } from './../../tools/api';
+import { saveAuthTokens } from './../../tools/secureToken';
+import { setAuthSession } from './../../tools/api';
 
 const ms = moderateScale;
 
@@ -57,14 +57,12 @@ const LoginForm = ({ onLocalLogin, onCancel }) => {
 
     setLoading(true);
     try {
-      const { token, user } = await loginRequest(username.trim(), password);
+      const { accessToken, refreshToken, user } = await loginRequest(username.trim(), password);
 
-      // Stockage sécurisé du token (Keychain). Si Keychain n'est pas dispo,
-      // saveToken renvoie false : l'utilisateur devra se reconnecter au
-      // prochain démarrage (mais reste connecté pour la session).
-      await saveToken(token);
-      // Cache mémoire pour que les futures requêtes envoient Authorization.
-      setAuthToken(token);
+      // Stockage sécurisé des deux tokens. Si Keychain n'est pas dispo,
+      // l'utilisateur restera connecté uniquement pour la session mémoire.
+      await saveAuthTokens({ accessToken, refreshToken });
+      setAuthSession({ accessToken, refreshToken });
 
       attemptsRef.current = 0;
       // Effacer le mot de passe de la mémoire React.

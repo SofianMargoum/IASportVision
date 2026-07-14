@@ -9,6 +9,7 @@
 
 const express = require('express');
 const router = express.Router();
+const crypto = require('crypto');
 
 const {
   findByUsernameWithHash,
@@ -16,7 +17,21 @@ const {
   findById,
   toPublic,
 } = require('../auth/userStore');
-const { signAuthToken, requireAuth } = require('../auth/jwt');
+const {
+  signAccessToken,
+  signRefreshToken,
+  verifyRefreshToken,
+  decodeRefreshToken,
+  requireAuth,
+} = require('../auth/jwt');
+const {
+  createRefreshToken,
+  getRefreshTokenById,
+  matchesRefreshToken,
+  rotateRefreshToken,
+  revokeSession,
+  revokeUserSessions,
+} = require('../auth/refreshTokenStore');
 
 // Rate-limit en mémoire (par IP+username) pour ralentir le brute force.
 // Pour la production sérieuse : remplacer par express-rate-limit (Redis) ou
@@ -68,6 +83,40 @@ function recordSuccess(key) {
 // n'existe pas (atténue les attaques par timing).
 const DUMMY_HASH = '$2a$10$CwTycUXWue0Thq9StjUM0uJ8xq3VOZk7nqQwQK0Ip9k0lYxC7Klty';
 
+function buildAuthResponse({ accessToken, refreshToken, user }) {
+  return {
+    status: 'ok',
+    token: accessToken,
+    accessToken,
+    refreshToken,
+    user,
+  };
+}
+
+function newTokenId() {
+  return crypto.randomUUID();
+}
+
+async function issueSessionTokens(user) {
+  const sessionId = crypto.randomUUID();
+  const refreshTokenId = newTokenId();
+  const accessToken = signAccessToken({ userId: user.id, role: user.role });
+  const refreshToken = signRefreshToken({
+    userId: user.id,
+    sessionId,
+    tokenId: refreshTokenId,
+  });
+  const refreshPayload = verifyRefreshToken(refreshToken);
+  await createRefreshToken({
+    tokenId: refreshTokenId,
+    userId: user.id,
+    sessionId,
+    token: refreshToken,
+    expiresAt: new Date(refreshPayload.exp * 1000),
+  });
+  return { accessToken, refreshToken };
+}
+
 /**
  * POST /auth/login
  */
@@ -106,15 +155,126 @@ router.post('/auth/login', async (req, res) => {
     }
 
     recordSuccess(key);
-    const token = signAuthToken({ userId: row.id, role: row.role });
+    const user = toPublic(row);
+    const { accessToken, refreshToken } = await issueSessionTokens(user);
 
-    return res.status(200).json({
-      status: 'ok',
-      token,
-      user: toPublic(row),
-    });
+    return res.status(200).json(buildAuthResponse({ accessToken, refreshToken, user }));
   } catch (err) {
     console.error('[auth/login] erreur :', err?.message);
+    return res.status(500).json({ status: 'error', message: 'Erreur serveur.' });
+  }
+});
+
+/**
+ * POST /auth/refresh
+ * Rotation stricte du refresh token. Révoque toute la session en cas de reuse.
+ */
+router.post('/auth/refresh', async (req, res) => {
+  try {
+    const { refreshToken } = req.body || {};
+    if (typeof refreshToken !== 'string' || !refreshToken) {
+      return res.status(400).json({ status: 'error', message: 'refreshToken requis.' });
+    }
+
+    let payload;
+    try {
+      payload = verifyRefreshToken(refreshToken);
+    } catch (e) {
+      return res.status(401).json({ status: 'error', message: 'Refresh token invalide ou expiré.' });
+    }
+
+    const record = await getRefreshTokenById(payload.tokenId);
+    if (!record) {
+      return res.status(401).json({ status: 'error', message: 'Refresh token introuvable.' });
+    }
+    if (!matchesRefreshToken(record, refreshToken)) {
+      await revokeSession(record.session_id, 'hash-mismatch');
+      return res.status(403).json({ status: 'error', message: 'Refresh token révoqué.' });
+    }
+    if (record.revoked_at) {
+      if (record.session_id) {
+        await revokeSession(record.session_id, 'reuse-detected');
+      }
+      return res.status(403).json({ status: 'error', message: 'Refresh token révoqué.' });
+    }
+    if (new Date(record.expires_at).getTime() <= Date.now()) {
+      await revokeSession(record.session_id, 'expired');
+      return res.status(401).json({ status: 'error', message: 'Refresh token expiré.' });
+    }
+
+    const user = await findById(payload.userId);
+    if (!user || !user.isActive) {
+      await revokeSession(record.session_id, 'user-inactive');
+      return res.status(403).json({ status: 'error', message: 'Compte introuvable ou désactivé.' });
+    }
+
+    const newRefreshTokenId = newTokenId();
+    const accessToken = signAccessToken({ userId: user.id, role: user.role });
+    const nextRefreshToken = signRefreshToken({
+      userId: user.id,
+      sessionId: payload.sessionId,
+      tokenId: newRefreshTokenId,
+    });
+    const nextPayload = verifyRefreshToken(nextRefreshToken);
+    const rotated = await rotateRefreshToken({
+      currentTokenId: payload.tokenId,
+      currentToken: refreshToken,
+      newTokenId: newRefreshTokenId,
+      newToken: nextRefreshToken,
+      expiresAt: new Date(nextPayload.exp * 1000),
+    });
+
+    if (!rotated.ok) {
+      if (rotated.sessionId) {
+        await revokeSession(rotated.sessionId, rotated.code === 'rotated' ? 'reuse-detected' : rotated.code);
+      }
+      const status = rotated.code === 'invalid' || rotated.code === 'expired' ? 401 : 403;
+      return res.status(status).json({ status: 'error', message: 'Refresh token invalide ou révoqué.' });
+    }
+
+    return res.status(200).json(buildAuthResponse({
+      accessToken,
+      refreshToken: nextRefreshToken,
+      user,
+    }));
+  } catch (err) {
+    console.error('[auth/refresh] erreur :', err?.message);
+    return res.status(500).json({ status: 'error', message: 'Erreur serveur.' });
+  }
+});
+
+/**
+ * POST /auth/logout
+ * Révoque le refresh token courant ou, à défaut, toutes les sessions du user authentifié.
+ */
+router.post('/auth/logout', async (req, res) => {
+  try {
+    const { refreshToken } = req.body || {};
+
+    if (typeof refreshToken === 'string' && refreshToken) {
+      let decoded = null;
+      try {
+        const payload = verifyRefreshToken(refreshToken);
+        await revokeSession(payload.sessionId, 'logout');
+      } catch (_) {
+        decoded = decodeRefreshToken(refreshToken);
+        if (decoded?.sessionId) {
+          await revokeSession(decoded.sessionId, 'logout');
+        }
+      }
+      return res.status(200).json({ status: 'ok' });
+    }
+
+    if (req.headers.authorization) {
+      return requireAuth(req, res, async () => {
+        await revokeUserSessions(req.auth.userId, 'logout-all');
+        return res.status(200).json({ status: 'ok' });
+      });
+    }
+
+    return res.status(200).json({ status: 'ok' });
+  } catch (err) {
+    console.error('[auth/logout] erreur :', err?.message);
     return res.status(500).json({ status: 'error', message: 'Erreur serveur.' });
   }
 });

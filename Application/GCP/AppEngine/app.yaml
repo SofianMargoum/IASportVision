@@ -69,8 +69,11 @@ env_variables:
   # En production, préférez Google Secret Manager plutôt qu'app.yaml.
   # Exemple génération : node -e "console.log(require('crypto').randomBytes(48).toString('base64'))"
   JWT_SECRET: 'n7F$kL9vQ2xP!aZ4mT8rYw3@Hc6UeJ1sB5dR0fXz'
-  # Durée de vie du token (par défaut 12h)
+  # Durée de vie des tokens d'authentification.
   JWT_TTL: '12h'
+  ACCESS_TOKEN_TTL: '15m'
+  REFRESH_TOKEN_TTL: '30d'
+  REFRESH_TOKEN_SECRET: 'Q4u!mP9#sL7@xC2vN8zA5eR1tY6wD3fH0kJ4pB7u'
 
   # ===== PostgreSQL (Cloud SQL) =====
   # Sur App Engine : socket Unix exposée à /cloudsql/<connection_name>

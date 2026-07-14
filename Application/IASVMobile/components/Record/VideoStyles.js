@@ -13,6 +13,7 @@ export const ACCENT_BLUE = '#1a73e8';
 // (ne tombe jamais sous 80dp = bonne cible tactile) et pas démesuré sur tablette.
 const RECORD_OUTER = Math.max(80, Math.min(120, ms(100)));
 const RECORD_INNER = Math.max(32, Math.min(48, ms(40)));
+const ACTION_OUTER = Math.max(56, Math.min(76, ms(64)));
 
 export default StyleSheet.create({
     container: {
@@ -38,6 +39,11 @@ export default StyleSheet.create({
         width: '100%',
         backgroundColor: '#010914',
         alignItems: 'center',
+    },
+    bottomActionsWrapper: {
+        width: '100%',
+        marginTop: 'auto',
+        paddingBottom: s(6),
     },
     title: {
         fontSize: ms(20),
@@ -374,10 +380,52 @@ export default StyleSheet.create({
     },
     buttonContainer: {
         width: '100%',
+        flexDirection: 'row',
         alignItems: 'center',
-        justifyContent: 'flex-end',
+        justifyContent: 'center',
+        marginTop: s(10),
+    },
+    sideActionSlotLeft: {
         flex: 1,
-        marginTop: s(16),
+        alignItems: 'flex-end',
+        paddingRight: s(12),
+    },
+    sideActionSlotRight: {
+        flex: 1,
+        alignItems: 'flex-start',
+        paddingLeft: s(12),
+    },
+    sideActionButton: {
+        width: ACTION_OUTER,
+        height: ACTION_OUTER,
+        borderRadius: ACTION_OUTER / 2,
+        backgroundColor: '#061425',
+        borderWidth: 1,
+        borderColor: '#10253e',
+        justifyContent: 'center',
+        alignItems: 'center',
+        paddingHorizontal: s(8),
+        paddingVertical: s(8),
+        opacity: 0.9,
+    },
+    sideActionButtonStack: {
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    sideActionButtonText: {
+        color: '#b5c2d2',
+        fontSize: ms(9),
+        fontWeight: '600',
+        textAlign: 'center',
+        lineHeight: ms(12),
+    },
+    sideActionButtonLabel: {
+        color: '#b5c2d2',
+        fontSize: ms(7.8),
+        fontWeight: '600',
+        textAlign: 'center',
+        marginTop: s(4),
+        lineHeight: ms(10),
     },
 
     outerCircle: {
@@ -406,6 +454,74 @@ export default StyleSheet.create({
     },
     recordingInner: {
         backgroundColor: 'black',
+    },
+
+    settingsOverlay: {
+        flex: 1,
+        backgroundColor: 'rgba(1, 9, 20, 0.78)',
+        justifyContent: 'center',
+        alignItems: 'center',
+        padding: s(18),
+    },
+    settingsCard: {
+        width: '100%',
+        maxWidth: ms(360),
+        borderRadius: ms(18),
+        backgroundColor: '#010E1E',
+        borderWidth: 1,
+        borderColor: '#1a2d45',
+        padding: s(16),
+        shadowColor: '#000',
+        shadowOpacity: 0.35,
+        shadowRadius: 14,
+        shadowOffset: { width: 0, height: 8 },
+        elevation: 8,
+    },
+    settingsHeader: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        marginBottom: s(14),
+    },
+    settingsTitle: {
+        color: '#ffffff',
+        fontSize: ms(18),
+        fontWeight: '700',
+    },
+    settingsCloseButton: {
+        width: ms(32),
+        height: ms(32),
+        borderRadius: ms(16),
+        alignItems: 'center',
+        justifyContent: 'center',
+        backgroundColor: '#0b1a33',
+        borderWidth: 1,
+        borderColor: '#1a2d45',
+    },
+    settingsCloseText: {
+        color: '#ffffff',
+        fontSize: ms(18),
+        lineHeight: ms(20),
+        fontWeight: '700',
+    },
+    settingsList: {
+    },
+    settingsRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        paddingVertical: s(10),
+        paddingHorizontal: s(12),
+        borderRadius: ms(12),
+        backgroundColor: '#010914',
+        borderWidth: 1,
+        borderColor: '#0b1a33',
+        marginBottom: s(12),
+    },
+    settingsRowLabel: {
+        color: '#ffffff',
+        fontSize: ms(13),
+        fontWeight: '600',
     },
 
     // --- Hint camera offline ---

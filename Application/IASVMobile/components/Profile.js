@@ -4,9 +4,15 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import LoginForm from './Profile/LoginForm';
 import UserProfile from './Profile/UserProfile';
 import { UserContext } from './../tools/UserContext';
-import { loadToken, clearToken } from './../tools/secureToken';
-import { meRequest } from './../tools/authApi';
-import { setAuthToken, clearAuthToken } from './../tools/api';
+import { loadAuthTokens } from './../tools/secureToken';
+import { AUTH_BASE } from './../tools/authApi';
+import {
+  clearAuthSession,
+  logoutCurrentSession,
+  registerAuthFailureHandler,
+  secureFetch,
+  setAuthSession,
+} from './../tools/api';
 
 // Sécurité : on ne persiste JAMAIS de tokens dans AsyncStorage.
 // Whitelist stricte des champs (cache d'affichage uniquement).
@@ -38,35 +44,23 @@ const Profile = ({ navigation }) => {
   const [showLogin, setShowLogin] = useState(false);
 
   useEffect(() => {
+    let cancelled = false;
+
     const initializeUser = async () => {
       try {
-        // 1) Source de vérité : token JWT stocké dans Keychain.
-        const token = await loadToken();
-        if (!token) {
+        const session = await loadAuthTokens();
+        if (!session?.accessToken && !session?.refreshToken) {
           // Pas de token : on s'assure qu'aucun cache utilisateur ne reste.
           await AsyncStorage.removeItem('user');
-          clearAuthToken();
-          setUser(null);
+          clearAuthSession();
+          if (!cancelled) setUser(null);
           return;
         }
 
-        // 2) Vérifier la validité du token côté serveur.
-        try {
-          await meRequest(token);
-        } catch (e) {
-          // Token expiré / invalide : nettoyage et retour anonyme.
-          if (__DEV__) console.warn('[Profile] token invalide :', e?.status);
-          await clearToken();
-          await AsyncStorage.removeItem('user');
-          clearAuthToken();
-          setUser(null);
-          return;
-        }
+        setAuthSession(session);
 
-        // 3) Token valide : injecter dans api.js + charger le cache d'affichage.
-        setAuthToken(token);
         const storedUser = await AsyncStorage.getItem('user');
-        if (storedUser) {
+        if (storedUser && !cancelled) {
           try {
             const parsed = JSON.parse(storedUser);
             setUser(sanitizeUserForStorage(parsed));
@@ -74,14 +68,46 @@ const Profile = ({ navigation }) => {
             await AsyncStorage.removeItem('user');
           }
         }
+
+        // Vérifie l'access token et renouvelle la session si besoin.
+        try {
+          const response = await secureFetch(`${AUTH_BASE}/auth/me`);
+          const safeUser = sanitizeUserForStorage(response?.user);
+          if (safeUser) {
+            if (!cancelled) setUser(safeUser);
+            await saveUserToStorage(safeUser);
+          }
+        } catch (e) {
+          if (e?.status === 401 || e?.status === 403) {
+            await AsyncStorage.removeItem('user');
+            clearAuthSession();
+            if (!cancelled) setUser(null);
+            return;
+          }
+          if (__DEV__) console.warn('[Profile] session conservée malgré erreur réseau :', e?.message || e?.status);
+          return;
+        }
       } catch (error) {
         if (__DEV__) console.error('Erreur init utilisateur:', error?.message);
       } finally {
-        setLoading(false);
+        if (!cancelled) setLoading(false);
       }
     };
 
+    registerAuthFailureHandler(async () => {
+      await AsyncStorage.removeItem('user');
+      if (!cancelled) {
+        setUser(null);
+        setShowLogin(false);
+      }
+    });
+
     initializeUser();
+
+    return () => {
+      cancelled = true;
+      registerAuthFailureHandler(null);
+    };
   }, []);
 
   const saveUserToStorage = async (u) => {
@@ -115,14 +141,17 @@ const Profile = ({ navigation }) => {
   const handleLogout = async () => {
     try {
       setLoading(true);
-      setUser(null);
-      // Supprimer le JWT du Keychain ET le cache utilisateur.
-      await clearToken();
-      clearAuthToken();
+      // Déconnexion manuelle : tentative de révocation serveur puis purge locale.
+      await logoutCurrentSession();
       await clearUserFromStorage();
+      setUser(null);
       setShowLogin(false);
     } catch (error) {
       if (__DEV__) console.error('Erreur déconnexion:', error?.message);
+      await clearUserFromStorage();
+      clearAuthSession();
+      setUser(null);
+      setShowLogin(false);
     } finally {
       setLoading(false);
     }

@@ -6,6 +6,14 @@ import 'react-native';
 import React from 'react';
 import App from '../App';
 
+jest.mock('@react-native-community/geolocation', () => ({
+  getCurrentPosition: jest.fn(),
+  watchPosition: jest.fn(),
+  clearWatch: jest.fn(),
+  stopObserving: jest.fn(),
+  requestAuthorization: jest.fn(),
+}));
+
 // Note: import explicitly to use the types shipped with jest.
 import {it} from '@jest/globals';
 

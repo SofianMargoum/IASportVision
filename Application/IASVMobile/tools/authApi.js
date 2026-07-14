@@ -7,7 +7,7 @@
  * Aucune information sensible n'est jamais journalisée.
  */
 
-const AUTH_BASE = 'https://ia-sport.oa.r.appspot.com';
+export const AUTH_BASE = 'https://ia-sport.oa.r.appspot.com';
 const TIMEOUT_MS = 15000;
 
 if (!/^https:\/\//i.test(AUTH_BASE)) {
@@ -72,12 +72,49 @@ export async function loginRequest(username, password) {
     method: 'POST',
     body: { username, password },
   });
-  if (!data || !data.token || !data.user) {
+  if (!data || !data.accessToken || !data.refreshToken || !data.user) {
     const err = new Error('Réponse serveur invalide.');
     err.status = 500;
     throw err;
   }
-  return { token: data.token, user: data.user };
+  return {
+    token: data.accessToken,
+    accessToken: data.accessToken,
+    refreshToken: data.refreshToken,
+    user: data.user,
+  };
+}
+
+export async function refreshTokenRequest(refreshToken) {
+  if (typeof refreshToken !== 'string' || !refreshToken) {
+    const err = new Error('Refresh token absent.');
+    err.status = 401;
+    throw err;
+  }
+  const data = await authFetch('/auth/refresh', {
+    method: 'POST',
+    body: { refreshToken },
+  });
+  if (!data || !data.accessToken || !data.refreshToken || !data.user) {
+    const err = new Error('Réponse serveur invalide.');
+    err.status = 500;
+    throw err;
+  }
+  return {
+    token: data.accessToken,
+    accessToken: data.accessToken,
+    refreshToken: data.refreshToken,
+    user: data.user,
+  };
+}
+
+export async function logoutRequest({ refreshToken, accessToken } = {}) {
+  const body = refreshToken ? { refreshToken } : undefined;
+  return authFetch('/auth/logout', {
+    method: 'POST',
+    body,
+    token: accessToken,
+  });
 }
 
 /**

@@ -11,7 +11,7 @@
  *   DELETE /admin/users/:id   (soft-delete : isActive=false)
  */
 
-import { loadToken } from './secureToken';
+import { secureFetch } from './api';
 
 const ADMIN_BASE = 'https://ia-sport.oa.r.appspot.com';
 const TIMEOUT_MS = 15000;
@@ -21,48 +21,12 @@ if (!/^https:\/\//i.test(ADMIN_BASE)) {
 }
 
 async function adminFetch(path, { method = 'GET', body } = {}) {
-  const token = await loadToken();
-  if (!token) {
-    const err = new Error('Session expirée. Reconnectez-vous.');
-    err.status = 401;
-    throw err;
-  }
-
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), TIMEOUT_MS);
-
-  try {
-    const resp = await fetch(`${ADMIN_BASE}${path}`, {
-      method,
-      headers: {
-        Accept: 'application/json',
-        Authorization: `Bearer ${token}`,
-        ...(body ? { 'Content-Type': 'application/json' } : {}),
-      },
-      body: body ? JSON.stringify(body) : undefined,
-      signal: controller.signal,
-    });
-
-    let data = {};
-    try { data = await resp.json(); } catch { data = {}; }
-
-    if (!resp.ok) {
-      const err = new Error((data && data.message) || `HTTP ${resp.status}`);
-      err.status = resp.status;
-      err.details = data;
-      throw err;
-    }
-    return data;
-  } catch (e) {
-    if (e?.name === 'AbortError') {
-      const err = new Error('La requête a expiré.');
-      err.status = 408;
-      throw err;
-    }
-    throw e;
-  } finally {
-    clearTimeout(timer);
-  }
+  return secureFetch(`${ADMIN_BASE}${path}`, {
+    method,
+    body,
+    timeoutMs: TIMEOUT_MS,
+    parse: 'json',
+  });
 }
 
 export async function listUsers() {

@@ -9,7 +9,7 @@
 
 --Astuce version simple Push
 	git add .
-	git commit -m "Before refont recording with sql"
+	git commit -m "After refont recording with sql"
 	git push -u origin main
 
 --Astuce pull

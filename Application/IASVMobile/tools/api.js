@@ -1,3 +1,10 @@
+import {
+  clearAuthTokens as clearStoredAuthTokens,
+  loadAuthTokens,
+  saveAuthTokens,
+} from './secureToken';
+import { logoutRequest, refreshTokenRequest } from './authApi';
+
 // --- API HikConnect ---
 
 const API_BASE = 'https://ia-sport.oa.r.appspot.com/api';
@@ -13,17 +20,133 @@ if (!/^https:\/\//i.test(API_BASE)) {
 // Renseigné par tools/secureToken après chargement du Keychain, ou par
 // LoginForm après un login réussi. Jamais persisté ailleurs qu'en Keychain.
 let CURRENT_AUTH_TOKEN = null;
+let CURRENT_REFRESH_TOKEN = null;
+let HYDRATE_SESSION_PROMISE = null;
+let REFRESH_SESSION_PROMISE = null;
+let AUTH_FAILURE_HANDLER = null;
 
 export function setAuthToken(token) {
   CURRENT_AUTH_TOKEN = typeof token === 'string' && token ? token : null;
+}
+
+export function setRefreshToken(token) {
+  CURRENT_REFRESH_TOKEN = typeof token === 'string' && token ? token : null;
+}
+
+export function setAuthSession({ accessToken, refreshToken } = {}) {
+  CURRENT_AUTH_TOKEN = typeof accessToken === 'string' && accessToken ? accessToken : null;
+  if (refreshToken === undefined) return;
+  CURRENT_REFRESH_TOKEN = typeof refreshToken === 'string' && refreshToken ? refreshToken : null;
 }
 
 export function clearAuthToken() {
   CURRENT_AUTH_TOKEN = null;
 }
 
+export function clearAuthSession() {
+  CURRENT_AUTH_TOKEN = null;
+  CURRENT_REFRESH_TOKEN = null;
+}
+
 export function getAuthToken() {
   return CURRENT_AUTH_TOKEN;
+}
+
+export function getRefreshToken() {
+  return CURRENT_REFRESH_TOKEN;
+}
+
+export function registerAuthFailureHandler(handler) {
+  AUTH_FAILURE_HANDLER = typeof handler === 'function' ? handler : null;
+}
+
+async function hydrateAuthSession() {
+  if (CURRENT_AUTH_TOKEN || CURRENT_REFRESH_TOKEN) {
+    return {
+      accessToken: CURRENT_AUTH_TOKEN,
+      refreshToken: CURRENT_REFRESH_TOKEN,
+    };
+  }
+  if (!HYDRATE_SESSION_PROMISE) {
+    HYDRATE_SESSION_PROMISE = (async () => {
+      const session = await loadAuthTokens();
+      if (session) setAuthSession(session);
+      return session;
+    })().finally(() => {
+      HYDRATE_SESSION_PROMISE = null;
+    });
+  }
+  return HYDRATE_SESSION_PROMISE;
+}
+
+async function persistAuthSession(session) {
+  setAuthSession(session);
+  await saveAuthTokens(session);
+}
+
+async function handleAuthFailure(reason) {
+  await clearStoredAuthTokens();
+  clearAuthSession();
+  if (AUTH_FAILURE_HANDLER) {
+    await AUTH_FAILURE_HANDLER(reason);
+  }
+}
+
+function shouldSkipRefresh(url) {
+  return /\/auth\/(login|refresh)\b/i.test(url);
+}
+
+function isJsonBody(body) {
+  return body !== null && body !== undefined && typeof body !== 'string';
+}
+
+function normalizeTimeoutError() {
+  const err = new Error('Request timed out');
+  err.status = 408;
+  return err;
+}
+
+async function refreshAccessSession() {
+  if (REFRESH_SESSION_PROMISE) return REFRESH_SESSION_PROMISE;
+
+  REFRESH_SESSION_PROMISE = (async () => {
+    await hydrateAuthSession();
+    if (!CURRENT_REFRESH_TOKEN) {
+      const err = new Error('Session expirée. Reconnectez-vous.');
+      err.status = 401;
+      throw err;
+    }
+
+    try {
+      const nextSession = await refreshTokenRequest(CURRENT_REFRESH_TOKEN);
+      await persistAuthSession({
+        accessToken: nextSession.accessToken,
+        refreshToken: nextSession.refreshToken,
+      });
+      return nextSession;
+    } catch (e) {
+      if (e?.status === 401 || e?.status === 403) {
+        await handleAuthFailure('refresh-rejected');
+      }
+      throw e;
+    } finally {
+      REFRESH_SESSION_PROMISE = null;
+    }
+  })();
+
+  return REFRESH_SESSION_PROMISE;
+}
+
+export async function logoutCurrentSession() {
+  await hydrateAuthSession();
+  const refreshToken = CURRENT_REFRESH_TOKEN;
+  const accessToken = CURRENT_AUTH_TOKEN;
+  try {
+    await logoutRequest({ refreshToken, accessToken });
+  } finally {
+    await clearStoredAuthTokens();
+    clearAuthSession();
+  }
 }
 
 /**
@@ -50,25 +173,35 @@ function isOwnApiUrl(url) {
     || url.startsWith(API_ORIGIN + '?');
 }
 
-async function secureFetch(url, { method = 'GET', headers, body, timeoutMs = DEFAULT_TIMEOUT_MS, parse = 'json' } = {}) {
+export async function secureFetch(
+  url,
+  { method = 'GET', headers, body, timeoutMs = DEFAULT_TIMEOUT_MS, parse = 'json', _retriedAfterRefresh = false } = {}
+) {
   if (typeof url !== 'string' || !/^https:\/\//i.test(url)) {
     throw new Error('Insecure or invalid URL');
+  }
+
+  const ownApi = isOwnApiUrl(url);
+  if (ownApi && (!CURRENT_AUTH_TOKEN || !CURRENT_REFRESH_TOKEN)) {
+    await hydrateAuthSession();
   }
 
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
 
-  const sendAuth = !!CURRENT_AUTH_TOKEN && isOwnApiUrl(url);
+  const sendAuth = !!CURRENT_AUTH_TOKEN && ownApi;
+  const hasBody = body !== undefined && body !== null;
+  const jsonBody = isJsonBody(body);
   try {
     const resp = await fetch(url, {
       method,
       headers: {
         Accept: 'application/ld+json, application/json;q=0.9, */*;q=0.1',
-        ...(body ? { 'Content-Type': 'application/json' } : {}),
+        ...(jsonBody ? { 'Content-Type': 'application/json' } : {}),
         ...(sendAuth ? { Authorization: `Bearer ${CURRENT_AUTH_TOKEN}` } : {}),
         ...(headers || {}),
       },
-      body: body ? JSON.stringify(body) : undefined,
+      body: !hasBody ? undefined : jsonBody ? JSON.stringify(body) : body,
       signal: controller.signal,
     });
 
@@ -80,6 +213,23 @@ async function secureFetch(url, { method = 'GET', headers, body, timeoutMs = DEF
     }
 
     if (!resp.ok) {
+      if (
+        resp.status === 401
+        && sendAuth
+        && !_retriedAfterRefresh
+        && !shouldSkipRefresh(url)
+      ) {
+        await refreshAccessSession();
+        return secureFetch(url, {
+          method,
+          headers,
+          body,
+          timeoutMs,
+          parse,
+          _retriedAfterRefresh: true,
+        });
+      }
+
       const err = new Error(
         (data && typeof data === 'object' && data.message) || `HTTP ${resp.status}`
       );
@@ -99,9 +249,7 @@ async function secureFetch(url, { method = 'GET', headers, body, timeoutMs = DEF
     return data;
   } catch (e) {
     if (e?.name === 'AbortError') {
-      const err = new Error('Request timed out');
-      err.status = 408;
-      throw err;
+      throw normalizeTimeoutError();
     }
     throw e;
   } finally {
